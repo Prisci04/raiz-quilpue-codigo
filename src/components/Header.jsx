@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const links = [
   { href: "/", label: "Inicio" },
@@ -20,15 +20,19 @@ function isActive(pathname, href) {
 export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [pathnameActual, setPathnameActual] = useState(pathname);
 
-  useEffect(() => {
+  if (pathnameActual !== pathname) {
+    setPathnameActual(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
+
+  const closeMenu = () => setOpen(false);
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#3d2f24]/12 bg-[#f6f1e8]/95 text-[#3d2f24] backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4 sm:px-8">
-        <Link href="/" className="min-w-0 leading-tight">
+        <Link href="/" className="min-w-0 leading-tight" onClick={closeMenu}>
           <span className="block text-[0.65rem] font-medium uppercase tracking-[0.28em] text-[#8a6f5c]">
             Corporación cultural
           </span>
@@ -41,7 +45,11 @@ export default function Header() {
           <ul className="flex items-center gap-7">
             {links.map((link) => (
               <li key={link.href}>
-                <NavLink href={link.href} active={isActive(pathname, link.href)}>
+                <NavLink
+                  href={link.href}
+                  active={isActive(pathname, link.href)}
+                  onNavigate={closeMenu}
+                >
                   {link.label}
                 </NavLink>
               </li>
@@ -78,6 +86,7 @@ export default function Header() {
                   href={link.href}
                   active={isActive(pathname, link.href)}
                   className="block py-2.5"
+                  onNavigate={closeMenu}
                 >
                   {link.label}
                 </NavLink>
@@ -90,11 +99,12 @@ export default function Header() {
   );
 }
 
-function NavLink({ href, active, className = "", children }) {
+function NavLink({ href, active, className = "", children, onNavigate }) {
   return (
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
+      onClick={onNavigate}
       className={`text-sm tracking-wide transition-colors ${
         active
           ? "font-medium text-[#b45a3c]"

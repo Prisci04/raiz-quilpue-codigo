@@ -1,42 +1,38 @@
-import { supabase } from "@/lib/supabase";
+import { fetchActividadesPublicas } from "@/lib/api/actividades";
+
+const MENSAJES = {
+  vacio: "No hay actividades publicadas.",
+  error: "Error al obtener las actividades.",
+};
 
 export default async function ActividadesPage() {
-  const { data: actividades, error } = await supabase
-    .from("actividades")
-    .select("*")
-    .eq("estado", "publicada")
-    .order("fecha", { ascending: true });
+  let actividades = [];
+  let estado = "ok";
 
-  if (error) {
-    console.error(error);
-
-    return (
-      <main>
-        <h1>Error al cargar actividades</h1>
-        <p>{error.message}</p>
-      </main>
-    );
+  try {
+    actividades = await fetchActividadesPublicas({ page: 1, limit: 10 });
+    estado = actividades.length === 0 ? "vacio" : "ok";
+  } catch {
+    estado = "error";
   }
 
   return (
     <main>
       <h1>Actividades</h1>
+      {estado !== "ok" ? <p>{MENSAJES[estado]}</p> : null}
 
-      {actividades?.map((actividad) => (
-        <article key={actividad.id}>
-          <h2>{actividad.titulo}</h2>
-
-          <p>{actividad.descripcion}</p>
-
-          <p>Fecha: {actividad.fecha}</p>
-
-          <p>Hora: {actividad.hora_inicio}</p>
-
-          <p>Ubicación: {actividad.ubicacion}</p>
-
-          <p>Cupos: {actividad.cupos}</p>
-        </article>
-      ))}
+      {estado === "ok"
+        ? actividades.map((actividad) => (
+            <article key={actividad.id}>
+              <h2>{actividad.titulo}</h2>
+              <p>{actividad.descripcion}</p>
+              <p>Fecha: {actividad.fecha}</p>
+              <p>Hora: {actividad.hora_inicio}</p>
+              <p>Ubicación: {actividad.ubicacion}</p>
+              <p>Cupos: {actividad.cupos}</p>
+            </article>
+          ))
+        : null}
     </main>
   );
 }
