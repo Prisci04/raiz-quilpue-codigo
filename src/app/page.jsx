@@ -5,7 +5,7 @@ export default function Home() {
         <h1 className="mt-4 font-serif text-5xl leading-tight tracking-tight sm:text-6xl">
           Raíz Quilpué
         </h1>
-        <p>ola</p>
+        <p>holaaa</p>
       </main>
     </div>
   );
