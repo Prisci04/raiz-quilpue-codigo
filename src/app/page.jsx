@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -250,11 +251,16 @@ export default function Home() {
                 className="museum-card text-left group"
                 style={{ animationDelay: `${i * 0.1}s` }}
               >
-                <div className="overflow-hidden" style={{ aspectRatio: "16/9", background: "var(--muted)" }}>
-                  <img
+                <div
+                  className="relative overflow-hidden"
+                  style={{ aspectRatio: "16/9", background: "var(--muted)" }}
+                >
+                  <Image
                     src={item.image}
                     alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
                 <div className="p-5" style={{ background: "var(--card)", border: "1px solid var(--border)", borderTop: "none" }}>
@@ -301,10 +307,12 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 overflow-hidden">
             <div className="relative" style={{ minHeight: "400px", background: "var(--muted)" }}>
-              <img
+              <Image
                 src={nextActivity.image}
                 alt={nextActivity.title}
-                className="absolute inset-0 w-full h-full object-cover"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
               />
               <div
                 className="absolute top-4 left-4 font-mono text-[10px] tracking-wide uppercase px-3 py-1.5"
@@ -346,7 +354,7 @@ export default function Home() {
             className="font-serif text-3xl md:text-4xl font-light leading-relaxed italic"
             style={{ color: "var(--background)" }}
           >
-            "Preservar la memoria es un acto de amor hacia quienes vendrán."
+            {'"Preservar la memoria es un acto de amor hacia quienes vendrán."'}
           </blockquote>
           <cite className="block mt-6 font-mono text-xs tracking-[0.15em] uppercase" style={{ color: "var(--accent)" }}>
             — Raíz Quilpué · Museo Digital
