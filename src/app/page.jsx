@@ -347,21 +347,33 @@ export default function Home() {
       )}
 
       {/* Mission strip */}
-      <section className="py-20 px-6" style={{ background: "var(--primary)" }}>
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="divider-gold mx-auto mb-8" style={{ maxWidth: "80px" }} />
-          <blockquote
-            className="font-serif text-3xl md:text-4xl font-light leading-relaxed italic"
-            style={{ color: "var(--background)" }}
-          >
-            {'"Preservar la memoria es un acto de amor hacia quienes vendrán."'}
-          </blockquote>
-          <cite className="block mt-6 font-mono text-xs tracking-[0.15em] uppercase" style={{ color: "var(--accent)" }}>
-            — Raíz Quilpué · Museo Digital
-          </cite>
-          <div className="divider-gold mx-auto mt-8" style={{ maxWidth: "80px" }} />
-        </div>
-      </section>
+<section className="py-10 px-6" style={{ background: "var(--primary)" }}>
+  <div className="max-w-3xl mx-auto text-center">
+    <div
+      className="divider-gold mx-auto mb-5"
+      style={{ maxWidth: "60px" }}
+    />
+
+    <blockquote
+      className="font-serif text-xl md:text-2xl font-light leading-relaxed italic"
+      style={{ color: "var(--background)" }}
+    >
+      {'"Preservar la memoria es un acto de amor hacia quienes vendrán."'}
+    </blockquote>
+
+    <cite
+      className="block mt-4 font-mono text-[10px] tracking-[0.15em] uppercase"
+      style={{ color: "var(--accent)" }}
+    >
+      — Raíz Quilpué · Museo Digital
+    </cite>
+
+    <div
+      className="divider-gold mx-auto mt-5"
+      style={{ maxWidth: "60px" }}
+    />
+  </div>
+</section>
     </div>
   );
 }
