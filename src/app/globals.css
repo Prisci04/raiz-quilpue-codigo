@@ -1,17 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f1e8;
-  --foreground: #3d2f24;
-  --primary: #2c1a0e;
-  --accent: #c9a227;
-  --border: rgba(61, 47, 36, 0.14);
-  --card: #f7f1e8;
-  --muted: #e8dfd0;
-  --muted-foreground: #6b5344;
-  --secondary: #efe6d6;
-  --terracotta: #b45a3c;
-  --forest: #4a5c3a;
+  --background: #e7dcd2;
+  --foreground: #946541;
+  --primary: #946541;
+  --accent: #ffdf90;
+  --accent-soft: #ffdf90;
+  --active-indicator: #704a31;
+  --border: rgba(187, 156, 130, 0.7);
+  --card: #e7dcd2;
+  --muted: rgba(187, 156, 130, 0.25);
+  --muted-foreground: #946541;
+  --secondary: rgba(187, 156, 130, 0.28);
+  --terracotta: #e48d40;
+  --orange-strong: #db700f;
+  --forest: #db700f;
 }
 
 @theme inline {
@@ -28,7 +31,7 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
 }
 
 .nav-link {
@@ -58,7 +61,7 @@ body {
   bottom: -6px;
   left: 0;
   height: 1px;
-  background: var(--accent);
+  background: var(--active-indicator);
 }
 
 .btn-outline {
@@ -77,7 +80,7 @@ body {
 
 .btn-outline:hover {
   background: var(--primary);
-  color: #fff;
+  color: var(--background);
 }
 
 .btn-primary {
@@ -86,8 +89,13 @@ body {
   justify-content: center;
   border: none;
   background: var(--primary);
-  color: #fff;
+  color: var(--background);
   cursor: pointer;
+}
+
+.site-footer {
+  background: var(--primary);
+  color: var(--background);
 }
 
 @keyframes fade-in {

@@ -72,8 +72,8 @@ export default function ActivityCard({ activity, onView }) {
   const occupancy = cupos ? Math.min(100, Math.round((inscritos / cupos) * 100)) : 0;
 
   return (
-    <article className="flex h-full flex-col overflow-hidden bg-[#f4eee4] text-[#3d2f24] shadow-[0_10px_24px_rgba(44,26,14,0.06)]">
-      <div className="relative h-[220px] w-full overflow-hidden">
+    <article className="flex h-full flex-col overflow-hidden border border-[#bb9c82] bg-[#e7dcd2] text-[#946541] shadow-[0_10px_24px_rgba(112,74,49,0.08)]">
+      <div className="relative h-[190px] w-full overflow-hidden">
         {activity.image ? (
           <Image
             src={activity.image}
@@ -83,25 +83,25 @@ export default function ActivityCard({ activity, onView }) {
             className="object-cover"
           />
         ) : (
-          <ImagePlaceholder height={220} />
+          <ImagePlaceholder height={190} />
         )}
 
         {activity.category ? (
-          <span className="absolute top-3 left-3 bg-[#c9a227] px-2.5 py-1 font-mono text-[10px] font-semibold tracking-[0.14em] text-white uppercase">
+          <span className="absolute top-3 left-3 bg-[#704a31] px-2.5 py-1 font-mono text-[10px] font-semibold tracking-[0.14em] text-[#e7dcd2] uppercase">
             {activity.category}
           </span>
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col px-5 pt-5 pb-5">
-        <h2 className="font-serif text-[1.45rem] leading-snug font-semibold text-[#2c1a0e]">
+      <div className="flex flex-1 flex-col px-4 pt-4 pb-4">
+        <h2 className="font-serif text-[1.3rem] leading-snug font-semibold text-[#704a31]">
           {activity.title}
         </h2>
 
-        <ul className="mt-4 space-y-2 text-[13.5px] text-[#5d493e]">
+        <ul className="mt-3 space-y-1.5 text-[13px] text-[#946541]">
           {activity.date ? (
             <li className="flex items-start gap-2.5">
-              <span className="mt-0.5 text-[#8a6f5c]">
+              <span className="mt-0.5 text-[#946541]">
                 <CalendarIcon />
               </span>
               <span>{formatLongDate(activity.date)}</span>
@@ -110,7 +110,7 @@ export default function ActivityCard({ activity, onView }) {
 
           {activity.time ? (
             <li className="flex items-start gap-2.5">
-              <span className="mt-0.5 text-[#8a6f5c]">
+              <span className="mt-0.5 text-[#946541]">
                 <ClockIcon />
               </span>
               <span>{formatTime(activity.time)}</span>
@@ -119,7 +119,7 @@ export default function ActivityCard({ activity, onView }) {
 
           {activity.location ? (
             <li className="flex items-start gap-2.5">
-              <span className="mt-0.5 text-[#8a6f5c]">
+              <span className="mt-0.5 text-[#946541]">
                 <PinIcon />
               </span>
               <span>{activity.location}</span>
@@ -127,20 +127,20 @@ export default function ActivityCard({ activity, onView }) {
           ) : null}
         </ul>
 
-        <div className="mt-auto pt-5">
+        <div className="mt-auto pt-4">
           <div className="mb-2 flex items-end justify-between gap-3 text-[12px]">
-            <span className="text-[#6b5344]">
+            <span className="text-[#946541]">
               Cupos:
               <span className="ml-1.5 tracking-wide">
                 {inscritos} / {cupos}
               </span>
             </span>
-            <span className="text-[#c9a227]">{available} disponibles</span>
+            <span className="text-[#ffdf90]">{available} disponibles</span>
           </div>
 
-          <div className="mb-4 h-[5px] overflow-hidden rounded-full bg-[#e7dcc8]">
+          <div className="mb-4 h-[5px] overflow-hidden rounded-full bg-[#bb9c82]/40">
             <div
-              className="h-full rounded-full bg-[#c9a227]"
+              className="h-full rounded-full bg-[#ffdf90]"
               style={{ width: `${occupancy}%` }}
             />
           </div>
@@ -148,7 +148,7 @@ export default function ActivityCard({ activity, onView }) {
           <button
             type="button"
             onClick={() => onView?.(activity.id)}
-            className="w-full bg-[#5c4033] py-3 text-[12px] font-medium tracking-[0.16em] text-white uppercase transition-colors hover:bg-[#4a3228]"
+            className="w-full bg-[#704a31] py-2.5 text-[11px] font-medium tracking-[0.16em] text-[#e7dcd2] uppercase transition-colors hover:bg-[#db700f]"
           >
             Ver actividad
           </button>

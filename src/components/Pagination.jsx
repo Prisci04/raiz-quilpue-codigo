@@ -31,9 +31,9 @@ function getVisiblePages(currentPage, totalPages) {
 }
 
 const controlClassName =
-  "inline-flex h-10 items-center justify-center rounded-md border px-3.5 text-sm transition-colors";
+  "inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm transition-colors";
 const pageClassName =
-  "inline-flex h-10 min-w-10 items-center justify-center rounded-md border px-2 text-sm transition-colors";
+  "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-sm transition-colors";
 
 export default function Pagination({
   currentPage,
@@ -42,73 +42,68 @@ export default function Pagination({
   label = "Paginación",
   className = "",
 }) {
-  if (!totalPages || totalPages <= 1) return null;
+  if (!totalPages) return null;
 
   const pages = getVisiblePages(currentPage, totalPages);
   const isFirstPage = currentPage <= 1;
   const isLastPage = currentPage >= totalPages;
 
   return (
-    <nav
-      aria-label={label}
-      className={`flex w-full flex-wrap items-center justify-center gap-2.5 ${className}`}
-    >
-      <button
-        type="button"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={isFirstPage}
-        aria-label="Página anterior"
-        className={`${controlClassName} ${
-          isFirstPage
-            ? "cursor-not-allowed border-[#e4d8c8] bg-transparent text-[#c4b5a5]"
-            : "cursor-pointer border-[#d7c8b6] bg-[#faf6f0] text-[#3d2f24] hover:bg-[#f3ebe1]"
-        }`}
-      >
-        ← Anterior
-      </button>
+    <nav aria-label={label} className={`flex w-full flex-col items-center gap-3 ${className}`}>
+      <div className="flex w-full flex-wrap items-center justify-center gap-2.5">
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={isFirstPage}
+          aria-label="Página anterior"
+          className={`${controlClassName} ${
+            isFirstPage
+              ? "cursor-not-allowed border-[#bb9c82]/45 bg-transparent text-[#bb9c82]"
+              : "cursor-pointer border-[#bb9c82] bg-[#e7dcd2] text-[#946541] hover:bg-[#ffdf90]/35"
+          }`}
+        >
+          ← Anterior
+        </button>
 
-      {pages.map((page, index) =>
-        page === "ellipsis" ? (
-          <span
-            key={`ellipsis-${index}`}
-            aria-hidden="true"
-            className="min-w-6 text-center text-[#8a6f5c]"
-          >
-            …
-          </span>
-        ) : (
-          <button
-            key={page}
-            type="button"
-            onClick={() => onPageChange(page)}
-            aria-label={`Página ${page}`}
-            aria-current={page === currentPage ? "page" : undefined}
-            className={`${pageClassName} ${
-              page === currentPage
-                ? "border-[#5c4033] bg-[#5c4033] font-medium text-white"
-                : "cursor-pointer border-[#d7c8b6] bg-[#faf6f0] text-[#3d2f24] hover:bg-[#f3ebe1]"
-            }`}
-          >
-            {page}
-          </button>
-        )
-      )}
+        {pages.map((page, index) =>
+          page === "ellipsis" ? (
+            <span key={`ellipsis-${index}`} aria-hidden="true" className="min-w-6 text-center text-[#946541]">
+              …
+            </span>
+          ) : (
+            <button
+              key={page}
+              type="button"
+              onClick={() => onPageChange(page)}
+              aria-label={`Página ${page}`}
+              aria-current={page === currentPage ? "page" : undefined}
+              className={`${pageClassName} ${
+                page === currentPage
+                  ? "border-[#704a31] bg-[#704a31] font-medium text-[#e7dcd2]"
+                  : "cursor-pointer border-[#bb9c82] bg-[#e7dcd2] text-[#946541] hover:bg-[#ffdf90]/35"
+              }`}
+            >
+              {page}
+            </button>
+          )
+        )}
 
-      <button
-        type="button"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={isLastPage}
-        aria-label="Página siguiente"
-        className={`${controlClassName} ${
-          isLastPage
-            ? "cursor-not-allowed border-[#e4d8c8] bg-transparent text-[#c4b5a5]"
-            : "cursor-pointer border-[#d7c8b6] bg-[#faf6f0] text-[#3d2f24] hover:bg-[#f3ebe1]"
-        }`}
-      >
-        Siguiente →
-      </button>
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={isLastPage}
+          aria-label="Página siguiente"
+          className={`${controlClassName} ${
+            isLastPage
+              ? "cursor-not-allowed border-[#bb9c82]/45 bg-transparent text-[#bb9c82]"
+              : "cursor-pointer border-[#bb9c82] bg-[#e7dcd2] text-[#946541] hover:bg-[#ffdf90]/35"
+          }`}
+        >
+          Siguiente →
+        </button>
+      </div>
 
-      <span className="ml-1 text-sm text-[#6b5344]">
+      <span className="text-sm text-[#946541]">
         Página {currentPage} de {totalPages}
       </span>
     </nav>

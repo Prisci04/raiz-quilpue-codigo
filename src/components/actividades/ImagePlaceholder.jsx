@@ -6,7 +6,7 @@ export default function ImagePlaceholder({ height = 220, className = "" }) {
       style={{
         height,
         background:
-          "linear-gradient(135deg, #d7c4ae 0%, #b45a3c 52%, #8a6f5c 100%)",
+          "linear-gradient(135deg, #bb9c82 0%, #e48d40 52%, #db700f 100%)",
       }}
     />
   );

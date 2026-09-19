@@ -1,7 +1,7 @@
 import { getContenidosFromDb } from "@/lib/contenido-db";
 import ContenidoView from "./contenido-view";
 
-export default async function ContenidoPage() {
+export default async function ContenidoPage({ searchParams }) {
   let items = [];
   let error = "";
 
@@ -12,5 +12,14 @@ export default async function ContenidoPage() {
       "No fue posible cargar los contenidos. Inténtalo de nuevo más tarde.";
   }
 
-  return <ContenidoView items={items} error={error} />;
+  const params = await searchParams;
+
+  return (
+    <ContenidoView
+      items={items}
+      error={error}
+      initialTipo={params?.tipo ?? "todos"}
+      initialQuery={params?.q ?? ""}
+    />
+  );
 }

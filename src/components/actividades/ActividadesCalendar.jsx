@@ -124,26 +124,26 @@ export default function ActividadesCalendar({ activities = [], onView }) {
         <button
           type="button"
           onClick={() => changeMonth(-1)}
-          className="rounded-md border border-[#d7c8b6] px-3 py-2 text-sm text-[#5c4033]"
+          className="rounded-md border border-[#bb9c82] px-3 py-2 text-sm text-[#946541]"
         >
           ←
         </button>
-        <h2 className="font-serif text-2xl text-[#2c1a0e]">{formatMonthTitle(monthDate)}</h2>
+        <h2 className="font-serif text-2xl text-[#946541]">{formatMonthTitle(monthDate)}</h2>
         <button
           type="button"
           onClick={() => changeMonth(1)}
-          className="rounded-md border border-[#d7c8b6] px-3 py-2 text-sm text-[#5c4033]"
+          className="rounded-md border border-[#bb9c82] px-3 py-2 text-sm text-[#946541]"
         >
           →
         </button>
       </div>
 
-      <div className="overflow-hidden border border-[#e6dccb] bg-[#f7f1e8]">
+      <div className="overflow-hidden border border-[#bb9c82] bg-[#e7dcd2]">
         <div className="grid grid-cols-7">
           {WEEKDAYS.map((day) => (
             <div
               key={day}
-              className="border-b border-[#e6dccb] px-2 py-2 text-center text-[11px] tracking-[0.14em] text-[#8a6f5c] uppercase"
+              className="border-b border-[#bb9c82] px-2 py-2 text-center text-[11px] tracking-[0.14em] text-[#946541] uppercase"
             >
               {day}
             </div>
@@ -154,7 +154,7 @@ export default function ActividadesCalendar({ activities = [], onView }) {
               return (
                 <div
                   key={`empty-${index}`}
-                  className="min-h-[108px] border-r border-b border-[#e6dccb] bg-[#f7f1e8]"
+                  className="min-h-[108px] border-r border-b border-[#bb9c82] bg-[#e7dcd2]"
                 />
               );
             }
@@ -171,20 +171,20 @@ export default function ActividadesCalendar({ activities = [], onView }) {
                 type="button"
                 onClick={() => handleSelectDay(key, hasActivities)}
                 disabled={!hasActivities}
-                className={`min-h-[108px] border-r border-b border-[#e6dccb] p-2 text-left align-top ${
+                className={`min-h-[108px] border-r border-b border-[#bb9c82] p-2 text-left align-top ${
                   isSelected
-                    ? "bg-[#f4e6c4]"
-                    : "bg-[#f7f1e8]"
+                    ? "bg-[#ffdf90]/45"
+                    : "bg-[#e7dcd2]"
                 } ${hasActivities ? "cursor-pointer" : "cursor-default"}`}
               >
                 {isToday ? (
-                  <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-[4px] bg-[#5c4033] px-1 text-[12px] font-semibold text-white">
+                  <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-[4px] bg-[#946541] px-1 text-[12px] font-semibold text-[#e7dcd2]">
                     {date.getDate()}
                   </span>
                 ) : (
                   <span
                     className={`text-[13px] ${
-                      isSelected ? "font-semibold text-[#c9a227]" : "text-[#6b5344]"
+                      isSelected ? "font-semibold text-[#ffdf90]" : "text-[#946541]"
                     }`}
                   >
                     {date.getDate()}
@@ -195,7 +195,7 @@ export default function ActividadesCalendar({ activities = [], onView }) {
                   {dayActivities.map((activity) => (
                     <span
                       key={activity.id}
-                      className="block truncate bg-[#c9a227] px-1.5 py-0.5 text-[10px] leading-4 text-white"
+                      className="block truncate bg-[#ffdf90] px-1.5 py-0.5 text-[10px] leading-4 text-[#946541]"
                       title={activity.title}
                     >
                       {activity.title}
@@ -209,8 +209,8 @@ export default function ActividadesCalendar({ activities = [], onView }) {
       </div>
 
       {selectedDate && selectedActivities.length > 0 ? (
-        <div className="mt-5 border-l-4 border-[#c9a227] bg-[#f3ebe1] px-5 py-4">
-          <p className="text-[11px] font-semibold tracking-[0.18em] text-[#c9a227] uppercase">
+        <div className="mt-5 border-l-4 border-[#ffdf90] bg-[#bb9c82]/25 px-5 py-4">
+          <p className="text-[11px] font-semibold tracking-[0.18em] text-[#ffdf90] uppercase">
             {formatPanelDate(selectedDate)}
           </p>
 
@@ -218,7 +218,7 @@ export default function ActividadesCalendar({ activities = [], onView }) {
             {selectedActivities.map((activity) => (
               <div
                 key={activity.id}
-                className="flex items-center gap-4 bg-[#efe4d0] px-3 py-3"
+                className="flex items-center gap-4 bg-[#ffdf90]/35 px-3 py-3"
               >
                 <div className="relative h-14 w-14 shrink-0 overflow-hidden">
                   {activity.image ? (
@@ -235,10 +235,10 @@ export default function ActividadesCalendar({ activities = [], onView }) {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-serif text-[1.05rem] font-semibold text-[#3d2f24]">
+                  <h3 className="font-serif text-[1.05rem] font-semibold text-[#946541]">
                     {activity.title}
                   </h3>
-                  <p className="mt-0.5 text-sm text-[#8a6f5c]">
+                  <p className="mt-0.5 text-sm text-[#946541]">
                     {[formatShortTime(activity.time), activity.location]
                       .filter(Boolean)
                       .join(" · ")}
@@ -248,7 +248,7 @@ export default function ActividadesCalendar({ activities = [], onView }) {
                 <button
                   type="button"
                   onClick={() => onView?.(activity.id)}
-                  className="shrink-0 text-sm text-[#8a6f5c] transition-colors hover:text-[#5c4033]"
+                  className="shrink-0 text-sm text-[#946541] transition-colors hover:text-[#db700f]"
                 >
                   Ver →
                 </button>
@@ -258,14 +258,14 @@ export default function ActividadesCalendar({ activities = [], onView }) {
         </div>
       ) : null}
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[12px] text-[#8a6f5c]">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[12px] text-[#946541]">
         <div className="flex flex-wrap items-center gap-5">
           <span className="inline-flex items-center gap-2">
-            <span className="h-3 w-3 bg-[#c9a227]" />
+            <span className="h-3 w-3 bg-[#ffdf90]" />
             Actividad programada
           </span>
           <span className="inline-flex items-center gap-2">
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-[3px] bg-[#5c4033] px-1 text-[10px] font-semibold text-white">
+            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-[3px] bg-[#946541] px-1 text-[10px] font-semibold text-[#e7dcd2]">
               H
             </span>
             Hoy

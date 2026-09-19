@@ -8,6 +8,8 @@ const FILTERS = [
   { id: "noticia", label: "Noticias" },
   { id: "patrimonio", label: "Patrimonio" },
   { id: "capsula_historica", label: "Cápsulas históricas" },
+  { id: "cultura", label: "Cultura" },
+  { id: "comunidad", label: "Comunidad" },
 ];
 
 function formatDate(dateString) {
@@ -25,13 +27,25 @@ function tipoLabel(tipo) {
   return FILTERS.find((item) => item.id === tipo)?.label ?? tipo;
 }
 
-export default function ContenidoView({ items = [], error = "" }) {
-  const [tipo, setTipo] = useState("todos");
+export default function ContenidoView({
+  items = [],
+  error = "",
+  initialTipo = "todos",
+  initialQuery = "",
+}) {
+  const requestedQuery = initialQuery.trim().toLowerCase();
+  const initialType = FILTERS.some((filter) => filter.id === initialTipo)
+    ? initialTipo
+    : "todos";
+  const [tipo, setTipo] = useState(initialType);
 
   const visibleItems = useMemo(() => {
-    if (tipo === "todos") return items;
-    return items.filter((item) => item.tipo === tipo);
-  }, [items, tipo]);
+    return items.filter((item) => {
+      const matchesType = tipo === "todos" || item.tipo === tipo;
+      const searchableText = `${item.title} ${item.description} ${item.tipo}`.toLowerCase();
+      return matchesType && (!requestedQuery || searchableText.includes(requestedQuery));
+    });
+  }, [items, requestedQuery, tipo]);
 
   const emptyMessage = error
     ? error
@@ -40,20 +54,24 @@ export default function ContenidoView({ items = [], error = "" }) {
       : "No hay contenidos en esta categoría.";
 
   return (
-    <main className="bg-[#ebe4d4] text-[#3d2f24]">
-      <section className="mx-auto max-w-3xl px-6 pt-16 pb-20 sm:px-8 sm:pt-20">
-        <h1 className="font-serif text-5xl font-normal text-[#5c4033]">
-          Contenidos
-        </h1>
-        <p className="mt-4 max-w-xl text-[16px] leading-relaxed text-[#6b5344]">
-          Noticias, patrimonio y cápsulas históricas de Quilpué.
-        </p>
+    <main className="bg-[#e7dcd2] text-[#946541]">
+      <section className="bg-[#bb9c82]/25 px-6 pt-16 pb-12 sm:pt-20">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-4 text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">Patrimonio · Noticias · Historias · Cultura · Comunidad</div>
+          <h1 className="font-serif text-[clamp(2.5rem,5vw,3.8rem)] leading-tight font-semibold text-[#704a31]">
+            Contenidos
+          </h1>
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-[#946541]">
+            Toda la información que construyen la memoria de Quilpué.
+            Todo el contenido cultural en un solo espacio.
+          </p>
+        </div>
+      </section>
 
-        <div
-          className="mt-8 flex flex-wrap gap-2"
-          role="tablist"
-          aria-label="Filtrar contenidos"
-        >
+      <div
+        className="sticky top-16 z-40 border-b border-[#bb9c82] bg-[#e7dcd2]/95 px-6 py-3 backdrop-blur-md"
+      >
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2">
           {FILTERS.map((filter) => {
             const active = tipo === filter.id;
 
@@ -64,61 +82,143 @@ export default function ContenidoView({ items = [], error = "" }) {
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTipo(filter.id)}
-                className={`px-3.5 py-2 text-[11px] font-semibold tracking-[0.12em] uppercase ${
+                className={`px-3.5 py-2 text-[11px] font-semibold tracking-[0.12em] uppercase transition-colors ${
                   active
-                    ? "bg-[#5c4033] text-white"
-                    : "border border-[#d7c8b6] bg-transparent text-[#5c4033]"
+                    ? "bg-[#704a31] text-[#e7dcd2]"
+                    : "border border-[#bb9c82] bg-transparent text-[#946541] hover:border-[#db700f] hover:text-[#db700f]"
                 }`}
               >
                 {filter.label}
               </button>
             );
           })}
+          <span className="ml-auto font-mono text-[10px] text-[#946541]">
+            {visibleItems.length} {visibleItems.length === 1 ? "publicación" : "publicaciones"}
+          </span>
         </div>
+      </div>
 
-        <p className="mt-4 text-sm text-[#c9a227]">
-          {visibleItems.length}{" "}
-          {visibleItems.length === 1 ? "contenido" : "contenidos"}
-        </p>
-
+      <div className="mx-auto max-w-7xl space-y-16 px-6 py-12">
         {visibleItems.length === 0 ? (
-          <p className="mt-10 text-[#6b5344]">{emptyMessage}</p>
+          <div className="py-20 text-center">
+            <div className="mb-4 text-4xl" aria-hidden="true">📭</div>
+            <p className="font-serif text-xl text-[#946541]">{emptyMessage}</p>
+          </div>
         ) : (
-          <ul className="mt-8 space-y-4">
-            {visibleItems.map((item) => (
-              <li
-                key={item.id}
-                className="border border-[#e0d5c4] bg-[#f6f1e8] p-5"
-              >
-                {item.image ? (
-                  <div className="relative mb-4 h-40 w-full overflow-hidden">
-                    <Image
-                      src={item.image}
-                      alt={item.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 768px"
-                      className="object-cover"
-                    />
-                  </div>
-                ) : null}
+          <>
+            {(tipo === "todos" || tipo === "patrimonio") &&
+            visibleItems.some((item) => item.tipo === "patrimonio") ? (
+              <section>
+                <SectionHeading
+                  eyebrow="Colección"
+                  title="Patrimonio cultural"
+                  count={visibleItems.filter((item) => item.tipo === "patrimonio").length}
+                  countLabel="piezas"
+                />
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {visibleItems
+                    .filter((item) => item.tipo === "patrimonio")
+                    .map((item, index) => (
+                      <ContentCard key={item.id} item={item} index={index} featured />
+                    ))}
+                </div>
+              </section>
+            ) : null}
 
-                <p className="text-[10px] font-semibold tracking-[0.16em] text-[#c9a227] uppercase">
-                  {tipoLabel(item.tipo)}
-                  {item.date ? ` · ${formatDate(item.date)}` : ""}
-                </p>
-                <h2 className="mt-2 font-serif text-2xl text-[#2c1a0e]">
-                  {item.title}
-                </h2>
-                {item.description ? (
-                  <p className="mt-2 text-sm leading-relaxed text-[#6b5344]">
-                    {item.description}
-                  </p>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+            {(tipo === "todos" || tipo !== "patrimonio") &&
+            visibleItems.some((item) => item.tipo !== "patrimonio") ? (
+              <section>
+                <SectionHeading
+                  eyebrow="Publicaciones"
+                  title="Noticias y publicaciones"
+                  count={visibleItems.filter((item) => item.tipo !== "patrimonio").length}
+                  countLabel="artículos"
+                />
+                <div className="space-y-4">
+                  {visibleItems
+                    .filter((item) => item.tipo !== "patrimonio")
+                    .map((item, index) => (
+                      <ContentCard key={item.id} item={item} index={index} />
+                    ))}
+                </div>
+              </section>
+            ) : null}
+          </>
         )}
-      </section>
+
+        <div className="border-t border-[#bb9c82] pt-8 text-center">
+          <p className="font-mono text-[10px] tracking-[0.14em] text-[#946541] uppercase">
+            Aquí aparecerán nuevos contenidos cuando sean publicados.
+          </p>
+        </div>
+      </div>
     </main>
+  );
+}
+
+function SectionHeading({ eyebrow, title, count, countLabel }) {
+  return (
+    <div className="mb-8 flex items-center gap-4">
+      <div>
+        <div className="section-label mb-0.5">{eyebrow}</div>
+        <h2 className="font-serif text-2xl font-semibold text-[#704a31]">{title}</h2>
+      </div>
+      <div className="h-px flex-1 bg-[#bb9c82]" />
+      <span className="font-mono text-[9px] text-[#946541]">
+        {count} {countLabel}
+      </span>
+    </div>
+  );
+}
+
+function ContentCard({ item, index, featured = false }) {
+  const imageClassName = featured
+    ? "aspect-[4/3]"
+    : "h-40 w-40 shrink-0 sm:h-32 sm:w-48";
+
+  return (
+    <article
+      className={`museum-card animate-fade-up overflow-hidden border border-[#bb9c82] bg-[#e7dcd2] ${
+        featured ? "" : "flex"
+      }`}
+      style={{ animationDelay: `${index * 0.06}s` }}
+    >
+      <div className={`relative overflow-hidden bg-[#bb9c82]/25 ${imageClassName}`}>
+        {item.image ? (
+          <Image
+            src={item.image}
+            alt={item.title}
+            fill
+            sizes={featured ? "(max-width: 768px) 100vw, 33vw" : "192px"}
+            className="object-cover transition-transform duration-500 hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center font-mono text-[10px] tracking-wide text-[#946541] uppercase">
+            Imagen próximamente
+          </div>
+        )}
+        <div className="absolute top-3 left-3 bg-[#946541] px-2 py-0.5 font-mono text-[8px] tracking-wide text-[#e7dcd2] uppercase">
+          {tipoLabel(item.tipo)}
+        </div>
+      </div>
+      <div className={`min-w-0 ${featured ? "p-5" : "flex flex-1 flex-col justify-center px-5 py-4"}`}>
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="font-mono text-[9px] text-[#946541]">
+            {item.date ? formatDate(item.date) : ""}
+          </span>
+        </div>
+        <h3 className={`${featured ? "text-lg" : "text-lg"} mb-2 font-serif leading-snug font-semibold text-[#946541]`}>
+          {item.title}
+        </h3>
+        {item.description ? (
+          <p className="mb-3 line-clamp-3 text-sm leading-relaxed text-[#946541]">
+            {item.description}
+          </p>
+        ) : null}
+        <span className="font-mono text-[9px] tracking-wide text-[#db700f] uppercase">
+          Ver detalle →
+        </span>
+      </div>
+    </article>
   );
 }

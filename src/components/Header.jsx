@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const navItems = [
   { href: "/", label: "Inicio" },
-  { href: "/", label: "Quiénes somos", placeholder: true },
+  { href: "/quienes-somos", label: "Quiénes somos" },
   { href: "/contenido", label: "Contenidos" },
   { href: "/actividades", label: "Actividades" },
   { href: "/", label: "Museo Digital", placeholder: true },
@@ -33,7 +34,7 @@ export default function Header() {
     <header
       className="fixed top-0 right-0 left-0 z-50"
       style={{
-        background: "rgba(244, 239, 230, 0.96)",
+        background: "rgba(231, 220, 210, 0.96)",
         backdropFilter: "blur(8px)",
         borderBottom: "1px solid var(--border)",
       }}
@@ -44,11 +45,17 @@ export default function Header() {
             <div
               className="flex h-8 w-8 items-center justify-center"
               style={{
-                background: "var(--primary)",
                 borderRadius: "2px",
               }}
             >
-              <span className="font-serif text-sm font-bold text-white">R</span>
+              {/* CAMBIAR IMAGEN AQUÍ: sube el logo oficial con este nombre. */}
+              <Image
+                src="/images/logo/logoraizquilpue.png"
+                alt="Logo de Raíz Quilpué"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+              />
             </div>
             <div className="leading-tight">
               <div
@@ -59,7 +66,7 @@ export default function Header() {
               </div>
               <div
                 className="font-mono text-[9px] tracking-[0.18em] uppercase"
-                style={{ color: "var(--accent)", marginTop: "-3px" }}
+                style={{ color: "var(--active-indicator)", marginTop: "-3px" }}
               >
                 Quilpué
               </div>
@@ -78,7 +85,7 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
-          <Link href="/" className="nav-link" style={{ color: "var(--accent)" }}>
+          <Link href="/" className="nav-link" style={{ color: "var(--active-indicator)" }}>
             Asistente
           </Link>
         </nav>
@@ -154,7 +161,7 @@ export default function Header() {
             <Link
               href="/"
               className="border-b py-2.5 text-left text-sm font-medium"
-              style={{ borderColor: "var(--border)", color: "var(--accent)" }}
+              style={{ borderColor: "var(--border)", color: "var(--active-indicator)" }}
               onClick={() => setMenuOpen(false)}
             >
               Asistente

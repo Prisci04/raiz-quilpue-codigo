@@ -7,9 +7,7 @@ import ActividadesCalendar from "@/components/actividades/ActividadesCalendar";
 import ImagePlaceholder from "@/components/actividades/ImagePlaceholder";
 import ViewTabs from "@/components/actividades/ViewTabs";
 import Pagination from "@/components/Pagination";
-import { DEFAULT_LIMIT } from "@/lib/http";
-
-const PAGE_SIZE = DEFAULT_LIMIT;
+const PAGE_SIZE = 3;
 
 function formatDate(dateString) {
   if (!dateString) return "";
@@ -31,8 +29,8 @@ function formatDate(dateString) {
   });
 }
 
-export default function ActividadesView({ activities = [], error = "" }) {
-  const [view, setView] = useState("actividades");
+export default function ActividadesView({ activities = [], error = "", initialView = "actividades" }) {
+  const [view, setView] = useState(initialView);
   const [pageIndex, setPageIndex] = useState(0);
   const [selectedActivityId, setSelectedActivityId] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -97,44 +95,43 @@ export default function ActividadesView({ activities = [], error = "" }) {
   }
 
   return (
-    <main className="bg-[#ebe4d4] text-[#3d2f24]">
-      <section>
-        <div className="mx-auto max-w-[1200px] px-6 pt-16 pb-2 sm:px-8 sm:pt-20">
-          <p className="text-[11px] font-semibold tracking-[0.22em] text-[#c9a227] uppercase">
+    <main className="bg-[#e7dcd2] text-[#946541]">
+      <section className="bg-[#bb9c82]/25">
+        <div className="mx-auto max-w-[1200px] px-6 pt-16 pb-10 sm:px-8 sm:pt-20">
+          <p className="text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">
             Talleres · Visitas · Conferencias
           </p>
-          <h1 className="mt-4 font-serif text-[clamp(2.8rem,6vw,4.6rem)] leading-none font-normal text-[#5c4033]">
+          <h1 className="mt-4 font-serif text-[clamp(2.5rem,5vw,3.8rem)] leading-none font-semibold text-[#704a31]">
             Actividades
           </h1>
-          <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-[#6b5344]">
+          <p className="mt-8 max-w-xl text-[17px] leading-relaxed text-[#946541]">
             Participa en talleres, visitas guiadas, conferencias y festivales que
             conectan a la comunidad de Quilpué con su patrimonio.
           </p>
 
-          <div className="mt-10">
-            <ViewTabs
-              value={view}
-              onChange={handleViewChange}
-              count={activities.length}
-            />
-          </div>
         </div>
       </section>
 
+      <ViewTabs
+        value={view}
+        onChange={handleViewChange}
+        count={activities.length}
+      />
+
       <section
         id="actividades-list"
-        className="mx-auto max-w-[1200px] px-6 pt-8 pb-20 sm:px-8"
+        className="mx-auto max-w-[1200px] px-6 pt-12 pb-20 sm:px-8"
       >
 
         {activities.length === 0 ? (
           <div
             style={{
-              background: "rgba(255,255,255,0.3)",
-              border: "1px solid rgba(61,47,36,0.1)",
-              borderRadius: 20,
+              background: "#e7dcd2",
+              border: "1px solid rgba(187,156,130,0.7)",
+              borderRadius: 2,
               padding: "56px 24px",
               textAlign: "center",
-              color: "#3d2f24",
+              color: "#946541",
               fontSize: 18,
             }}
           >
@@ -157,7 +154,7 @@ export default function ActividadesView({ activities = [], error = "" }) {
             style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-              gap: 22,
+              gap: 18,
               width: "100%",
             }}
           >
@@ -174,7 +171,7 @@ export default function ActividadesView({ activities = [], error = "" }) {
             totalPages={totalPages}
             onPageChange={goToPage}
             label="Paginación de actividades"
-            className="mt-12"
+            className="mt-8"
           />
           </div>
         )}
@@ -185,7 +182,7 @@ export default function ActividadesView({ activities = [], error = "" }) {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(22,14,9,0.58)",
+              background: "rgba(148,101,65,0.58)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -199,9 +196,9 @@ export default function ActividadesView({ activities = [], error = "" }) {
               width: "min(980px, 100%)",
               maxHeight: "90vh",
               overflowY: "auto",
-              background: "#f6f1e8",
+              background: "#e7dcd2",
               borderRadius: 24,
-              border: "1px solid rgba(61,47,36,0.12)",
+              border: "1px solid rgba(187,156,130,0.7)",
               boxShadow: "0 28px 70px rgba(17,12,8,0.18)",
             }}
             onClick={(event) => event.stopPropagation()}
@@ -222,11 +219,11 @@ export default function ActividadesView({ activities = [], error = "" }) {
                   width: 42,
                   height: 42,
                   borderRadius: "50%",
-                  background: "rgba(255,255,255,0.9)",
-                  border: "1px solid rgba(61,47,36,0.12)",
+                  background: "rgba(231,220,210,0.95)",
+                  border: "1px solid rgba(187,156,130,0.7)",
                   cursor: "pointer",
                   fontSize: 20,
-                  color: "#2c1a0e",
+                  color: "#704a31",
                 }}
                 aria-label="Cerrar detalle"
               >
@@ -250,7 +247,7 @@ export default function ActividadesView({ activities = [], error = "" }) {
             <div style={{ padding: "28px 28px 32px" }}>
               <div
                 style={{
-                  color: "#8a6f5c",
+                  color: "#704a31",
                   fontSize: 11,
                   letterSpacing: "0.16em",
                   textTransform: "uppercase",
@@ -266,7 +263,7 @@ export default function ActividadesView({ activities = [], error = "" }) {
                   fontFamily: "Georgia, serif",
                   fontSize: "clamp(2rem, 4vw, 3rem)",
                   lineHeight: 1.1,
-                  color: "#2c1a0e",
+                  color: "#946541",
                 }}
               >
                 {selectedActivity.title}
@@ -278,7 +275,7 @@ export default function ActividadesView({ activities = [], error = "" }) {
                   gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
                   gap: 18,
                   margin: "0 0 24px",
-                  color: "#5d493e",
+                  color: "#946541",
                   fontSize: 14,
                 }}
               >
@@ -290,7 +287,7 @@ export default function ActividadesView({ activities = [], error = "" }) {
                 style={{
                   margin: "0 0 22px",
                   lineHeight: 1.8,
-                  color: "rgba(61,47,36,0.8)",
+                  color: "rgba(148,101,65,0.8)",
                   fontSize: 16,
                 }}
               >
@@ -311,8 +308,8 @@ export default function ActividadesView({ activities = [], error = "" }) {
                   onClick={() => setShowForm(true)}
                   style={{
                     borderRadius: 999,
-                    background: "#2c1a0e",
-                    color: "#fff",
+                    background: "#946541",
+                    color: "#e7dcd2",
                     padding: "14px 22px",
                     fontSize: 12,
                     letterSpacing: "0.12em",
@@ -330,7 +327,7 @@ export default function ActividadesView({ activities = [], error = "" }) {
                   style={{
                     marginTop: 24,
                     background: "rgba(255,255,255,0.18)",
-                    border: "1px solid rgba(61,47,36,0.12)",
+                    border: "1px solid rgba(187,156,130,0.7)",
                     borderRadius: 18,
                     padding: 20,
                   }}
@@ -342,7 +339,7 @@ export default function ActividadesView({ activities = [], error = "" }) {
                       gap: 16,
                     }}
                   >
-                    <label style={{ display: "grid", gap: 8, fontSize: 13, color: "#3d2f24" }}>
+                    <label style={{ display: "grid", gap: 8, fontSize: 13, color: "#946541" }}>
                       Nombre
                       <input
                         name="nombre"
@@ -350,16 +347,16 @@ export default function ActividadesView({ activities = [], error = "" }) {
                         onChange={handleFormChange}
                         required
                         style={{
-                          border: "1px solid rgba(61,47,36,0.18)",
+                          border: "1px solid rgba(187,156,130,0.7)",
                           borderRadius: 12,
                           padding: "12px 14px",
-                          background: "#fff",
-                          color: "#3d2f24",
+                          background: "#e7dcd2",
+                          color: "#946541",
                         }}
                       />
                     </label>
 
-                    <label style={{ display: "grid", gap: 8, fontSize: 13, color: "#3d2f24" }}>
+                    <label style={{ display: "grid", gap: 8, fontSize: 13, color: "#946541" }}>
                       Apellido
                       <input
                         name="apellido"
@@ -367,16 +364,16 @@ export default function ActividadesView({ activities = [], error = "" }) {
                         onChange={handleFormChange}
                         required
                         style={{
-                          border: "1px solid rgba(61,47,36,0.18)",
+                          border: "1px solid rgba(187,156,130,0.7)",
                           borderRadius: 12,
                           padding: "12px 14px",
-                          background: "#fff",
-                          color: "#3d2f24",
+                          background: "#e7dcd2",
+                          color: "#946541",
                         }}
                       />
                     </label>
 
-                    <label style={{ display: "grid", gap: 8, fontSize: 13, color: "#3d2f24" }}>
+                    <label style={{ display: "grid", gap: 8, fontSize: 13, color: "#946541" }}>
                       Correo electrónico
                       <input
                         name="email"
@@ -385,16 +382,16 @@ export default function ActividadesView({ activities = [], error = "" }) {
                         onChange={handleFormChange}
                         required
                         style={{
-                          border: "1px solid rgba(61,47,36,0.18)",
+                          border: "1px solid rgba(187,156,130,0.7)",
                           borderRadius: 12,
                           padding: "12px 14px",
-                          background: "#fff",
-                          color: "#3d2f24",
+                          background: "#e7dcd2",
+                          color: "#946541",
                         }}
                       />
                     </label>
 
-                    <label style={{ display: "grid", gap: 8, fontSize: 13, color: "#3d2f24" }}>
+                    <label style={{ display: "grid", gap: 8, fontSize: 13, color: "#946541" }}>
                       Teléfono
                       <input
                         name="telefono"
@@ -403,11 +400,11 @@ export default function ActividadesView({ activities = [], error = "" }) {
                         onChange={handleFormChange}
                         required
                         style={{
-                          border: "1px solid rgba(61,47,36,0.18)",
+                          border: "1px solid rgba(187,156,130,0.7)",
                           borderRadius: 12,
                           padding: "12px 14px",
-                          background: "#fff",
-                          color: "#3d2f24",
+                          background: "#e7dcd2",
+                          color: "#946541",
                         }}
                       />
                     </label>
@@ -418,8 +415,8 @@ export default function ActividadesView({ activities = [], error = "" }) {
                       type="submit"
                       style={{
                         borderRadius: 999,
-                        background: "#b45a3c",
-                        color: "#fff",
+                        background: "#e48d40",
+                        color: "#e7dcd2",
                         padding: "13px 20px",
                         fontSize: 12,
                         letterSpacing: "0.12em",
@@ -433,7 +430,7 @@ export default function ActividadesView({ activities = [], error = "" }) {
                     {confirmation ? (
                       <span
                         style={{
-                          color: "#1d6d40",
+                          color: "#db700f",
                           fontWeight: 600,
                           fontSize: 14,
                         }}
@@ -447,7 +444,7 @@ export default function ActividadesView({ activities = [], error = "" }) {
                 <div
                   style={{
                     marginTop: 20,
-                    color: "#1d6d40",
+                    color: "#db700f",
                     fontWeight: 700,
                     fontSize: 15,
                   }}
