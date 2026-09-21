@@ -93,6 +93,15 @@ body {
   cursor: pointer;
 }
 
+.section-label {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--orange-strong);
+}
+
 .site-footer {
   background: var(--primary);
   color: var(--background);

@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 function getVisiblePages(currentPage, totalPages) {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -62,7 +64,8 @@ export default function Pagination({
               : "cursor-pointer border-[#bb9c82] bg-[#e7dcd2] text-[#946541] hover:bg-[#ffdf90]/35"
           }`}
         >
-          ← Anterior
+          <ChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" className="mr-1" />
+          Anterior
         </button>
 
         {pages.map((page, index) =>
@@ -99,7 +102,8 @@ export default function Pagination({
               : "cursor-pointer border-[#bb9c82] bg-[#e7dcd2] text-[#946541] hover:bg-[#ffdf90]/35"
           }`}
         >
-          Siguiente →
+          Siguiente
+          <ChevronRight size={16} strokeWidth={1.8} aria-hidden="true" className="ml-1" />
         </button>
       </div>
 

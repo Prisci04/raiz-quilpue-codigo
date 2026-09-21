@@ -1,11 +1,43 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Mail } from "lucide-react";
 
 const footerLinks = [
 	{ label: "Inicio", href: "/" },
 	{ label: "Quiénes somos", href: "/quienes-somos" },
 	{ label: "Contenidos", href: "/contenido" },
 	{ label: "Actividades", href: "/actividades" },
+];
+
+function InstagramIcon({ className }) {
+	return (
+		<svg
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.8"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			aria-hidden="true"
+			className={className}
+		>
+			<rect x="3" y="3" width="18" height="18" rx="5" />
+			<circle cx="12" cy="12" r="4" />
+			<circle cx="17.4" cy="6.6" r="1.05" fill="currentColor" stroke="none" />
+		</svg>
+	);
+}
+
+const iconClassName = "size-[1em] shrink-0";
+
+const socialLinks = [
+	{ label: "Correo", href: "mailto:raizquilpue@gmail.com", icon: Mail },
+	{
+		label: "Instagram",
+		href: "https://www.instagram.com/raizquilpue/",
+		icon: InstagramIcon,
+		external: true,
+	},
 ];
 
 export default function Footer() {
@@ -38,20 +70,22 @@ export default function Footer() {
 							Rescatando la memoria, fortaleciendo la identidad y construyendo comunidad desde Quilpué.
 						</p>
 						<div className="mt-6 flex flex-wrap gap-3">
-							{[
-								{ label: "Correo", href: "mailto:raizquilpue@gmail.com" },
-								{ label: "Instagram", href: "https://www.instagram.com/raizquilpue/" },
-							].map((social) => (
-								<a
-									key={social.label}
-									href={social.href}
-									target={social.label === "Instagram" ? "_blank" : undefined}
-									rel={social.label === "Instagram" ? "noreferrer" : undefined}
-									className="border border-[#e7dcd2]/20 px-3 py-1.5 font-mono text-[10px] tracking-wide text-[#e7dcd2]/50 uppercase transition-colors hover:border-[#ffdf90] hover:text-[#ffdf90]"
-								>
-									{social.label}
-								</a>
-							))}
+							{socialLinks.map((social) => {
+								const Icon = social.icon;
+
+								return (
+									<a
+										key={social.label}
+										href={social.href}
+										target={social.external ? "_blank" : undefined}
+										rel={social.external ? "noreferrer" : undefined}
+										className="inline-flex min-h-11 items-center gap-1.5 border border-[#e7dcd2]/20 px-3 py-2 font-mono text-[10px] tracking-wide text-[#e7dcd2]/50 uppercase transition-colors hover:border-[#ffdf90] hover:text-[#ffdf90] sm:min-h-0 sm:py-1.5 sm:text-[11px]"
+									>
+										<Icon className={iconClassName} strokeWidth={1.8} aria-hidden="true" />
+										{social.label}
+									</a>
+								);
+							})}
 						</div>
 					</div>
 
@@ -90,7 +124,7 @@ export default function Footer() {
 						© 2026 Raíz Quilpué — Todos los derechos reservados.
 					</p>
 					<p className="font-mono text-[10px] tracking-wide text-[#e7dcd2]/35">
-						PATRIMONIO · CULTURA · COMUNIDAD 
+						PATRIMONIO · CULTURA · COMUNIDAD
 					</p>
 				</div>
 			</div>

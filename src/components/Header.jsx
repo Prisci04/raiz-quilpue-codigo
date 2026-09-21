@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { Menu, X } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Inicio" },
@@ -100,33 +101,17 @@ export default function Header() {
 
           <button
             type="button"
-            className="flex flex-col gap-1.5 p-2 lg:hidden"
+            className="p-2 lg:hidden"
             aria-expanded={menuOpen}
             aria-controls="menu-movil"
             onClick={() => setMenuOpen((open) => !open)}
           >
             <span className="sr-only">{menuOpen ? "Cerrar menú" : "Abrir menú"}</span>
-            <span
-              className="block h-px w-5 transition-all duration-300"
-              style={{
-                background: "var(--primary)",
-                transform: menuOpen ? "rotate(45deg) translate(3.5px, 3.5px)" : "",
-              }}
-            />
-            <span
-              className="block h-px w-5 transition-all duration-300"
-              style={{
-                background: "var(--primary)",
-                opacity: menuOpen ? 0 : 1,
-              }}
-            />
-            <span
-              className="block h-px w-5 transition-all duration-300"
-              style={{
-                background: "var(--primary)",
-                transform: menuOpen ? "rotate(-45deg) translate(3.5px, -3.5px)" : "",
-              }}
-            />
+            {menuOpen ? (
+              <X size={22} strokeWidth={1.8} color="var(--primary)" aria-hidden="true" />
+            ) : (
+              <Menu size={22} strokeWidth={1.8} color="var(--primary)" aria-hidden="true" />
+            )}
           </button>
         </div>
       </div>

@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { ArrowRight, MapPin, Search, Users } from "lucide-react";
+import AccessSection from "@/components/home/AccessSection";
 
 const fallbackImage = "/images/inicio/imageninicio.jpg";
 
@@ -21,37 +23,6 @@ const heroSlides = [
     // CAMBIAR IMAGEN AQUÍ: agrega aquí la tercera foto histórica del inicio.
     image: "/images/contenido/carozzi.jpeg",
     caption: "Compañía Carozzi en Quilpué",
-  },
-];
-
-const accessCards = [
-  {
-    icon: "🏛️",
-    title: "Patrimonio",
-    description: "Fotografías, documentos y objetos históricos de Quilpué",
-    href: "/contenido?tipo=patrimonio",
-    color: "var(--primary)",
-  },
-  {
-    icon: "📰",
-    title: "Noticias",
-    description: "Publicaciones, artículos e historias de la comunidad",
-    href: "/contenido?tipo=noticia",
-    color: "var(--terracotta)",
-  },
-  {
-    icon: "📅",
-    title: "Actividades",
-    description: "Talleres, visitas guiadas y eventos culturales",
-    href: "/actividades",
-    color: "var(--primary)",
-  },
-  {
-    icon: "🏺",
-    title: "Museo Digital",
-    description: "Colección permanente de piezas del patrimonio local",
-    href: "/contenido",
-    color: "var(--terracotta)",
   },
 ];
 
@@ -175,10 +146,7 @@ export default function HomeView({ contents = [], activities = [] }) {
                 style={{ background: "rgba(231,220,210,0.94)", color: "var(--foreground)" }}
               />
               <button type="submit" className="btn-primary px-5" aria-label="Buscar">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
+                <Search size={16} strokeWidth={2} aria-hidden="true" />
               </button>
             </form>
           </div>
@@ -216,19 +184,7 @@ export default function HomeView({ contents = [], activities = [] }) {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-16">
-        <div className="mb-10 flex items-center gap-4"><div className="section-label">Accesos principales</div><div className="h-px flex-1" style={{ background: "var(--border)" }} /></div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {accessCards.map((card) => (
-            <button key={card.title} type="button" onClick={() => router.push(card.href)} className="museum-card border p-6 text-left" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
-              <div className="mb-4 text-3xl">{card.icon}</div>
-              <h3 className="mb-2 font-serif text-xl font-semibold" style={{ color: card.color }}>{card.title}</h3>
-              <p className="text-sm leading-relaxed text-[#946541]">{card.description}</p>
-              <div className="mt-4 font-mono text-[10px] tracking-wide uppercase" style={{ color: card.color }}>Ingresar →</div>
-            </button>
-          ))}
-        </div>
-      </section>
+      <AccessSection contents={contents} activities={activities} />
 
       <section className="bg-[#bb9c82]/25 px-6 py-16">
         <div className="mx-auto max-w-7xl">
@@ -248,7 +204,7 @@ export default function HomeView({ contents = [], activities = [] }) {
         {featuredNoticias.length === 0 && <p className="text-[#946541]">Aún no hay noticias publicadas.</p>}
       </section>
 
-          {nextActivity && <section className="bg-[#bb9c82]/25 px-6 py-16"><div className="mx-auto max-w-7xl"><div className="mb-10 flex items-center gap-4"><div className="section-label">Próxima actividad</div><div className="h-px flex-1" style={{ background: "var(--border)" }} /><button type="button" onClick={() => router.push("/actividades?vista=calendario")} className="btn-outline hidden px-3 py-2 md:flex">Ver calendario</button></div><div className="grid grid-cols-1 overflow-hidden lg:grid-cols-2"><div className="relative min-h-[380px] bg-[#bb9c82]/30"><Image src={getImage(nextActivity.image)} alt={nextActivity.title} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" unoptimized={getImage(nextActivity.image).startsWith("/")} /><div className="absolute top-4 left-4 bg-[#ffdf90] px-3 py-1.5 font-mono text-[10px] tracking-wide text-[#946541] uppercase">Actividad</div></div><div className="flex flex-col justify-center border border-[#bb9c82] bg-[#e7dcd2] p-10"><div className="section-label mb-3">{formatDate(nextActivity.date)} · {nextActivity.time}</div><h2 className="mb-4 font-serif text-3xl font-semibold text-[#946541]">{nextActivity.title}</h2><p className="mb-5 text-sm leading-relaxed text-[#946541]">{nextActivity.description}</p><div className="mb-6 flex flex-wrap gap-4 text-sm text-[#946541]"><span>📍 {nextActivity.location}</span><span>👥 {nextActivity.cupos} cupos</span></div><button type="button" onClick={() => router.push("/actividades")} className="btn-primary self-start px-4 py-3">Ver actividades →</button></div></div></div></section>}
+          {nextActivity && <section className="bg-[#bb9c82]/25 px-6 py-16"><div className="mx-auto max-w-7xl"><div className="mb-10 flex items-center gap-4"><div className="section-label">Próxima actividad</div><div className="h-px flex-1" style={{ background: "var(--border)" }} /><button type="button" onClick={() => router.push("/actividades?vista=calendario")} className="btn-outline hidden px-3 py-2 md:flex">Ver calendario</button></div><div className="grid grid-cols-1 overflow-hidden lg:grid-cols-2"><div className="relative min-h-[380px] bg-[#bb9c82]/30"><Image src={getImage(nextActivity.image)} alt={nextActivity.title} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" unoptimized={getImage(nextActivity.image).startsWith("/")} /><div className="absolute top-4 left-4 bg-[#ffdf90] px-3 py-1.5 font-mono text-[10px] tracking-wide text-[#946541] uppercase">Actividad</div></div><div className="flex flex-col justify-center border border-[#bb9c82] bg-[#e7dcd2] p-10"><div className="section-label mb-3">{formatDate(nextActivity.date)} · {nextActivity.time}</div><h2 className="mb-4 font-serif text-3xl font-semibold text-[#946541]">{nextActivity.title}</h2><p className="mb-5 text-sm leading-relaxed text-[#946541]">{nextActivity.description}</p><div className="mb-6 flex flex-wrap gap-4 text-sm text-[#946541]"><span className="inline-flex items-center gap-1.5"><MapPin size={15} strokeWidth={1.7} aria-hidden="true" /> {nextActivity.location}</span><span className="inline-flex items-center gap-1.5"><Users size={15} strokeWidth={1.7} aria-hidden="true" /> {nextActivity.cupos} cupos</span></div><button type="button" onClick={() => router.push("/actividades")} className="btn-primary self-start inline-flex items-center gap-2 px-4 py-3">Ver actividades <ArrowRight size={14} strokeWidth={1.8} aria-hidden="true" /></button></div></div></div></section>}
 
     </div>
   );

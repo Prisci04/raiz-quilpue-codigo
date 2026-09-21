@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
+import { ArrowRight, Inbox } from "lucide-react";
 
 const FILTERS = [
   { id: "todos", label: "Todos" },
@@ -101,7 +102,9 @@ export default function ContenidoView({
       <div className="mx-auto max-w-7xl space-y-16 px-6 py-12">
         {visibleItems.length === 0 ? (
           <div className="py-20 text-center">
-            <div className="mb-4 text-4xl" aria-hidden="true">📭</div>
+            <div className="mb-4 flex justify-center text-[#946541]" aria-hidden="true">
+              <Inbox size={36} strokeWidth={1.5} />
+            </div>
             <p className="font-serif text-xl text-[#946541]">{emptyMessage}</p>
           </div>
         ) : (
@@ -215,8 +218,9 @@ function ContentCard({ item, index, featured = false }) {
             {item.description}
           </p>
         ) : null}
-        <span className="font-mono text-[9px] tracking-wide text-[#db700f] uppercase">
-          Ver detalle →
+        <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-[#db700f] uppercase">
+          Ver detalle
+          <ArrowRight size={12} strokeWidth={1.8} aria-hidden="true" />
         </span>
       </div>
     </article>

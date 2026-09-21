@@ -1,7 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import ImagePlaceholder from "./ImagePlaceholder";
+import { Calendar, Clock, MapPin } from "lucide-react";
 
 function formatLongDate(dateString) {
   if (!dateString) return "";
@@ -32,40 +34,7 @@ function formatTime(time) {
   return match ? `${match[1]} horas` : time;
 }
 
-function CalendarIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M3 10h18" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M8 3v4M16 3v4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.7" />
-      <path d="M12 8v4.5l3 1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function PinIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 21s7-6.2 7-11.2A7 7 0 1 0 5 9.8C5 14.8 12 21 12 21Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="9.8" r="2.2" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  );
-}
-
-export default function ActivityCard({ activity, onView }) {
+export default function ActivityCard({ activity }) {
   const cupos = Number(activity.cupos) || 0;
   const inscritos = Number(activity.inscritos) || 0;
   const available = Math.max(cupos - inscritos, 0);
@@ -102,7 +71,7 @@ export default function ActivityCard({ activity, onView }) {
           {activity.date ? (
             <li className="flex items-start gap-2.5">
               <span className="mt-0.5 text-[#946541]">
-                <CalendarIcon />
+                <Calendar size={15} strokeWidth={1.7} aria-hidden="true" />
               </span>
               <span>{formatLongDate(activity.date)}</span>
             </li>
@@ -111,7 +80,7 @@ export default function ActivityCard({ activity, onView }) {
           {activity.time ? (
             <li className="flex items-start gap-2.5">
               <span className="mt-0.5 text-[#946541]">
-                <ClockIcon />
+                <Clock size={15} strokeWidth={1.7} aria-hidden="true" />
               </span>
               <span>{formatTime(activity.time)}</span>
             </li>
@@ -120,7 +89,7 @@ export default function ActivityCard({ activity, onView }) {
           {activity.location ? (
             <li className="flex items-start gap-2.5">
               <span className="mt-0.5 text-[#946541]">
-                <PinIcon />
+                <MapPin size={15} strokeWidth={1.7} aria-hidden="true" />
               </span>
               <span>{activity.location}</span>
             </li>
@@ -145,13 +114,12 @@ export default function ActivityCard({ activity, onView }) {
             />
           </div>
 
-          <button
-            type="button"
-            onClick={() => onView?.(activity.id)}
-            className="w-full bg-[#704a31] py-2.5 text-[11px] font-medium tracking-[0.16em] text-[#e7dcd2] uppercase transition-colors hover:bg-[#db700f]"
+          <Link
+            href={`/actividades/${activity.id}`}
+            className="flex min-h-11 w-full items-center justify-center bg-[#704a31] py-2.5 text-center text-[11px] font-medium tracking-[0.16em] text-[#e7dcd2] uppercase transition-colors hover:bg-[#db700f]"
           >
             Ver actividad
-          </button>
+          </Link>
         </div>
       </div>
     </article>

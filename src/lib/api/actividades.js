@@ -57,3 +57,20 @@ export async function fetchActividadesPublicas({ page = 1, limit = 10 } = {}) {
 
   return (payload.data ?? []).map(mapActividadPublica);
 }
+
+export async function fetchActividadPublicaById(id) {
+  const origin = await getInternalOrigin();
+  const url = new URL(`/api/actividades/${id}`, origin);
+  const response = await fetch(url, { cache: "no-store" });
+  const payload = await response.json().catch(() => null);
+
+  if (response.status === 404 || payload?.error?.code === "ACTIVITY_NOT_FOUND") {
+    return null;
+  }
+
+  if (!response.ok || !payload?.success) {
+    throw new Error("Error al obtener la actividad.");
+  }
+
+  return mapActividadPublica(payload.data);
+}
