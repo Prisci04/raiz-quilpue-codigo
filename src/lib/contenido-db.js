@@ -3,12 +3,29 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 function mapContenido(row) {
   if (!row) return null;
 
+  let image = row.imagen_url ?? null;
+
+if (!image) {
+  if (row.titulo === "Cápsula histórica: recuerdos de Quilpué") {
+    image = "/images/contenido/capsula-recuerdos1.jpg";
+  }
+
+  if (row.titulo === "El patrimonio ferroviario de Quilpué") {
+    image = "/images/contenido/patrimonio-ferrocarril.jpg";
+  }
+
+  if (row.titulo === "TU TERCER TITULO") {
+    image = "/images/contenido/archivo-historico.jpg";
+  }
+}
+
   return {
     id: row.id,
     title: row.titulo ?? "",
     description: row.resumen ?? row.contenido ?? "",
+    content: row.contenido ?? row.resumen ?? "",
     tipo: row.tipo ?? "",
-    image: row.imagen_url ?? null,
+    image,
     date: row.fecha_publicacion ?? row.fecha_creacion ?? null,
   };
 }
