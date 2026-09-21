@@ -6,7 +6,7 @@ import { useState } from "react";
 
 const navItems = [
   { href: "/", label: "Inicio" },
-  { href: "/", label: "Quiénes somos", placeholder: true },
+  { href: "/quienes-somos", label: "Quiénes somos" },
   { href: "/contenido", label: "Contenidos" },
   { href: "/actividades", label: "Actividades" },
   { href: "/", label: "Museo Digital", placeholder: true },
