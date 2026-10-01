@@ -115,6 +115,11 @@ const content = {
   // CAMBIAR TEXTO AQUÍ
   foundationText:
     "El 17 de junio de 2026 ocurrió un hito muy importante para nosotros: oficialmente se firmó para ser una corporación sin fines de lucro, desde la comunidad para la comunidad, con el fin de valorar, preservar y unir el patrimonio, cultura e historia de nuestro Quilpué.",
+  // CAMBIAR TEXTO AQUÍ
+  quoteEyebrow: "Raíz Quilpué",
+  // CAMBIAR TEXTO AQUÍ
+  quote:
+    "Preservar la memoria es mantener vivo el vínculo entre quienes fuimos, quienes somos y quienes vendrán.",
 };
 
 const images = {
@@ -346,6 +351,15 @@ export default function QuienesSomosPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="bg-[#e7dcd2] px-6 py-16 text-center sm:py-24">
+        <p className="mb-5 text-[11px] font-semibold tracking-[0.28em] text-[#db700f] uppercase">
+          {content.quoteEyebrow}
+        </p>
+        <blockquote className="mx-auto max-w-3xl font-serif text-2xl leading-snug font-medium text-[#704a31] sm:text-4xl sm:leading-tight">
+          “{content.quote}”
+        </blockquote>
       </section>
     </main>
   );

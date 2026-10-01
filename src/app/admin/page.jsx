@@ -1,16 +1,19 @@
-import { getContenidosFromDb } from "@/lib/contenido-db";
 import {
   buildContentSlices,
   DEFAULT_CONTENT_SLICES,
   formatDashboardDate,
 } from "@/lib/admin-dashboard";
+import { mapContenidoVista } from "@/lib/contenido";
+import { MAX_LIMIT } from "@/lib/http";
+import { getContenidos } from "@/services/contenido.service";
 import AdminDashboardView from "./dashboard-view";
 
 export default async function AdminDashboardPage() {
   let contents = [];
 
   try {
-    contents = await getContenidosFromDb();
+    const result = await getContenidos({ page: 1, limit: MAX_LIMIT });
+    contents = result.data.map(mapContenidoVista).filter(Boolean);
   } catch {
     contents = [];
   }

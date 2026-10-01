@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { fetchActividadPublicaById } from "@/lib/api/actividades";
+import { mapActividadVista } from "@/lib/actividades";
+import { getActividadById } from "@/services/actividades.service";
 import ActividadView from "./actividad-view";
 
 export default async function ActividadPage({ params }) {
@@ -13,7 +14,7 @@ export default async function ActividadPage({ params }) {
   let activity = null;
 
   try {
-    activity = await fetchActividadPublicaById(numericId);
+    activity = mapActividadVista(await getActividadById(numericId));
   } catch {
     throw new Error("No fue posible cargar la actividad.");
   }

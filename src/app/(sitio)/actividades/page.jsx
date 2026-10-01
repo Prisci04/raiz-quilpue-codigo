@@ -1,5 +1,6 @@
-import { fetchActividadesPublicas } from "@/lib/api/actividades";
+import { mapActividadVista } from "@/lib/actividades";
 import { MAX_LIMIT } from "@/lib/http";
+import { getActividades } from "@/services/actividades.service";
 import ActividadesView from "./actividades-view";
 
 export default async function ActividadesPage({ searchParams }) {
@@ -7,10 +8,8 @@ export default async function ActividadesPage({ searchParams }) {
   let error = "";
 
   try {
-    activities = await fetchActividadesPublicas({
-      page: 1,
-      limit: MAX_LIMIT,
-    });
+    const result = await getActividades({ page: 1, limit: MAX_LIMIT });
+    activities = result.data.map(mapActividadVista).filter(Boolean);
   } catch {
     error =
       "No fue posible cargar las actividades. Inténtalo de nuevo más tarde.";

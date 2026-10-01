@@ -1,3 +1,6 @@
+//metricas fake
+
+
 export const CONTENT_TYPE_LABELS = {
   noticia: "Noticias",
   patrimonio: "Patrimonio",

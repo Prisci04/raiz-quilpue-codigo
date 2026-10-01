@@ -1,12 +1,18 @@
-import { getContenidosFromDb } from "@/lib/contenido-db";
-import { fetchActividadesPublicas } from "@/lib/api/actividades";
+import { mapActividadVista } from "@/lib/actividades";
+import { mapContenidoVista } from "@/lib/contenido";
 import { MAX_LIMIT } from "@/lib/http";
+import { getActividades } from "@/services/actividades.service";
+import { getContenidos } from "@/services/contenido.service";
 import HomeView from "./home-view";
 
 export default async function HomePage() {
   const [contentsResult, activitiesResult] = await Promise.allSettled([
-    getContenidosFromDb(),
-    fetchActividadesPublicas({ page: 1, limit: MAX_LIMIT }),
+    getContenidos({ page: 1, limit: MAX_LIMIT }).then((result) =>
+      result.data.map(mapContenidoVista).filter(Boolean),
+    ),
+    getActividades({ page: 1, limit: MAX_LIMIT }).then((result) =>
+      result.data.map(mapActividadVista).filter(Boolean),
+    ),
   ]);
 
   const contents = contentsResult.status === "fulfilled" ? contentsResult.value : [];
