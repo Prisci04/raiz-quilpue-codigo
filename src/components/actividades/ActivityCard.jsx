@@ -2,10 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import ImagePlaceholder from "./ImagePlaceholder";
 import { Calendar, Clock, MapPin } from "lucide-react";
 
-function formatLongDate(dateString) {
+function formatShortDate(dateString) {
   if (!dateString) return "";
 
   const [year, month, day] = String(dateString).split("-").map(Number);
@@ -14,114 +13,75 @@ function formatLongDate(dateString) {
 
   if (Number.isNaN(date.getTime())) return "";
 
-  const formatted = date.toLocaleDateString("es-CL", {
-    weekday: "long",
+  return date.toLocaleDateString("es-CL", {
     day: "numeric",
-    month: "long",
-    year: "numeric",
+    month: "short",
   });
-
-  return formatted
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
 }
 
 function formatTime(time) {
   if (!time) return "";
 
   const match = String(time).match(/(\d{1,2}:\d{2})/);
-  return match ? `${match[1]} horas` : time;
+  return match ? match[1] : time;
 }
 
 export default function ActivityCard({ activity }) {
   const cupos = Number(activity.cupos) || 0;
-  const inscritos = Number(activity.inscritos) || 0;
-  const available = Math.max(cupos - inscritos, 0);
-  const occupancy = cupos ? Math.min(100, Math.round((inscritos / cupos) * 100)) : 0;
+  const when = [formatShortDate(activity.date), formatTime(activity.time)]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <article className="flex h-full flex-col overflow-hidden border border-[#bb9c82] bg-[#e7dcd2] text-[#946541] shadow-[0_10px_24px_rgba(112,74,49,0.08)]">
-      <div className="relative h-[190px] w-full overflow-hidden">
+    <Link
+      href={`/actividades/${activity.id}`}
+      className="flex gap-3 border border-[#bb9c82] bg-[#f4ece4] p-3 text-[#946541] shadow-[0_8px_20px_rgba(112,74,49,0.06)] md:h-full md:flex-col md:gap-0 md:overflow-hidden md:p-0 md:hover:-translate-y-0.5"
+    >
+      <div className="relative h-24 w-24 shrink-0 overflow-hidden bg-[#bb9c82]/50 md:h-48 md:w-full">
         {activity.image ? (
           <Image
             src={activity.image}
-            alt={activity.title}
+            alt=""
             fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="(max-width: 768px) 96px, 33vw"
             className="object-cover"
           />
         ) : (
-          <ImagePlaceholder height={190} />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(145deg, #c4a88e 0%, #e48d40 55%, #db700f 100%)",
+            }}
+          />
         )}
-
-        {activity.category ? (
-          <span className="absolute top-3 left-3 bg-[#704a31] px-2.5 py-1 font-mono text-[10px] font-semibold tracking-[0.14em] text-[#e7dcd2] uppercase">
-            {activity.category}
-          </span>
-        ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col px-4 pt-4 pb-4">
-        <h2 className="font-serif text-[1.3rem] leading-snug font-semibold text-[#704a31]">
+      <div className="flex min-w-0 flex-1 flex-col justify-center md:px-4 md:pt-4 md:pb-5">
+        <h2 className="font-serif text-[1.05rem] leading-snug font-semibold text-[#704a31] md:text-[1.3rem]">
           {activity.title}
         </h2>
 
-        <ul className="mt-3 space-y-1.5 text-[13px] text-[#946541]">
-          {activity.date ? (
-            <li className="flex items-start gap-2.5">
-              <span className="mt-0.5 text-[#946541]">
-                <Calendar size={15} strokeWidth={1.7} aria-hidden="true" />
-              </span>
-              <span>{formatLongDate(activity.date)}</span>
-            </li>
-          ) : null}
+        {when ? (
+          <p className="mt-1.5 flex items-center gap-1.5 text-[13px]">
+            <Calendar size={14} strokeWidth={1.7} aria-hidden="true" />
+            <span>{when}</span>
+          </p>
+        ) : null}
 
-          {activity.time ? (
-            <li className="flex items-start gap-2.5">
-              <span className="mt-0.5 text-[#946541]">
-                <Clock size={15} strokeWidth={1.7} aria-hidden="true" />
-              </span>
-              <span>{formatTime(activity.time)}</span>
-            </li>
-          ) : null}
+        {activity.location ? (
+          <p className="mt-1 flex items-center gap-1.5 text-[13px]">
+            <MapPin size={14} strokeWidth={1.7} className="shrink-0" aria-hidden="true" />
+            <span className="truncate">{activity.location}</span>
+          </p>
+        ) : null}
 
-          {activity.location ? (
-            <li className="flex items-start gap-2.5">
-              <span className="mt-0.5 text-[#946541]">
-                <MapPin size={15} strokeWidth={1.7} aria-hidden="true" />
-              </span>
-              <span>{activity.location}</span>
-            </li>
-          ) : null}
-        </ul>
-
-        <div className="mt-auto pt-4">
-          <div className="mb-2 flex items-end justify-between gap-3 text-[12px]">
-            <span className="text-[#946541]">
-              Cupos:
-              <span className="ml-1.5 tracking-wide">
-                {inscritos} / {cupos}
-              </span>
-            </span>
-            <span className="text-[#ffdf90]">{available} disponibles</span>
-          </div>
-
-          <div className="mb-4 h-[5px] overflow-hidden rounded-full bg-[#bb9c82]/40">
-            <div
-              className="h-full rounded-full bg-[#ffdf90]"
-              style={{ width: `${occupancy}%` }}
-            />
-          </div>
-
-          <Link
-            href={`/actividades/${activity.id}`}
-            className="flex min-h-11 w-full items-center justify-center bg-[#704a31] py-2.5 text-center text-[11px] font-medium tracking-[0.16em] text-[#e7dcd2] uppercase transition-colors hover:bg-[#db700f]"
-          >
-            Ver actividad
-          </Link>
-        </div>
+        <p className="mt-2 hidden items-center gap-1.5 text-[12px] text-[#946541] md:flex">
+          <Clock size={14} strokeWidth={1.7} aria-hidden="true" />
+          {cupos} cupos
+        </p>
       </div>
-    </article>
+    </Link>
   );
 }

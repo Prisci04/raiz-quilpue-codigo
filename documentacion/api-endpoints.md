@@ -172,13 +172,24 @@ Códigos actuales:
 
 ---
 
-## No implementado todavía
+## Reservado para después
 
-Estos métodos no existen en este sprint:
+El sitio público sigue usando solo los `GET` de arriba. El service público pasa a llamarse así, sin cambiar la URL:
 
-- `POST /api/actividades`
-- `PUT /api/actividades/{id}`
-- `PATCH /api/actividades/{id}`
-- `DELETE /api/actividades/{id}`
+| Función | Ruta actual |
+|---|---|
+| `getActividadesPublicadas({ page, limit })` | `GET /api/actividades` |
+| `getActividadPublicadaById(id)` | `GET /api/actividades/{id}` |
 
-Next.js responde `405 Method Not Allowed` si se usan.
+Hoy esas funciones todavía se llaman `getActividades` y `getActividadById`.
+
+El admin no usa esas rutas. Cuando exista el formulario, el service agrega estas funciones y viven en rutas propias:
+
+| Función | Ruta prevista |
+|---|---|
+| `getActividadesAdmin({ page, limit })` | `GET /api/admin/actividades` |
+| `createActividad(datos)` | `POST /api/admin/actividades` |
+| `updateActividad(id, datos)` | `PATCH /api/admin/actividades/{id}` |
+| `deleteActividad(id)` | `DELETE /api/admin/actividades/{id}` |
+
+`getActividadesAdmin` lista todos los estados, no solo `publicada`. Crear, editar y borrar no se exponen en `/api/actividades`.

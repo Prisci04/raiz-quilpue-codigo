@@ -121,3 +121,45 @@ body {
 .animate-fade-in {
   animation: fade-in 0.2s ease;
 }
+
+.admin-shell {
+  --admin-bg: #f1ebe4;
+  --admin-card: #fffdf9;
+  --admin-line: rgba(61, 36, 24, 0.08);
+  --admin-ink: #2c1810;
+  --admin-muted: #7c5c47;
+  background: var(--admin-bg);
+  color: var(--admin-ink);
+}
+
+.admin-card {
+  background: var(--admin-card);
+  border: 1px solid var(--admin-line);
+  border-radius: 1.05rem;
+  box-shadow:
+    0 1px 1px rgba(44, 24, 16, 0.03),
+    0 10px 28px rgba(44, 24, 16, 0.045);
+}
+
+@media (max-width: 1023px) {
+  aside.admin-sidebar:not(.is-open) {
+    transform: translateX(-100%);
+  }
+}
+
+@media print {
+  header,
+  aside,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .print-dashboard {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+}
