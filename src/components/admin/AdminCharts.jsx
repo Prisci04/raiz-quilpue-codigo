@@ -189,15 +189,16 @@ export function AdminDonutChart({ title, slices }) {
   const cx = 92;
   const cy = 92;
   const radius = 58;
-  let cursor = 0;
-
-  const arcs = slices.map((slice) => {
+  const arcs = slices.reduce((result, slice) => {
     const sweep = (slice.value / total) * 360;
-    const startAngle = cursor;
-    const endAngle = cursor + Math.max(sweep, 0.8);
-    cursor += sweep;
-    return { ...slice, startAngle, endAngle };
-  });
+    const startAngle = result.cursor;
+    const endAngle = startAngle + Math.max(sweep, 0.8);
+
+    return {
+      cursor: result.cursor + sweep,
+      arcs: [...result.arcs, { ...slice, startAngle, endAngle }],
+    };
+  }, { cursor: 0, arcs: [] }).arcs;
 
   return (
     <ChartFrame title={title}>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BarChart3,
   CalendarDays,
@@ -49,9 +49,36 @@ function isActive(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ displayName = "Equipo interno" }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    if (loggingOut) {
+      return;
+    }
+
+    setLoggingOut(true);
+
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+      });
+
+      if (response.ok) {
+        router.push("/admin/login");
+        router.refresh();
+        return;
+      }
+    } catch {
+      // El mensaje queda en el panel; la sesión no se da por cerrada.
+    }
+
+    setLoggingOut(false);
+  }
 
   return (
     <>
@@ -154,17 +181,18 @@ export default function AdminSidebar() {
               RQ
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] font-medium">Administrador</span>
+              <span className="block truncate text-[13px] font-medium">{displayName}</span>
               <span className="block truncate text-[11px] text-[#f4ebe3]/45">Raíz Quilpué</span>
             </span>
-            <Link
-              href="/"
-              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg text-[#f4ebe3]/55 hover:bg-white/8 hover:text-[#f4ebe3]"
+            <button
+              type="button"
+              className="inline-flex min-h-9 min-w-9 items-center justify-center rounded-lg text-[#f4ebe3]/55 hover:bg-white/8 hover:text-[#f4ebe3] disabled:opacity-50"
               aria-label="Cerrar sesión"
-              onClick={() => setOpen(false)}
+              disabled={loggingOut}
+              onClick={handleLogout}
             >
               <LogOut size={15} strokeWidth={1.8} aria-hidden="true" />
-            </Link>
+            </button>
           </div>
         </div>
       </aside>

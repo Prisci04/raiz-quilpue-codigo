@@ -1,9 +1,5 @@
-import LoginView from "./login-view";
-
-export const metadata = {
-  title: "Iniciar sesión — Raíz Quilpué",
-};
+import { redirect } from "next/navigation";
 
 export default function LoginPage() {
-  return <LoginView />;
+  redirect("/admin/login");
 }

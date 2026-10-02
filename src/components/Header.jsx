@@ -93,7 +93,7 @@ export default function Header() {
 
         <div className="flex flex-1 items-center justify-end gap-3">
           <Link
-            href="/login"
+            href="/admin/login"
             className="btn-outline hidden px-4 py-2 text-xs lg:inline-flex"
           >
             Acceder
@@ -152,7 +152,7 @@ export default function Header() {
               Asistente
             </Link>
             <Link
-              href="/login"
+              href="/admin/login"
               className="btn-outline mt-3 w-full py-2 text-center"
               onClick={() => setMenuOpen(false)}
             >

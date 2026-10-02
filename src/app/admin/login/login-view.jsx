@@ -6,9 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BarChart3, CalendarDays, FileText, Landmark } from "lucide-react";
 
-const DEMO_EMAIL = "admin@raizquilpue.cl";
-const DEMO_PASSWORD = "raiz2026";
-
 const features = [
   { icon: FileText, label: "Gestión de contenidos y patrimonio" },
   { icon: CalendarDays, label: "Control de actividades e inscritos" },
@@ -18,19 +15,50 @@ const features = [
 
 export default function LoginView() {
   const router = useRouter();
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
-    if (email.trim() !== DEMO_EMAIL || password !== DEMO_PASSWORD) {
-      setError("Correo o contraseña incorrectos.");
+    if (submitting) {
       return;
     }
 
-    router.push("/admin");
+    if (!email.trim() || !password) {
+      setError("Ingresa correo y contraseña.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ email, password }),
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok || !payload?.success) {
+        setError(
+          payload?.error?.message || "No fue posible iniciar sesión.",
+        );
+        setSubmitting(false);
+        return;
+      }
+
+      router.push("/admin");
+      router.refresh();
+    } catch {
+      setError("No fue posible conectar. Inténtalo de nuevo.");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -112,6 +140,7 @@ export default function LoginView() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
+                disabled={submitting}
                 className="min-h-12 border border-[#d9cbb8] bg-[#f7f1e8] px-3 text-sm font-normal tracking-normal text-[#5c331c] normal-case outline-none"
               />
             </label>
@@ -124,13 +153,10 @@ export default function LoginView() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
+                disabled={submitting}
                 className="min-h-12 border border-[#d9cbb8] bg-[#f7f1e8] px-3 text-sm font-normal tracking-normal outline-none"
               />
             </label>
-
-            <p className="border border-[#e4d3a8] bg-[#f3e6c4] px-3 py-2.5 text-sm text-[#6b5344]">
-              <span className="font-semibold">Demo:</span> {DEMO_EMAIL} / {DEMO_PASSWORD}
-            </p>
 
             {error ? (
               <p className="text-sm font-semibold text-[#b4531a]">{error}</p>
@@ -138,9 +164,11 @@ export default function LoginView() {
 
             <button
               type="submit"
-              className="min-h-12 w-full bg-[#6b3f2a] text-[12px] font-semibold tracking-[0.16em] text-[#f6efe6] uppercase"
+              disabled={submitting}
+              aria-busy={submitting}
+              className="min-h-12 w-full bg-[#6b3f2a] text-[12px] font-semibold tracking-[0.16em] text-[#f6efe6] uppercase disabled:opacity-60"
             >
-              Ingresar al panel
+              {submitting ? "Ingresando..." : "Ingresar al panel"}
             </button>
           </form>
 
