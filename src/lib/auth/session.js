@@ -121,6 +121,16 @@ export async function getCurrentUser() {
   return result.user;
 }
 
+export async function getCurrentTokenHash() {
+  const token = await readSessionToken();
+
+  if (!token) {
+    return null;
+  }
+
+  return hashSessionToken(token);
+}
+
 export async function destroySession() {
   const token = await readSessionToken();
 

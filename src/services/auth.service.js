@@ -67,6 +67,16 @@ export async function findSesionByTokenHash(tokenHash) {
   return data;
 }
 
+export async function deleteOtrasSesiones(usuarioId, tokenHashActual) {
+  const { error } = await getSupabaseAdminClient()
+    .from("sesiones")
+    .delete()
+    .eq("usuario_id", usuarioId)
+    .neq("token_hash", tokenHashActual);
+
+  assertQuery(error);
+}
+
 export async function deleteSesionByTokenHash(tokenHash) {
   const { error } = await getSupabaseAdminClient()
     .from("sesiones")

@@ -1,15 +1,26 @@
-import AdminPlaceholder from "@/components/admin/AdminPlaceholder";
+import ContenidosPanel from "@/components/admin/contenidos/ContenidosPanel";
+import { listContenidosPanel } from "@/services/contenidos-admin.service";
 
 export const metadata = { title: "Contenidos — Admin Raíz Quilpué" };
 
-export default function AdminContenidosPage() {
-  return (
-    <AdminPlaceholder
-      eyebrow="Gestión"
-      title="Contenidos"
-      description="Aquí podrás crear, editar y publicar noticias, patrimonio, historias y el resto del archivo cultural."
-      actionHref="/admin/contenidos/nuevo"
-      actionLabel="Nuevo contenido"
-    />
-  );
+export const dynamic = "force-dynamic";
+
+export default async function AdminContenidosPage({ searchParams }) {
+  const query = await searchParams;
+  let contenidos = [];
+  let error = "";
+  const notice =
+    query.creado === "1"
+      ? "Contenido creado correctamente."
+      : query.eliminado === "1"
+        ? "Contenido eliminado correctamente."
+        : "";
+
+  try {
+    contenidos = await listContenidosPanel();
+  } catch {
+    error = "No se pudieron cargar los contenidos.";
+  }
+
+  return <ContenidosPanel contenidos={contenidos} error={error} notice={notice} />;
 }

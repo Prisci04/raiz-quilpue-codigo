@@ -1,24 +1,38 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const ESTADO_PUBLICADA = "publicada";
-const ACTIVIDAD_PUBLIC_COLUMNS =
-  "id,titulo,descripcion,fecha,hora_inicio,ubicacion,cupos,imagen_url";
+const ACTIVIDAD_LISTADO_COLUMNS =
+  "id,titulo,descripcion,fecha,hora_inicio,hora_fin,lugar,publico_objetivo,modalidad,tipo_participacion,cupos,tipo_valor,valor_monto,imagen_url";
+const ACTIVIDAD_DETALLE_COLUMNS = `${ACTIVIDAD_LISTADO_COLUMNS},forma_pago,informacion_adicional`;
 
-function mapActividadPublica(row) {
+function mapActividadPublica(row, { includeDetail = false } = {}) {
   if (!row) {
     return null;
   }
 
-  return {
+  const actividad = {
     id: row.id,
     titulo: row.titulo,
     descripcion: row.descripcion,
-    fecha: row.fecha,
-    hora_inicio: row.hora_inicio,
-    ubicacion: row.ubicacion,
-    cupos: row.cupos,
+    fecha: row.fecha ?? null,
+    hora_inicio: row.hora_inicio ?? null,
+    hora_fin: row.hora_fin ?? null,
+    lugar: row.lugar ?? null,
+    publico_objetivo: row.publico_objetivo ?? null,
+    modalidad: row.modalidad ?? null,
+    tipo_participacion: row.tipo_participacion,
+    cupos: row.cupos ?? null,
+    tipo_valor: row.tipo_valor,
+    valor_monto: row.valor_monto ?? null,
     imagen_url: row.imagen_url ?? null,
   };
+
+  if (includeDetail) {
+    actividad.forma_pago = row.forma_pago ?? null;
+    actividad.informacion_adicional = row.informacion_adicional ?? null;
+  }
+
+  return actividad;
 }
 
 function buildPagination(page, limit, total) {
@@ -58,10 +72,11 @@ export async function getActividades({ page, limit }) {
   const desde = (page - 1) * limit;
   const hasta = desde + limit - 1;
 
-  const { data, error, count } = await publicadasQuery(ACTIVIDAD_PUBLIC_COLUMNS, {
+  const { data, error, count } = await publicadasQuery(ACTIVIDAD_LISTADO_COLUMNS, {
     count: "exact",
   })
-    .order("fecha", { ascending: true })
+    .order("fecha", { ascending: true, nullsFirst: false })
+    .order("hora_inicio", { ascending: true, nullsFirst: false })
     .order("id", { ascending: true })
     .range(desde, hasta);
 
@@ -78,13 +93,13 @@ export async function getActividades({ page, limit }) {
   }
 
   return {
-    data: (data ?? []).map(mapActividadPublica),
+    data: (data ?? []).map((row) => mapActividadPublica(row)),
     pagination: buildPagination(page, limit, count ?? 0),
   };
 }
 
 export async function getActividadById(id) {
-  const { data, error } = await publicadasQuery(ACTIVIDAD_PUBLIC_COLUMNS)
+  const { data, error } = await publicadasQuery(ACTIVIDAD_DETALLE_COLUMNS)
     .eq("id", id)
     .maybeSingle();
 
@@ -92,5 +107,5 @@ export async function getActividadById(id) {
     throw new Error("Failed to get actividad");
   }
 
-  return mapActividadPublica(data);
+  return mapActividadPublica(data, { includeDetail: true });
 }

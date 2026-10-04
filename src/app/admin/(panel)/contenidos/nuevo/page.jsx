@@ -1,13 +1,7 @@
-import AdminPlaceholder from "@/components/admin/AdminPlaceholder";
+import ContenidoForm from "@/components/admin/contenidos/ContenidoForm";
 
 export const metadata = { title: "Nuevo contenido — Admin Raíz Quilpué" };
 
 export default function AdminNuevoContenidoPage() {
-  return (
-    <AdminPlaceholder
-      eyebrow="Contenidos"
-      title="Nuevo contenido"
-      description="El formulario para crear publicaciones estará disponible en el siguiente paso del portal administrativo."
-    />
-  );
+  return <ContenidoForm mode="create" />;
 }

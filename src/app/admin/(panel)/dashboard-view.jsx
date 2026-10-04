@@ -36,7 +36,7 @@ function KpiCard({ value, label, hint, tone, icon: Icon }) {
         <p className={`text-[1.85rem] leading-none font-semibold tracking-tight ${colors.value}`}>
           {value}
         </p>
-        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${colors.icon}`}>
+        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-sm ${colors.icon}`}>
           <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
         </span>
       </div>
@@ -169,7 +169,7 @@ export default function AdminDashboardView({
                 href={action.href}
                 className="admin-card group flex min-h-[5.25rem] items-center gap-3.5 px-4 transition-transform hover:-translate-y-0.5"
               >
-                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2c1810]/6 text-[#2c1810] transition-colors group-hover:bg-[#feca2b]">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-[#2c1810]/6 text-[#2c1810] transition-colors group-hover:bg-[#feca2b]">
                   <Icon size={18} strokeWidth={1.7} aria-hidden="true" />
                 </span>
                 <span>

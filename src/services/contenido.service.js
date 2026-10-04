@@ -1,23 +1,31 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const ESTADO_PUBLICADA = "publicada";
-const CONTENIDO_PUBLIC_COLUMNS =
-  "id,titulo,resumen,contenido,tipo,imagen_url,fecha_publicacion";
+const CONTENIDO_LIST_COLUMNS =
+  "id,titulo,descripcion,resumen,tipo,imagen_url,fecha_publicacion";
+const CONTENIDO_DETAIL_COLUMNS =
+  "id,titulo,descripcion,resumen,contenido,tipo,imagen_url,fecha_publicacion";
 
-function mapContenidoPublico(row) {
+function mapContenidoPublico(row, { includeContenido = false } = {}) {
   if (!row) {
     return null;
   }
 
-  return {
+  const contenido = {
     id: row.id,
     titulo: row.titulo,
-    resumen: row.resumen,
-    contenido: row.contenido,
+    descripcion: row.descripcion ?? null,
+    resumen: row.resumen ?? null,
     tipo: row.tipo,
     imagen_url: row.imagen_url ?? null,
     fecha_publicacion: row.fecha_publicacion,
   };
+
+  if (includeContenido) {
+    contenido.contenido = row.contenido ?? null;
+  }
+
+  return contenido;
 }
 
 function buildPagination(page, limit, total) {
@@ -57,7 +65,7 @@ export async function getContenidos({ page, limit }) {
   const desde = (page - 1) * limit;
   const hasta = desde + limit - 1;
 
-  const { data, error, count } = await publicadasQuery(CONTENIDO_PUBLIC_COLUMNS, {
+  const { data, error, count } = await publicadasQuery(CONTENIDO_LIST_COLUMNS, {
     count: "exact",
   })
     .order("fecha_publicacion", { ascending: false })
@@ -77,13 +85,13 @@ export async function getContenidos({ page, limit }) {
   }
 
   return {
-    data: (data ?? []).map(mapContenidoPublico),
+    data: (data ?? []).map((row) => mapContenidoPublico(row)),
     pagination: buildPagination(page, limit, count ?? 0),
   };
 }
 
 export async function getContenidoById(id) {
-  const { data, error } = await publicadasQuery(CONTENIDO_PUBLIC_COLUMNS)
+  const { data, error } = await publicadasQuery(CONTENIDO_DETAIL_COLUMNS)
     .eq("id", id)
     .maybeSingle();
 
@@ -91,5 +99,5 @@ export async function getContenidoById(id) {
     throw new Error("Failed to get contenido");
   }
 
-  return mapContenidoPublico(data);
+  return mapContenidoPublico(data, { includeContenido: true });
 }

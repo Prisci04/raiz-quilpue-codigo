@@ -135,7 +135,7 @@ body {
 .admin-card {
   background: var(--admin-card);
   border: 1px solid var(--admin-line);
-  border-radius: 1.05rem;
+  border-radius: 2px;
   box-shadow:
     0 1px 1px rgba(44, 24, 16, 0.03),
     0 10px 28px rgba(44, 24, 16, 0.045);
@@ -145,6 +145,55 @@ body {
   aside.admin-sidebar:not(.is-open) {
     transform: translateX(-100%);
   }
+}
+
+.contenido-editor .ProseMirror {
+  min-height: 18rem;
+  outline: none;
+}
+
+.contenido-editor .ProseMirror p {
+  margin: 0.45rem 0;
+}
+
+.contenido-editor .ProseMirror h2 {
+  margin-top: 1.1rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #5c331c;
+}
+
+.contenido-editor .ProseMirror h3 {
+  margin-top: 0.9rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #5c331c;
+}
+
+.contenido-editor .ProseMirror ul,
+.contenido-editor .ProseMirror ol {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+
+.contenido-editor .ProseMirror ul {
+  list-style: disc;
+}
+
+.contenido-editor .ProseMirror ol {
+  list-style: decimal;
+}
+
+.contenido-editor .ProseMirror blockquote {
+  margin: 0.75rem 0;
+  border-left: 2px solid #c4a04a;
+  padding-left: 0.9rem;
+  font-style: italic;
+}
+
+.contenido-editor .ProseMirror a {
+  color: #db700f;
+  text-decoration: underline;
 }
 
 @media print {

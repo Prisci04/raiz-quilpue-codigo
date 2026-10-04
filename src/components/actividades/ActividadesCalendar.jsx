@@ -52,10 +52,10 @@ function isSameDay(date, other) {
 export default function ActividadesCalendar({ activities = [] }) {
   const initialMonth = useMemo(() => {
     const firstDated = activities.find((activity) =>
-      parseActivityDate(activity.date)
+      parseActivityDate(activity.fecha)
     );
     return firstDated
-      ? startOfMonth(parseActivityDate(firstDated.date))
+      ? startOfMonth(parseActivityDate(firstDated.fecha))
       : startOfMonth(new Date());
   }, [activities]);
 
@@ -67,7 +67,7 @@ export default function ActividadesCalendar({ activities = [] }) {
     const grouped = new Map();
 
     for (const activity of activities) {
-      const parsed = parseActivityDate(activity.date);
+      const parsed = parseActivityDate(activity.fecha);
       if (!parsed) continue;
       const key = toDateKey(parsed);
       const current = grouped.get(key) ?? [];
@@ -233,9 +233,9 @@ export default function ActividadesCalendar({ activities = [] }) {
                     <span
                       key={activity.id}
                       className="block truncate border-l-[3px] border-[#db700f] pl-1.5 text-[10px] leading-4 text-[#704a31]"
-                      title={activity.title}
+                      title={activity.titulo}
                     >
-                      {activity.title}
+                      {activity.titulo}
                     </span>
                   ))}
                 </div>
@@ -319,12 +319,12 @@ export default function ActividadesCalendar({ activities = [] }) {
                     className="flex min-h-16 w-full items-center gap-4 px-3 py-3.5 text-left"
                   >
                     <span className="w-14 shrink-0 font-mono text-sm font-semibold text-[#db700f]">
-                      {formatShortTime(activity.time) || "—"}
+                      {formatShortTime(activity.hora_inicio) || "—"}
                     </span>
                     <span className="relative hidden h-12 w-12 shrink-0 overflow-hidden sm:block">
-                      {activity.image ? (
+                      {activity.imagen_url ? (
                         <Image
-                          src={activity.image}
+                          src={activity.imagen_url}
                           alt=""
                           fill
                           sizes="48px"
@@ -336,11 +336,11 @@ export default function ActividadesCalendar({ activities = [] }) {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block font-serif text-base leading-snug font-semibold text-[#704a31]">
-                        {activity.title}
+                        {activity.titulo}
                       </span>
-                      {activity.location ? (
+                      {activity.lugar ? (
                         <span className="mt-0.5 block truncate text-sm text-[#946541]">
-                          {activity.location}
+                          {activity.lugar}
                         </span>
                       ) : null}
                     </span>

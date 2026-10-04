@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { ArrowRight, Inbox } from "lucide-react";
+import ContenidoPreviewModal from "@/components/contenido/ContenidoPreviewModal";
 
 const FILTERS = [
   { id: "todos", label: "Todos" },
@@ -39,15 +40,18 @@ export default function ContenidoView({
     ? initialTipo
     : "todos";
   const [tipo, setTipo] = useState(initialType);
+  const [selectedId, setSelectedId] = useState(null);
+  const closePreview = useCallback(() => setSelectedId(null), []);
 
   const visibleItems = useMemo(() => {
     return items.filter((item) => {
       const matchesType = tipo === "todos" || item.tipo === tipo;
-      const searchableText = `${item.title} ${item.description} ${item.tipo}`.toLowerCase();
+      const searchableText = `${item.title} ${item.description} ${item.summary} ${item.tipo}`.toLowerCase();
       return matchesType && (!requestedQuery || searchableText.includes(requestedQuery));
     });
   }, [items, requestedQuery, tipo]);
 
+  const selectedItem = items.find((item) => item.id === selectedId) ?? null;
   const emptyMessage = error
     ? error
     : tipo === "todos"
@@ -122,7 +126,13 @@ export default function ContenidoView({
                   {visibleItems
                     .filter((item) => item.tipo === "patrimonio")
                     .map((item, index) => (
-                      <ContentCard key={item.id} item={item} index={index} featured />
+                      <ContentCard
+                        key={item.id}
+                        item={item}
+                        index={index}
+                        featured
+                        onOpen={setSelectedId}
+                      />
                     ))}
                 </div>
               </section>
@@ -141,7 +151,12 @@ export default function ContenidoView({
                   {visibleItems
                     .filter((item) => item.tipo !== "patrimonio")
                     .map((item, index) => (
-                      <ContentCard key={item.id} item={item} index={index} />
+                      <ContentCard
+                        key={item.id}
+                        item={item}
+                        index={index}
+                        onOpen={setSelectedId}
+                      />
                     ))}
                 </div>
               </section>
@@ -155,6 +170,13 @@ export default function ContenidoView({
           </p>
         </div>
       </div>
+      {selectedItem ? (
+        <ContenidoPreviewModal
+          item={selectedItem}
+          tipoLabel={tipoLabel(selectedItem.tipo)}
+          onClose={closePreview}
+        />
+      ) : null}
     </main>
   );
 }
@@ -174,7 +196,7 @@ function SectionHeading({ eyebrow, title, count, countLabel }) {
   );
 }
 
-function ContentCard({ item, index, featured = false }) {
+function ContentCard({ item, index, featured = false, onOpen }) {
   const imageClassName = featured
     ? "aspect-[4/3]"
     : "h-40 w-40 shrink-0 sm:h-32 sm:w-48";
@@ -218,10 +240,14 @@ function ContentCard({ item, index, featured = false }) {
             {item.description}
           </p>
         ) : null}
-        <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-[#db700f] uppercase">
+        <button
+          type="button"
+          onClick={() => onOpen(item.id)}
+          className="inline-flex min-h-11 items-center gap-1 font-mono text-[9px] tracking-wide text-[#db700f] uppercase"
+        >
           Ver detalle
           <ArrowRight size={12} strokeWidth={1.8} aria-hidden="true" />
-        </span>
+        </button>
       </div>
     </article>
   );

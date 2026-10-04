@@ -3,6 +3,7 @@ import "server-only";
 import { isMutatingMethod, isTrustedOrigin } from "@/lib/auth/origin";
 import { validateSession } from "@/lib/auth/session";
 import { jsonError } from "@/lib/http";
+import { usuarioTieneRol } from "@/services/usuarios.service";
 
 export async function requireInternalSession(request) {
   const result = await validateSession();
@@ -29,4 +30,45 @@ export async function requireInternalSession(request) {
   }
 
   return { user: result.user, response: null };
+}
+
+export async function requireAdministrador(request) {
+  const auth = await requireInternalSession(request);
+
+  if (auth.response) {
+    return auth;
+  }
+
+  const isAdmin = await usuarioTieneRol(auth.user.id, "administrador");
+
+  if (!isAdmin) {
+    return {
+      user: null,
+      response: jsonError(403, "FORBIDDEN", "No autorizado"),
+    };
+  }
+
+  return auth;
+}
+
+export async function requireGestorContenido(request) {
+  const auth = await requireInternalSession(request);
+
+  if (auth.response) {
+    return auth;
+  }
+
+  const [isAdministrador, isEditor] = await Promise.all([
+    usuarioTieneRol(auth.user.id, "administrador"),
+    usuarioTieneRol(auth.user.id, "editor"),
+  ]);
+
+  if (!isAdministrador && !isEditor) {
+    return {
+      user: null,
+      response: jsonError(403, "FORBIDDEN", "No autorizado"),
+    };
+  }
+
+  return auth;
 }

@@ -7,7 +7,7 @@ import ActividadesCalendar from "@/components/actividades/ActividadesCalendar";
 import ViewTabs from "@/components/actividades/ViewTabs";
 import Pagination from "@/components/Pagination";
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 12;
 
 export default function ActividadesView({ activities = [], error = "", initialView = "actividades" }) {
   const [view, setView] = useState(initialView);
@@ -19,7 +19,7 @@ export default function ActividadesView({ activities = [], error = "", initialVi
     if (!normalizedQuery) return activities;
 
     return activities.filter((activity) => {
-      const text = `${activity.title} ${activity.location} ${activity.description}`.toLowerCase();
+      const text = `${activity.titulo} ${activity.lugar ?? ""} ${activity.descripcion}`.toLowerCase();
       return text.includes(normalizedQuery);
     });
   }, [activities, normalizedQuery]);
@@ -95,15 +95,22 @@ export default function ActividadesView({ activities = [], error = "", initialVi
         id="actividades-list"
         className="mx-auto max-w-[1200px] px-4 pt-8 pb-16 sm:px-8 sm:pt-12 sm:pb-20"
       >
-        {visibleActivities.length === 0 ? (
+        {view === "calendario" ? (
+          <div>
+            {error ? (
+              <p className="mb-4 border border-[#bb9c82] px-6 py-4 text-center text-lg">
+                {error}
+              </p>
+            ) : null}
+            <ActividadesCalendar activities={visibleActivities} />
+          </div>
+        ) : visibleActivities.length === 0 ? (
           <div className="border border-[#bb9c82] px-6 py-14 text-center text-lg">
             {emptyMessage}
           </div>
-        ) : view === "calendario" ? (
-          <ActividadesCalendar activities={visibleActivities} />
         ) : (
           <div className="flex w-full flex-col">
-            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-[18px] lg:grid-cols-3">
+            <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
               {pageItems.map((activity) => (
                 <ActivityCard key={activity.id} activity={activity} />
               ))}
