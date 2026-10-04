@@ -53,10 +53,6 @@ export default function UsuariosPanel() {
   const [busyId, setBusyId] = useState(null);
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    setForbidden(false);
-
     try {
       const [panel, sessionUser] = await Promise.all([
         listUsuariosPanel(),
@@ -79,16 +75,39 @@ export default function UsuariosPanel() {
   useEffect(() => {
     let active = true;
 
-    load().catch(() => {
-      if (active) {
-        setError("No fue posible cargar los usuarios.");
+    async function run() {
+      try {
+        const [panel, sessionUser] = await Promise.all([
+          listUsuariosPanel(),
+          getSessionUser(),
+        ]);
+
+        if (!active) return;
+
+        setUsuarios(panel.usuarios ?? []);
+        setRoles(panel.roles ?? []);
+        setCurrentUserId(sessionUser?.id ?? null);
+        setForbidden(false);
+        setError("");
+      } catch (loadError) {
+        if (!active) return;
+
+        if (loadError.status === 403) {
+          setForbidden(true);
+        } else {
+          setError(loadError.message || "No fue posible cargar los usuarios.");
+        }
+      } finally {
+        if (active) setLoading(false);
       }
-    });
+    }
+
+    void run();
 
     return () => {
       active = false;
     };
-  }, [load]);
+  }, []);
 
   const activeAdminCount = usuarios.filter(isActiveAdmin).length;
   const lockAdminRole = Boolean(
@@ -167,7 +186,7 @@ export default function UsuariosPanel() {
 
   if (loading) {
     return (
-      <section className="border border-[#bb9c82]/70 bg-[#fffdf9] px-6 py-10 text-sm text-[#7c5c47]">
+      <section className="rounded-md border border-[#bb9c82]/70 bg-[#fffdf9] px-6 py-10 text-sm text-[#7c5c47]">
         Cargando usuarios…
       </section>
     );
@@ -175,7 +194,7 @@ export default function UsuariosPanel() {
 
   if (forbidden) {
     return (
-      <section className="max-w-2xl border border-[#bb9c82]/70 bg-[#fffdf9] px-6 py-8">
+      <section className="max-w-2xl rounded-md border border-[#bb9c82]/70 bg-[#fffdf9] px-6 py-8">
         <h1 className="text-lg font-semibold text-[#2c1810]">Usuarios del panel</h1>
         <p className="mt-2 text-sm text-[#7c5c47]">
           Solo un administrador puede gestionar las personas con acceso al portal.
@@ -203,7 +222,7 @@ export default function UsuariosPanel() {
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex min-h-10 items-center gap-2 bg-[#2c1810] px-4 text-[12px] font-medium tracking-[0.08em] text-[#f4ebe3] uppercase transition-colors hover:bg-[#3d2418]"
+          className="inline-flex min-h-10 items-center gap-2 rounded-md bg-[#2c1810] px-4 text-[12px] font-medium tracking-[0.08em] text-[#f4ebe3] uppercase transition-colors hover:bg-[#3d2418]"
         >
           <Plus size={15} strokeWidth={1.8} aria-hidden="true" />
           Crear usuario
@@ -247,7 +266,7 @@ export default function UsuariosPanel() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="usuario-confirm-title"
-            className="w-full max-w-md border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-5 sm:p-6"
+            className="w-full max-w-md rounded-md border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-5 sm:p-6"
           >
             <h2 id="usuario-confirm-title" className="text-lg font-semibold text-[#2c1810]">
               {confirmCopy.title}
@@ -258,7 +277,7 @@ export default function UsuariosPanel() {
                 type="button"
                 onClick={() => setConfirm(null)}
                 disabled={busyId !== null}
-                className="inline-flex min-h-10 items-center border border-[#bb9c82]/80 px-4 text-[12px] font-medium tracking-[0.08em] text-[#704a31] uppercase disabled:opacity-60"
+                className="inline-flex min-h-10 items-center rounded-md border border-[#bb9c82]/80 px-4 text-[12px] font-medium tracking-[0.08em] text-[#704a31] uppercase disabled:opacity-60"
               >
                 Cancelar
               </button>
@@ -266,7 +285,7 @@ export default function UsuariosPanel() {
                 type="button"
                 onClick={runConfirm}
                 disabled={busyId !== null}
-                className={`inline-flex min-h-10 items-center px-4 text-[12px] font-medium tracking-[0.08em] text-[#f4ebe3] uppercase disabled:opacity-60 ${
+                className={`inline-flex min-h-10 items-center rounded-md px-4 text-[12px] font-medium tracking-[0.08em] text-[#f4ebe3] uppercase disabled:opacity-60 ${
                   confirm.type === "delete"
                     ? "bg-[#8d3b28] hover:bg-[#742f20]"
                     : "bg-[#2c1810] hover:bg-[#3d2418]"

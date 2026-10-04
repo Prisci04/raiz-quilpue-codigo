@@ -5,7 +5,7 @@ import { ArrowRight, CalendarDays, Landmark, Library, Newspaper } from "lucide-r
 const accessItems = [
   {
     title: "Patrimonio",
-    description: "Fotografías, documentos y objetos históricos de Quilpué.",
+    description: "Historias, lugares y expresiones que forman parte del patrimonio de Quilpué.",
     href: "/contenido?tipo=patrimonio",
     cta: "Ver patrimonio",
     image: "/images/contenido/iglesia desde plaza.jpg",
@@ -17,7 +17,7 @@ const accessItems = [
   },
   {
     title: "Noticias",
-    description: "Publicaciones, artículos e historias de la comunidad.",
+    description: "Noticias, proyectos y novedades vinculadas a Raíz Quilpué y al patrimonio local.",
     href: "/contenido?tipo=noticia",
     cta: "Leer noticias",
     image: "/images/inicio/imgini7.jpg",
@@ -29,7 +29,7 @@ const accessItems = [
   },
   {
     title: "Actividades",
-    description: "Talleres, visitas guiadas y eventos culturales.",
+    description: "Talleres, recorridos y actividades culturales para encontrarnos con nuestro territorio.",
     href: "/actividades",
     cta: "Ver actividades",
     image: "/images/inicio/imgini4.JPG",
@@ -41,8 +41,8 @@ const accessItems = [
   },
   {
     title: "Museo Digital",
-    description: "Colección permanente de piezas del patrimonio local.",
-    href: "/contenido",
+    description: "Un espacio digital para conservar, compartir y descubrir las memorias y piezas que forman parte de Quilpué.",
+    href: "/museo",
     cta: "Entrar al museo",
     image: "/images/contenido/reloj y vaca Quilpué -01.jpeg",
     imageAlt: "Fotografía patrimonial del reloj de Quilpué",
@@ -71,10 +71,10 @@ export default function AccessSection({ contents = [], activities = [] }) {
       <div className="mb-10 max-w-2xl">
         <div className="section-label mb-2">Accesos principales</div>
         <h2 id="accesos-heading" className="font-serif text-3xl font-semibold text-[#704a31] md:text-4xl">
-          Explora las colecciones
+          Explora Raíz Quilpué
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-[#946541] md:text-base">
-          Cuatro entradas para recorrer el patrimonio, las noticias, las actividades y el museo digital de Quilpué.
+          Cuatro espacios para conocer el patrimonio, descubrir historias, participar en actividades y recorrer el museo digital de Quilpué. 
         </p>
       </div>
 

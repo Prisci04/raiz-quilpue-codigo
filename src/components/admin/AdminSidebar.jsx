@@ -70,7 +70,7 @@ export default function AdminSidebar({ open, onClose, isAdministrador }) {
                       onClick={onClose}
                       className={`flex min-h-10 items-center gap-3 rounded-sm px-3 text-[13.5px] transition-colors ${
                         active
-                          ? "bg-[#feca2b] font-medium text-[#2c1810]"
+                          ? "bg-[#f4ebe3]/16 font-medium text-[#f6efe6]"
                           : "text-[#f4ebe3]/78 hover:bg-white/8 hover:text-[#f4ebe3]"
                       }`}
                     >

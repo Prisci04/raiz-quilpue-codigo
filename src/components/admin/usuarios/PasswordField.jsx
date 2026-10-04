@@ -28,7 +28,7 @@ export default function PasswordField({ value, onChange, error }) {
             autoComplete="new-password"
             value={value}
             onChange={(event) => onChange(event.target.value)}
-            className="w-full border border-[#bb9c82]/80 bg-white py-2.5 pr-11 pl-3 text-sm text-[#2c1810] outline-none transition-colors focus:border-[#704a31]"
+            className="w-full rounded-md border border-[#bb9c82]/80 bg-white py-2.5 pr-11 pl-3 text-sm text-[#2c1810] outline-none transition-colors focus:border-[#704a31]"
           />
           <button
             type="button"
@@ -46,7 +46,7 @@ export default function PasswordField({ value, onChange, error }) {
         <button
           type="button"
           onClick={handleGenerate}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center border border-[#bb9c82]/80 px-4 text-[12px] font-medium tracking-[0.06em] text-[#2c1810] uppercase transition-colors hover:bg-[#f7f1ea]"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-md border border-[#bb9c82]/80 px-4 text-[12px] font-medium tracking-[0.06em] text-[#2c1810] uppercase transition-colors hover:bg-[#f7f1ea]"
         >
           Generar contraseña
         </button>

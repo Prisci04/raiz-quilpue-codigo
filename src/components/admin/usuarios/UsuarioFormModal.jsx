@@ -7,17 +7,24 @@ import {
   parseUpdateUsuario,
 } from "@/lib/usuarios/validation.mjs";
 
-const EMPTY = {
-  nombre: "",
-  apellido: "",
-  email: "",
-  telefono: "",
-  rolCodigo: "",
-  password: "",
-};
+function usuarioFormState(usuario, roles) {
+  return {
+    nombre: usuario?.nombre ?? "",
+    apellido: usuario?.apellido ?? "",
+    email: usuario?.email ?? "",
+    telefono: usuario?.telefono ?? "",
+    rolCodigo: usuario?.roles?.[0]?.codigo ?? roles[0]?.codigo ?? "",
+    password: "",
+  };
+}
+
+function formSource(mode, usuario, roles) {
+  const roleKey = (roles ?? []).map((rol) => rol.codigo).join(",");
+  return `${mode}:${usuario?.id ?? "nuevo"}:${roleKey}`;
+}
 
 function fieldClassName() {
-  return "mt-1.5 w-full border border-[#bb9c82]/80 bg-white px-3 py-2.5 text-sm text-[#2c1810] outline-none transition-colors focus:border-[#704a31]";
+  return "mt-1.5 w-full rounded-md border border-[#bb9c82]/80 bg-white px-3 py-2.5 text-sm text-[#2c1810] outline-none transition-colors focus:border-[#704a31]";
 }
 
 export default function UsuarioFormModal({
@@ -31,20 +38,16 @@ export default function UsuarioFormModal({
   onSubmit,
 }) {
   const titleId = useId();
-  const [form, setForm] = useState(EMPTY);
+  const source = formSource(mode, usuario, roles);
+  const [formSourceKey, setFormSourceKey] = useState(source);
+  const [form, setForm] = useState(() => usuarioFormState(usuario, roles));
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  if (source !== formSourceKey) {
+    setFormSourceKey(source);
+    setForm(usuarioFormState(usuario, roles));
     setError("");
-    setForm({
-      nombre: usuario?.nombre ?? "",
-      apellido: usuario?.apellido ?? "",
-      email: usuario?.email ?? "",
-      telefono: usuario?.telefono ?? "",
-      rolCodigo: usuario?.roles?.[0]?.codigo ?? roles[0]?.codigo ?? "",
-      password: "",
-    });
-  }, [usuario, roles, mode]);
+  }
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -84,7 +87,7 @@ export default function UsuarioFormModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="max-h-[92vh] w-full max-w-lg overflow-y-auto border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-5 sm:p-6"
+        className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-md border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-5 sm:p-6"
       >
         <h2 id={titleId} className="text-lg font-semibold text-[#2c1810]">
           {title}
@@ -198,14 +201,14 @@ export default function UsuarioFormModal({
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="inline-flex min-h-10 items-center border border-[#bb9c82]/80 px-4 text-[12px] font-medium tracking-[0.08em] text-[#704a31] uppercase transition-colors hover:bg-[#f7f1ea] disabled:opacity-60"
+              className="inline-flex min-h-10 items-center rounded-md border border-[#bb9c82]/80 px-4 text-[12px] font-medium tracking-[0.08em] text-[#704a31] uppercase transition-colors hover:bg-[#f7f1ea] disabled:opacity-60"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex min-h-10 items-center bg-[#2c1810] px-4 text-[12px] font-medium tracking-[0.08em] text-[#f4ebe3] uppercase transition-colors hover:bg-[#3d2418] disabled:opacity-60"
+              className="inline-flex min-h-10 items-center rounded-md bg-[#2c1810] px-4 text-[12px] font-medium tracking-[0.08em] text-[#f4ebe3] uppercase transition-colors hover:bg-[#3d2418] disabled:opacity-60"
             >
               {submitting ? "Guardando…" : mode === "create" ? "Crear usuario" : "Guardar cambios"}
             </button>

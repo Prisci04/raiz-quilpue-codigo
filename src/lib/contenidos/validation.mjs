@@ -6,8 +6,8 @@ import {
   TIPOS_CONTENIDO,
   TITULO_MAX_LENGTH,
   parseDocumento,
-  safeContenidoHref,
 } from "./documento.mjs";
+import { parseOwnedPortadaUrl } from "../media/policy.mjs";
 
 function fail(message) {
   return { ok: false, message };
@@ -60,13 +60,13 @@ function readImagen(value, { allowOmit }) {
     return fail("La imagen de portada no es válida.");
   }
 
-  const href = safeContenidoHref(value.trim());
+  const owned = parseOwnedPortadaUrl(value.trim());
 
-  if (!href || href.length > IMAGEN_URL_MAX_LENGTH) {
+  if (!owned || owned.publicUrl.length > IMAGEN_URL_MAX_LENGTH) {
     return fail("La imagen de portada no es válida.");
   }
 
-  return { ok: true, value: href };
+  return { ok: true, value: owned.publicUrl };
 }
 
 function readFields(body, { allowOmitImage }) {

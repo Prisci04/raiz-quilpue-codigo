@@ -11,7 +11,7 @@ const navItems = [
   { href: "/quienes-somos", label: "Quiénes somos" },
   { href: "/contenido", label: "Contenidos" },
   { href: "/actividades", label: "Actividades" },
-  { href: "/", label: "Museo Digital", placeholder: true },
+  { href: "/museo", label: "Museo Digital" },
   { href: "/", label: "Market", placeholder: true },
 ];
 

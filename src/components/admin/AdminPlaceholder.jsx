@@ -22,7 +22,7 @@ export default function AdminPlaceholder({
       {actionHref && actionLabel ? (
         <Link
           href={actionHref}
-          className="mt-7 inline-flex min-h-10 items-center gap-2 rounded-full bg-[#2c1810] px-4 text-[13px] font-medium text-[#f4ebe3] transition-colors hover:bg-[#3d2418]"
+          className="mt-7 inline-flex min-h-10 items-center gap-2 rounded-md bg-[#2c1810] px-4 text-[13px] font-medium text-[#f4ebe3] transition-colors hover:bg-[#3d2418]"
         >
           {actionLabel}
           <ArrowRight size={15} strokeWidth={1.8} aria-hidden="true" />

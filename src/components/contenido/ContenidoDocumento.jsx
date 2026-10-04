@@ -1,8 +1,6 @@
-const TIPO_LABELS = {
-  noticia: "Noticias",
-  patrimonio: "Patrimonio",
-  capsula_historica: "Cápsulas históricas",
-};
+import { TIPO_LABELS_PUBLICO } from "@/lib/contenidos/documento.mjs";
+
+const TIPO_LABELS = TIPO_LABELS_PUBLICO;
 
 function isRecord(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -104,6 +102,8 @@ function renderImage(node, key) {
   const alt = typeof node.attrs?.alt === "string" ? node.attrs.alt : "";
 
   return (
+    // El cuerpo acepta imágenes http(s) ya saneadas; no todas entran en next/image.
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       key={key}
       src={src}

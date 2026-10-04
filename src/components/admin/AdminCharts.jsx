@@ -31,7 +31,7 @@ function ChartFrame({ title, highlight, children }) {
       <div className="mb-4 flex items-start justify-between gap-3">
         <h2 className="text-[15px] font-semibold tracking-tight text-[#2c1810]">{title}</h2>
         {highlight ? (
-          <span className="rounded-full bg-[#2c1810]/5 px-2.5 py-1 text-[11px] font-medium text-[#7c5c47]">
+          <span className="rounded-md bg-[#2c1810]/5 px-2.5 py-1 text-[11px] font-medium text-[#7c5c47]">
             {highlight}
           </span>
         ) : null}

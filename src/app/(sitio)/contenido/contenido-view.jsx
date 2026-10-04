@@ -67,8 +67,7 @@ export default function ContenidoView({
             Contenidos
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-[#946541]">
-            Toda la información que construyen la memoria de Quilpué.
-            Todo el contenido cultural en un solo espacio.
+            Todo lo que queremos compartir sobre Quilpué, reunido en un solo espacio. Explora nuestras noticias, contenidos patrimoniales, cápsulas históricas, expresiones culturales y relatos de la comunidad.
           </p>
         </div>
       </section>

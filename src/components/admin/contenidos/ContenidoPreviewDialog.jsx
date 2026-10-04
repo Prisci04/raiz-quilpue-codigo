@@ -9,7 +9,7 @@ export default function ContenidoPreviewDialog({ titulo, resumen, contenido, onC
         role="dialog"
         aria-modal="true"
         aria-labelledby="vista-previa-titulo"
-        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto border border-[#e6ddd4] bg-[#fffdf9] p-5 sm:p-6"
+        className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-md border border-[#e6ddd4] bg-[#fffdf9] p-5 sm:p-6"
       >
         <div className="flex items-start justify-between gap-4">
           <p className="text-[12px] font-medium tracking-[0.14em] text-[#db700f] uppercase">

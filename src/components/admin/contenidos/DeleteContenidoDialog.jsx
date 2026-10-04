@@ -7,7 +7,7 @@ export default function DeleteContenidoDialog({ titulo, busy, onCancel, onConfir
         role="dialog"
         aria-modal="true"
         aria-labelledby="eliminar-contenido-titulo"
-        className="w-full max-w-md border border-[#e6ddd4] bg-white p-5"
+        className="w-full max-w-md rounded-md border border-[#e6ddd4] bg-white p-5"
       >
         <h2 id="eliminar-contenido-titulo" className="text-lg font-semibold text-[#2c1810]">
           ¿Eliminar contenido?
@@ -21,7 +21,7 @@ export default function DeleteContenidoDialog({ titulo, busy, onCancel, onConfir
             type="button"
             onClick={onCancel}
             disabled={busy}
-            className="inline-flex min-h-10 items-center border border-[#e6ddd4] bg-white px-4 text-sm text-[#2c1810] disabled:opacity-50"
+            className="inline-flex min-h-10 items-center rounded-md border border-[#e6ddd4] bg-white px-4 text-sm text-[#2c1810] disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -29,7 +29,7 @@ export default function DeleteContenidoDialog({ titulo, busy, onCancel, onConfir
             type="button"
             onClick={onConfirm}
             disabled={busy}
-            className="inline-flex min-h-10 items-center bg-[#8d3b28] px-4 text-sm font-medium text-white disabled:opacity-50"
+            className="inline-flex min-h-10 items-center rounded-md bg-[#8d3b28] px-4 text-sm font-medium text-white disabled:opacity-50"
           >
             {busy ? "Eliminando…" : "Eliminar"}
           </button>

@@ -130,12 +130,13 @@ export default function HomeView({ contents = [], activities = [] }) {
             <h1 className="mb-6 font-serif text-5xl leading-[1.07] font-light text-white md:text-7xl">
               Historias que
               <br />
-              <em className="text-[#e48d40]">construyen</em>
+              <em className="text-[#e48d40]">dan forma</em>
               <br />
-              nuestra memoria
+              a Quilpué
             </h1>
             <p className="mb-8 max-w-xl text-base leading-relaxed text-[#e7dcd2]/85 md:text-lg">
-              Un espacio para descubrir, preservar y compartir la historia, cultura y patrimonio de Quilpué.
+              Un espacio donde las historias mantienen vivas nuestras raíces.  
+
             </p>
             <form onSubmit={handleSearch} className="flex max-w-lg">
               <input
@@ -165,12 +166,12 @@ export default function HomeView({ contents = [], activities = [] }) {
         <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div>
             <div className="section-label mb-3">¿Qué es Raíz Quilpué?</div>
-            <h2 className="mb-5 font-serif text-4xl leading-tight font-semibold text-[#946541]">Raíz Quilpué es una corporación cultural</h2>
-            <p className="mb-4 text-base leading-relaxed text-[#946541]">Raíz Quilpué es una plataforma cultural que reúne el patrimonio histórico, las noticias y las actividades de la comunidad quilpueína en un solo espacio digital.</p>
-            <p className="mb-6 text-base leading-relaxed text-[#946541]">El 17 de Junio de 2026  ocurrio un hito muy importante para nosotros oficialmente se firmo para ser una Corporación sin fines de lucro desde la comunidad para la comunidad, con el fin de valorar, preservar y unir el patrimonio, cultura e historia de nuestro Quilpué.</p>
+            <h2 className="mb-5 font-serif text-4xl leading-tight font-semibold text-[#946541]">Raíz Quilpué es una corporación cultural e histórica</h2>
+            <p className="mb-4 text-base leading-relaxed text-[#946541]">Somos un espacio para encontrarnos con las historias, saberes, lugares, personas y expresiones que forman parte de nuestra identidad local, conectando el patrimonio con la comunidad y el territorio.</p>
+            <p className="mb-6 text-base leading-relaxed text-[#946541]">Dedicada a investigar, rescatar, difundir y construir participativamente la memoria histórica y cultural de Quilpué.</p>
             <div className="flex flex-wrap gap-3">
               <button type="button" onClick={() => router.push("/quienes-somos")} className="btn-primary px-4 py-3">Conocer más</button>
-              <button type="button" onClick={() => router.push("/contenido")} className="btn-outline px-4 py-3">Explorar museo</button>
+              <button type="button" onClick={() => router.push("/museo")} className="btn-outline px-4 py-3">Explorar museo</button>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">

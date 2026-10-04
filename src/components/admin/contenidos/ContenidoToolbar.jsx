@@ -21,7 +21,7 @@ function ToolButton({ active, label, onClick, children }) {
       aria-label={label}
       aria-pressed={active}
       onClick={onClick}
-      className={`inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-[12px] font-medium ${
+      className={`inline-flex h-8 min-w-8 items-center justify-center rounded-sm px-2 text-[12px] font-medium ${
         active ? "bg-[#2c1810] text-white" : "text-[#4d4036] hover:bg-white"
       }`}
     >

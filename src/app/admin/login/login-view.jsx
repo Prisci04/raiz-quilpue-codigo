@@ -141,7 +141,7 @@ export default function LoginView() {
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 disabled={submitting}
-                className="min-h-12 border border-[#d9cbb8] bg-[#f7f1e8] px-3 text-sm font-normal tracking-normal text-[#5c331c] normal-case outline-none"
+                className="min-h-12 rounded-md border border-[#d9cbb8] bg-[#f7f1e8] px-3 text-sm font-normal tracking-normal text-[#5c331c] normal-case outline-none"
               />
             </label>
             <label className="grid gap-2 text-[11px] font-semibold tracking-[0.16em] uppercase">
@@ -154,7 +154,7 @@ export default function LoginView() {
                 onChange={(event) => setPassword(event.target.value)}
                 required
                 disabled={submitting}
-                className="min-h-12 border border-[#d9cbb8] bg-[#f7f1e8] px-3 text-sm font-normal tracking-normal outline-none"
+                className="min-h-12 rounded-md border border-[#d9cbb8] bg-[#f7f1e8] px-3 text-sm font-normal tracking-normal outline-none"
               />
             </label>
 
@@ -166,7 +166,7 @@ export default function LoginView() {
               type="submit"
               disabled={submitting}
               aria-busy={submitting}
-              className="min-h-12 w-full bg-[#6b3f2a] text-[12px] font-semibold tracking-[0.16em] text-[#f6efe6] uppercase disabled:opacity-60"
+              className="min-h-12 w-full rounded-md bg-[#6b3f2a] text-[12px] font-semibold tracking-[0.16em] text-[#f6efe6] uppercase disabled:opacity-60"
             >
               {submitting ? "Ingresando..." : "Ingresar al panel"}
             </button>
