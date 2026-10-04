@@ -1,33 +1,52 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronLeft, ChevronRight, ImageIcon, MoreHorizontal, Plus, Search } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  CircleCheck,
+  Clock,
+  Eye,
+  FileText,
+  ImageIcon,
+  Landmark,
+  MoreHorizontal,
+  Newspaper,
+  Palette,
+  Pencil,
+  Plus,
+  ScrollText,
+  Search,
+  Users,
+} from "lucide-react";
+import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import DeleteContenidoDialog from "@/components/admin/contenidos/DeleteContenidoDialog";
 import { deleteContenido, setEstadoContenido } from "@/lib/api/contenidos";
+import { TIPO_LABELS_ADMIN } from "@/lib/contenidos/documento.mjs";
 
 const PAGE_SIZE = 8;
 
-const TIPO_LABELS = {
-  noticia: "Noticias",
-  patrimonio: "Patrimonio",
-  capsula_historica: "Cápsulas",
-};
+const TIPO_LABELS = TIPO_LABELS_ADMIN;
 
-const TIPO_TONES = {
-  noticia: "bg-[#e7f0fb] text-[#2457a6]",
-  patrimonio: "bg-[#e5f6ea] text-[#1f7a45]",
-  capsula_historica: "bg-[#f3e8fb] text-[#7a3eaa]",
+const TIPO_ICONS = {
+  noticia: Newspaper,
+  patrimonio: Landmark,
+  capsula_historica: ScrollText,
+  cultura: Palette,
+  comunidad: Users,
 };
 
 const FILTERS = [
   { id: "todos", label: "Todos" },
-  { id: "publicada", label: "Publicados" },
-  { id: "borrador", label: "Borradores" },
-  { id: "patrimonio", label: "Patrimonio" },
   { id: "noticia", label: "Noticias" },
+  { id: "patrimonio", label: "Patrimonio" },
   { id: "capsula_historica", label: "Cápsulas" },
+  { id: "cultura", label: "Cultura" },
+  { id: "comunidad", label: "Comunidad" },
 ];
 
 function matchesFilter(contenido, filterId) {
@@ -42,13 +61,12 @@ function timestamp(value) {
   return Number.isNaN(time) ? null : time;
 }
 
-function TipoBadge({ tipo }) {
+function TipoCell({ tipo }) {
+  const Icon = TIPO_ICONS[tipo] ?? Newspaper;
+
   return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-[12px] font-medium ${
-        TIPO_TONES[tipo] ?? "bg-[#f4efe9] text-[#7c5c47]"
-      }`}
-    >
+    <span className="inline-flex items-center gap-2 text-[13px] text-[#5c4d42]">
+      <Icon size={15} strokeWidth={1.7} className="shrink-0 text-[#8a7968]" aria-hidden="true" />
       {TIPO_LABELS[tipo] ?? tipo}
     </span>
   );
@@ -58,9 +76,13 @@ function EstadoBadge({ estado }) {
   const published = estado === "publicada";
 
   return (
-    <span className="inline-flex items-center gap-2 text-[13px] text-[#3d342c]">
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium ${
+        published ? "bg-[#e5f6ea] text-[#1c7a42]" : "bg-[#fff3d6] text-[#9a6708]"
+      }`}
+    >
       <span
-        className={`h-2 w-2 rounded-full ${published ? "bg-[#2f9e5a]" : "bg-[#e0a100]"}`}
+        className={`h-1.5 w-1.5 rounded-full ${published ? "bg-[#2f9e5a]" : "bg-[#e0a100]"}`}
         aria-hidden="true"
       />
       {published ? "Publicado" : "Borrador"}
@@ -68,19 +90,50 @@ function EstadoBadge({ estado }) {
   );
 }
 
+function SummaryCard({ icon: Icon, iconClass, label, value, valueClass = "text-[#2c1810]", active = false, onClick }) {
+  const className = `flex w-full items-center gap-3 rounded-2xl border bg-white px-4 py-4 text-left ${
+    active ? "border-[#1e4536]" : "border-[#efe6dc]"
+  } ${onClick ? "transition-colors hover:border-[#e0d4c6]" : ""}`;
+  const body = (
+    <>
+      <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md ${iconClass}`}>
+        <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[13px] text-[#8a7968]">{label}</span>
+        <span className={`mt-0.5 block truncate text-[1.35rem] font-semibold leading-tight tracking-tight sm:text-[1.55rem] ${valueClass}`}>
+          {value}
+        </span>
+      </span>
+    </>
+  );
+
+  if (!onClick) {
+    return <div className={className}>{body}</div>;
+  }
+
+  return (
+    <button type="button" onClick={onClick} aria-pressed={active} className={className}>
+      {body}
+    </button>
+  );
+}
+
 function Thumb({ contenido }) {
   if (contenido.imagen_url) {
     return (
-      <img
+      <Image
         src={contenido.imagen_url}
         alt=""
-        className="h-11 w-11 rounded-lg object-cover"
+        width={72}
+        height={56}
+        className="h-14 w-[4.5rem] shrink-0 rounded-lg object-cover"
       />
     );
   }
 
   return (
-    <span className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-[#f3eee8] text-[#b7a394]">
+    <span className="inline-flex h-14 w-[4.5rem] shrink-0 items-center justify-center rounded-lg bg-[#f3eee8] text-[#b7a394]">
       <ImageIcon size={16} strokeWidth={1.8} aria-hidden="true" />
     </span>
   );
@@ -104,18 +157,35 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
   }, [open]);
 
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div className="flex items-center justify-end gap-0.5">
       <Link
         href={`/admin/contenidos/${contenido.id}/editar`}
-        className="inline-flex min-h-8 items-center rounded-lg border border-[#e4ddd4] bg-white px-3 text-[13px] font-medium text-[#2c1810] transition-colors hover:bg-[#faf7f4]"
+        aria-label={`Editar ${contenido.titulo}`}
+        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] transition-colors hover:bg-[#efe6dc]"
       >
-        Editar
+        <Pencil size={15} strokeWidth={1.8} aria-hidden="true" />
       </Link>
+      {contenido.estado === "publicada" ? (
+        <Link
+          href={`/contenido/${contenido.id}`}
+          aria-label={`Ver ${contenido.titulo} en el portal`}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] transition-colors hover:bg-[#efe6dc]"
+        >
+          <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
+        </Link>
+      ) : (
+        <span
+          className="inline-flex h-8 w-8 items-center justify-center text-[#d3c4b4]"
+          title="El borrador no está publicado"
+        >
+          <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
+        </span>
+      )}
       <div className="relative" ref={menuRef}>
         <button
           type="button"
           disabled={busy}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#7c5c47] hover:bg-[#f4efe9] disabled:opacity-40"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] transition-colors hover:bg-[#efe6dc] disabled:opacity-40"
           aria-label={`Más acciones de ${contenido.titulo}`}
           aria-expanded={open}
           onClick={() => setOpen((current) => !current)}
@@ -123,14 +193,7 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
           <MoreHorizontal size={16} strokeWidth={1.8} aria-hidden="true" />
         </button>
         {open ? (
-          <div className="absolute right-0 z-20 mt-1 min-w-44 border border-[#e4ddd4] bg-white py-1 shadow-lg">
-            <Link
-              href={`/admin/contenidos/${contenido.id}/editar`}
-              className="block px-3 py-2 text-left text-[13px] text-[#2c1810] hover:bg-[#faf7f4]"
-              onClick={() => setOpen(false)}
-            >
-              Editar
-            </Link>
+          <div className="absolute right-0 bottom-full z-20 mb-1 min-w-44 border border-[#e4ddd4] bg-white py-1 shadow-lg">
             <button
               type="button"
               className="block w-full px-3 py-2 text-left text-[13px] text-[#2c1810] hover:bg-[#faf7f4]"
@@ -141,15 +204,6 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
             >
               {contenido.estado === "publicada" ? "Pasar a borrador" : "Publicar"}
             </button>
-            {contenido.estado === "publicada" ? (
-              <Link
-                href={`/contenido/${contenido.id}`}
-                className="block px-3 py-2 text-left text-[13px] text-[#2c1810] hover:bg-[#faf7f4]"
-                onClick={() => setOpen(false)}
-              >
-                Ver en el portal
-              </Link>
-            ) : null}
             <button
               type="button"
               className="block w-full px-3 py-2 text-left text-[13px] text-[#8d3b28] hover:bg-[#faf7f4]"
@@ -170,19 +224,20 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
 export default function ContenidosPanel({ contenidos, error, notice = "" }) {
   const router = useRouter();
   const searchId = useId();
-  const sortId = useId();
   const [query, setQuery] = useState("");
   const [filterId, setFilterId] = useState("todos");
   const [sort, setSort] = useState("recientes");
   const [page, setPage] = useState(1);
   const [banner, setBanner] = useState(notice);
+  const [trackedNotice, setTrackedNotice] = useState(notice);
   const [actionError, setActionError] = useState("");
+
+  if (notice !== trackedNotice) {
+    setTrackedNotice(notice);
+    setBanner(notice);
+  }
   const [busyId, setBusyId] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
-
-  useEffect(() => {
-    setBanner(notice);
-  }, [notice]);
 
   async function changeEstado(contenido) {
     setBusyId(contenido.id);
@@ -222,13 +277,22 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
     }
   }
 
-  const counts = useMemo(() => {
-    return Object.fromEntries(
-      FILTERS.map((filter) => [
-        filter.id,
-        contenidos.filter((contenido) => matchesFilter(contenido, filter.id)).length,
-      ]),
-    );
+  const stats = useMemo(() => {
+    const latest = contenidos.reduce((best, item) => {
+      const time = timestamp(item.fecha_publicacion);
+      if (time === null) return best;
+      if (!best || time > best.time) return { time, item };
+      return best;
+    }, null);
+
+    return {
+      total: contenidos.length,
+      publicados: contenidos.filter((item) => item.estado === "publicada").length,
+      borradores: contenidos.filter((item) => item.estado === "borrador").length,
+      ultima: latest?.item?.fecha_texto && latest.item.fecha_texto !== "Sin fecha"
+        ? latest.item.fecha_texto
+        : "Sin fecha",
+    };
   }, [contenidos]);
 
   const visible = useMemo(() => {
@@ -275,53 +339,58 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
             </span>
             Contenidos
           </p>
-          <h1 className="mt-2 text-[clamp(1.8rem,3vw,2.2rem)] font-semibold tracking-tight text-[#2c1810]">
+          <h1 className="mt-2 font-serif text-[clamp(2rem,3vw,2.6rem)] font-semibold tracking-tight text-[#2c1810]">
             Contenidos
           </h1>
-          <p className="mt-1 text-sm text-[#7c6a5c]">
-            Gestiona noticias, patrimonio, historias y archivo cultural.
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#7c6a5c]">
+            Aquí podrás crear, editar y publicar noticias, patrimonio, historias y el resto del archivo cultural de Raíz Quilpué.
           </p>
         </div>
-        <Link
-          href="/admin/contenidos/nuevo"
-          className="inline-flex min-h-10 items-center gap-2 rounded-full bg-[#2c1810] px-4 text-sm font-medium text-white transition-colors hover:bg-[#3d2418]"
-        >
-          <Plus size={16} strokeWidth={2} aria-hidden="true" />
-          Nuevo contenido
-        </Link>
       </div>
 
-      {banner ? (
-        <p className="mt-4 text-sm text-[#2d7a46]" role="status">
-          {banner}
-        </p>
-      ) : null}
+      {banner ? <AdminNotice>{banner}</AdminNotice> : null}
       {error || actionError ? (
-        <p className="mt-4 text-sm text-[#8d3b28]" role="alert">
-          {error || actionError}
-        </p>
+        <AdminNotice tone="error">{error || actionError}</AdminNotice>
       ) : null}
 
-      <div className="mt-5 rounded-2xl border border-[#e7dfd6] bg-white p-3 shadow-[0_8px_24px_rgba(44,24,16,0.04)] sm:p-4">
-        <label htmlFor={searchId} className="sr-only">
-          Buscar contenidos
-        </label>
-        <div className="flex items-center gap-2 rounded-xl border border-[#ece4db] bg-[#fbfaf8] px-3">
-          <Search size={16} strokeWidth={1.8} className="text-[#a89888]" aria-hidden="true" />
-          <input
-            id={searchId}
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-              setPage(1);
-            }}
-            placeholder="Buscar contenidos por título o palabra clave..."
-            className="h-11 w-full bg-transparent text-sm text-[#2c1810] outline-none placeholder:text-[#b3a496]"
-          />
-        </div>
+      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard
+          icon={FileText}
+          iconClass="bg-[#f3eee8] text-[#5c4636]"
+          label="Total contenidos"
+          value={stats.total}
+          active={filterId === "todos"}
+          onClick={() => changeFilter("todos")}
+        />
+        <SummaryCard
+          icon={CircleCheck}
+          iconClass="bg-[#e5f6ea] text-[#1f7a45]"
+          label="Publicados"
+          value={stats.publicados}
+          valueClass="text-[#1f7a45]"
+          active={filterId === "publicada"}
+          onClick={() => changeFilter("publicada")}
+        />
+        <SummaryCard
+          icon={FileText}
+          iconClass="bg-[#fde8e2] text-[#c45c38]"
+          label="Borradores"
+          value={stats.borradores}
+          valueClass="text-[#c45c38]"
+          active={filterId === "borrador"}
+          onClick={() => changeFilter("borrador")}
+        />
+        <SummaryCard
+          icon={Clock}
+          iconClass="bg-[#f6efe4] text-[#8a5a32]"
+          label="Última actualización"
+          value={stats.ultima}
+        />
+      </div>
 
-        <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-2">
+      <div className="mt-4 rounded-2xl border border-[#efe6dc] bg-white p-3 sm:p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="flex gap-2 overflow-x-auto">
             {FILTERS.map((filter) => {
               const active = filter.id === filterId;
 
@@ -331,86 +400,139 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
                   type="button"
                   aria-pressed={active}
                   onClick={() => changeFilter(filter.id)}
-                  className={`inline-flex min-h-8 items-center rounded-full px-3 text-[13px] transition-colors ${
+                  className={`inline-flex h-9 shrink-0 items-center rounded-sm px-4 text-[13px] transition-colors ${
                     active
-                      ? "bg-[#2c1810] font-medium text-white"
-                      : "border border-[#e6ddd4] bg-white text-[#4d4036] hover:bg-[#faf7f4]"
+                      ? "bg-[#1e4536] font-medium text-white"
+                      : "border border-[#eadfd4] bg-white text-[#3d342c] hover:bg-[#faf6f1]"
                   }`}
                 >
-                  {filter.label} ({counts[filter.id] ?? 0})
+                  {filter.label}
                 </button>
               );
             })}
           </div>
-          <label className="relative inline-flex items-center self-start" htmlFor={sortId}>
-            <span className="sr-only">Ordenar contenidos</span>
-            <select
-              id={sortId}
-              value={sort}
-              onChange={(event) => {
-                setSort(event.target.value);
-                setPage(1);
-              }}
-              className="h-9 appearance-none rounded-lg border border-[#e6ddd4] bg-white pr-8 pl-3 text-[13px] text-[#2c1810] outline-none"
+          <div className="flex min-w-0 flex-1 items-center gap-3 lg:ml-auto lg:max-w-md">
+            <label htmlFor={searchId} className="sr-only">
+              Buscar contenidos
+            </label>
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-sm border border-[#eadfd4] bg-[#fbf8f5] px-3">
+              <Search size={15} strokeWidth={1.8} className="shrink-0 text-[#a89888]" aria-hidden="true" />
+              <input
+                id={searchId}
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Buscar contenidos..."
+                className="h-9 w-full bg-transparent text-sm text-[#2c1810] outline-none placeholder:text-[#b3a496]"
+              />
+            </div>
+            <Link
+              href="/admin/contenidos/nuevo"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-sm bg-[#c45c38] px-4 text-sm font-medium text-white transition-colors hover:bg-[#a84c2c]"
             >
-              <option value="recientes">Más recientes</option>
-              <option value="antiguos">Más antiguos</option>
-            </select>
-            <ChevronDown
-              size={14}
-              strokeWidth={1.8}
-              className="pointer-events-none absolute right-2.5 text-[#7c5c47]"
-              aria-hidden="true"
-            />
-          </label>
+              <Plus size={15} strokeWidth={2.2} aria-hidden="true" />
+              Nuevo contenido
+            </Link>
+          </div>
         </div>
 
-        <div className="mt-3 overflow-x-auto">
-          <table className="min-w-[760px] w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-[#f0e8e0] text-[13px] text-[#8d7b6d]">
-                <th className="px-3 py-3 font-medium">Título</th>
-                <th className="px-3 py-3 font-medium">Tipo</th>
-                <th className="px-3 py-3 font-medium">Estado</th>
-                <th className="px-3 py-3 font-medium">Fecha</th>
-                <th className="px-3 py-3 text-right font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pageItems.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-3 py-12 text-center text-sm text-[#7c5c47]">
-                    No hay contenidos con ese criterio.
-                  </td>
-                </tr>
-              ) : (
-                pageItems.map((contenido) => {
-                  return (
-                    <tr key={contenido.id} className="border-b border-[#f4eee8] last:border-b-0">
-                      <td className="px-3 py-3">
+        {pageItems.length === 0 ? (
+          <p className="mt-3 px-3 py-12 text-center text-sm text-[#7c5c47]">
+            No hay contenidos con ese criterio.
+          </p>
+        ) : (
+          <>
+            <ul className="mt-3 space-y-3 md:hidden">
+              {pageItems.map((contenido) => (
+                <li key={contenido.id} className="border-b border-[#e8dfd4] py-3">
+                  <div className="flex items-start gap-3">
+                    <Thumb contenido={contenido} />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-[#2c1810]">{contenido.titulo}</p>
+                      <p className="mt-0.5 text-[13px] leading-relaxed text-[#8d7b6d]">
+                        {contenido.descripcion}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <TipoCell tipo={contenido.tipo} />
+                    <EstadoBadge estado={contenido.estado} />
+                    <span className="text-[13px] text-[#8d7b6d]">
+                      {contenido.fecha_texto}
+                      {contenido.hora_texto ? ` · ${contenido.hora_texto}` : ""}
+                    </span>
+                  </div>
+                  <div className="mt-3 border-t border-[#f4eee8] pt-3">
+                    <RowActions
+                      contenido={contenido}
+                      busy={busyId === contenido.id}
+                      onEstado={changeEstado}
+                      onDelete={setPendingDelete}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-2 hidden overflow-x-auto md:block">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#e6dcd0] text-[13px] text-[#8a7968]">
+                    <th className="px-2 py-3 font-medium">Título</th>
+                    <th className="hidden w-44 px-2 py-3 font-medium lg:table-cell">Tipo</th>
+                    <th className="w-32 px-2 py-3 font-medium">Estado</th>
+                    <th className="hidden w-40 px-2 py-3 font-medium lg:table-cell">
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1"
+                        onClick={() => {
+                          setSort((current) => (current === "recientes" ? "antiguos" : "recientes"));
+                          setPage(1);
+                        }}
+                      >
+                        Fecha de publicación
+                        <ChevronDown
+                          size={13}
+                          strokeWidth={1.8}
+                          className={sort === "antiguos" ? "rotate-180" : ""}
+                          aria-hidden="true"
+                        />
+                      </button>
+                    </th>
+                    <th className="w-28 px-2 py-3 text-right font-medium">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageItems.map((contenido) => (
+                    <tr key={contenido.id} className="border-b border-[#efe6db] last:border-b-0">
+                      <td className="px-2 py-3.5">
                         <div className="flex items-center gap-3">
                           <Thumb contenido={contenido} />
                           <div className="min-w-0">
-                            <p className="font-medium text-[#2c1810]">{contenido.titulo}</p>
-                            <p className="mt-0.5 max-w-md truncate text-[13px] text-[#8d7b6d]">
+                            <p className="line-clamp-2 font-medium text-[#2c1810]">
+                              {contenido.titulo}
+                            </p>
+                            <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-[#8d7b6d]">
                               {contenido.descripcion}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3">
-                        <TipoBadge tipo={contenido.tipo} />
+                      <td className="hidden px-2 py-3.5 lg:table-cell">
+                        <TipoCell tipo={contenido.tipo} />
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-2 py-3.5">
                         <EstadoBadge estado={contenido.estado} />
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <p className="text-[#2c1810]">{contenido.fecha_texto}</p>
+                      <td className="hidden px-2 py-3.5 whitespace-nowrap lg:table-cell">
+                        <p className="text-[#3d342c]">{contenido.fecha_texto || "—"}</p>
                         {contenido.hora_texto ? (
-                          <p className="text-[12px] text-[#8d7b6d]">{contenido.hora_texto}</p>
+                          <p className="text-[12px] text-[#8a7968]">{contenido.hora_texto}</p>
                         ) : null}
                       </td>
-                      <td className="px-3 py-3">
+                      <td className="px-2 py-3.5">
                         <RowActions
                           contenido={contenido}
                           busy={busyId === contenido.id}
@@ -419,21 +541,21 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
                         />
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-3 border-t border-[#f0e8e0] px-3 pt-3">
-          <p className="text-[13px] text-[#8d7b6d]">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 pt-3">
+          <p className="text-[13px] text-[#8a7968]">
             Mostrando {from} a {to} de {visible.length} contenidos
           </p>
           <div className="flex items-center gap-1">
             <button
               type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#7c5c47] hover:bg-[#f4efe9] disabled:opacity-40"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
               aria-label="Página anterior"
               disabled={currentPage <= 1}
               onClick={() => setPage(currentPage - 1)}
@@ -446,10 +568,10 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
                 type="button"
                 aria-current={pageNumber === currentPage ? "page" : undefined}
                 onClick={() => setPage(pageNumber)}
-                className={`inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-[13px] ${
+                className={`inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-[13px] ${
                   pageNumber === currentPage
-                    ? "bg-[#2c1810] font-medium text-white"
-                    : "text-[#4d4036] hover:bg-[#f4efe9]"
+                    ? "bg-[#1e4536] font-medium text-white"
+                    : "text-[#4a3f36] hover:bg-[#efe6dc]"
                 }`}
               >
                 {pageNumber}
@@ -457,7 +579,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
             ))}
             <button
               type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#7c5c47] hover:bg-[#f4efe9] disabled:opacity-40"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
               aria-label="Página siguiente"
               disabled={currentPage >= totalPages}
               onClick={() => setPage(currentPage + 1)}

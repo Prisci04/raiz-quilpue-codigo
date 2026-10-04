@@ -247,7 +247,6 @@ function ContentCard({ item, index, featured = false, onOpen }) {
           Ver detalle
           <ArrowRight size={12} strokeWidth={1.8} aria-hidden="true" />
         </button>
-        </button>
       </div>
     </article>
   );

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, ImageIcon } from "lucide-react";
+import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import ContenidoEditor from "@/components/admin/contenidos/ContenidoEditor";
 import ContenidoPreviewDialog from "@/components/admin/contenidos/ContenidoPreviewDialog";
 import DeleteContenidoDialog from "@/components/admin/contenidos/DeleteContenidoDialog";
@@ -13,16 +14,39 @@ import {
   getContenidoAdmin,
   updateContenido,
 } from "@/lib/api/contenidos";
+import { discardUploadedPortada, uploadPortada } from "@/lib/api/media";
 import {
   DESCRIPCION_MAX_LENGTH,
   RESUMEN_MAX_LENGTH,
+  TIPOS_CONTENIDO,
+  TIPO_LABELS_ADMIN,
   TITULO_MAX_LENGTH,
 } from "@/lib/contenidos/documento.mjs";
 
 const EMPTY_DOC = { type: "doc", content: [{ type: "paragraph" }] };
+const PORTADA_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+const PORTADA_MAX_BYTES = 5 * 1024 * 1024;
+
+function imageNoticeMessage(imageNotice) {
+  if (imageNotice === "subir") {
+    return "El contenido se guardó, pero no se pudo subir la imagen.";
+  }
+
+  if (imageNotice === "guardar") {
+    return "El contenido se guardó, pero no se pudo asociar la imagen.";
+  }
+
+  return "";
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 const fieldClass =
-  "mt-1.5 w-full rounded-xl border border-[#e6ddd4] bg-[#fbfaf8] px-3 py-2.5 text-sm text-[#2c1810] outline-none focus:border-[#c4a484]";
+  "mt-1.5 w-full rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] px-3 py-2.5 text-sm text-[#2c1810] outline-none focus:border-[#c4a484]";
 
 function FieldLabel({ children, hint }) {
   return (
@@ -33,15 +57,19 @@ function FieldLabel({ children, hint }) {
   );
 }
 
-export default function ContenidoForm({ mode, contenidoId }) {
+export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
   const router = useRouter();
+  const fileRef = useRef(null);
   const editing = mode === "edit";
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState("");
-  const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(() => imageNoticeMessage(imageNotice));
   const [success, setSuccess] = useState("");
   const [preview, setPreview] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmPortada, setConfirmPortada] = useState(false);
+  const [portadaFile, setPortadaFile] = useState(null);
   const [form, setForm] = useState({
     titulo: "",
     descripcion: "",
@@ -84,16 +112,22 @@ export default function ContenidoForm({ mode, contenidoId }) {
     };
   }, [contenidoId, editing]);
 
+  const portadaPreview = useMemo(() => {
+    if (!portadaFile) return "";
+    return URL.createObjectURL(portadaFile);
+  }, [portadaFile]);
+
+  useEffect(() => {
+    if (!portadaPreview) return undefined;
+    return () => URL.revokeObjectURL(portadaPreview);
+  }, [portadaPreview]);
+
   function updateField(name, value) {
     setForm((current) => ({ ...current, [name]: value }));
   }
 
-  async function save(estado, action) {
-    setSaving(action);
-    setError("");
-    setSuccess("");
-
-    const payload = {
+  function contentPayload(estado) {
+    return {
       titulo: form.titulo,
       descripcion: form.descripcion,
       resumen: form.resumen,
@@ -101,23 +135,132 @@ export default function ContenidoForm({ mode, contenidoId }) {
       estado,
       contenido: form.contenido,
     };
+  }
+
+  function applySaved(saved) {
+    setPortadaFile(null);
+    setForm((current) => ({
+      ...current,
+      estado: saved.estado,
+      fecha_texto: saved.fecha_texto ?? "",
+      imagen_url: saved.imagen_url ?? null,
+      contenido: saved.contenido ?? current.contenido,
+    }));
+  }
+
+  function choosePortada(event) {
+    const next = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!next) return;
+
+    if (!PORTADA_TYPES.includes(next.type)) {
+      setError("El formato de imagen no está permitido.");
+      return;
+    }
+
+    if (next.size === 0 || next.size > PORTADA_MAX_BYTES) {
+      setError(next.size > PORTADA_MAX_BYTES ? "La imagen supera el máximo de 5 MB." : "El archivo no es válido.");
+      return;
+    }
+
+    setError("");
+    setConfirmPortada(false);
+    setPortadaFile(next);
+  }
+
+  async function saveExisting(payload) {
+    let uploaded = null;
+    const nextPayload = { ...payload };
+
+    if (portadaFile) {
+      setUploading(true);
+      uploaded = await uploadPortada(portadaFile, contenidoId);
+      nextPayload.imagen_url = uploaded.url;
+    }
 
     try {
+      const saved = await updateContenido(contenidoId, nextPayload);
+      applySaved(saved);
+      setSuccess("Contenido actualizado correctamente.");
+    } catch (saveError) {
+      if (uploaded?.url) {
+        await discardUploadedPortada(uploaded.url).catch(() => {});
+      }
+
+      throw saveError;
+    }
+  }
+
+  async function saveNew(payload) {
+    const created = await createContenido(payload);
+
+    if (!portadaFile) {
+      router.push("/admin/contenidos?creado=1");
+      return;
+    }
+
+    let uploaded = null;
+    setUploading(true);
+
+    try {
+      uploaded = await uploadPortada(portadaFile, created.id);
+      await updateContenido(created.id, { ...payload, imagen_url: uploaded.url });
+      router.push("/admin/contenidos?creado=1");
+    } catch {
+      if (uploaded?.url) {
+        await discardUploadedPortada(uploaded.url).catch(() => {});
+        router.push(`/admin/contenidos/${created.id}/editar?imagen=guardar`);
+        return;
+      }
+
+      router.push(`/admin/contenidos/${created.id}/editar?imagen=subir`);
+    }
+  }
+
+  async function save(estado, action) {
+    setSaving(action);
+    setError("");
+    setSuccess("");
+
+    try {
+      const payload = contentPayload(estado);
+
       if (editing) {
-        const saved = await updateContenido(contenidoId, payload);
-        setForm((current) => ({
-          ...current,
-          estado: saved.estado,
-          fecha_texto: saved.fecha_texto ?? "",
-          contenido: saved.contenido ?? current.contenido,
-        }));
-        setSuccess("Contenido actualizado correctamente.");
+        await saveExisting(payload);
       } else {
-        await createContenido(payload);
-        router.push("/admin/contenidos?creado=1");
+        await saveNew(payload);
       }
     } catch (saveError) {
-      setError(saveError.message);
+      setError(saveError.message || "No se pudo subir la imagen.");
+    } finally {
+      setSaving("");
+      setUploading(false);
+    }
+  }
+
+  async function removePortada() {
+    setConfirmPortada(false);
+
+    if (portadaFile) {
+      setPortadaFile(null);
+      return;
+    }
+
+    if (!editing || !form.imagen_url) return;
+
+    setSaving("imagen");
+    setError("");
+
+    try {
+      const saved = await updateContenido(contenidoId, {
+        ...contentPayload(form.estado),
+        imagen_url: null,
+      });
+      applySaved(saved);
+      setSuccess("La imagen de portada se eliminó.");
+    } catch (removeError) {
+      setError(removeError.message);
     } finally {
       setSaving("");
     }
@@ -137,7 +280,8 @@ export default function ContenidoForm({ mode, contenidoId }) {
     }
   }
 
-  const busy = Boolean(saving);
+  const busy = Boolean(saving) || uploading;
+  const portadaVisible = portadaPreview || form.imagen_url || "";
   const primaryEstado = editing ? form.estado : "publicada";
   const primaryLabel = editing ? "Guardar cambios" : "Publicar";
 
@@ -172,7 +316,7 @@ export default function ContenidoForm({ mode, contenidoId }) {
         <button
           type="button"
           onClick={() => setPreview(true)}
-          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#e6ddd4] bg-white px-3 text-sm text-[#2c1810]"
+          className="inline-flex min-h-10 items-center gap-2 rounded-sm border border-[#e6ddd4] bg-white px-3 text-sm text-[#2c1810]"
         >
           <Eye size={16} strokeWidth={1.8} aria-hidden="true" />
           Vista previa
@@ -180,16 +324,8 @@ export default function ContenidoForm({ mode, contenidoId }) {
       </div>
 
       {loading ? <p className="mt-6 text-sm text-[#7c5c47]">Cargando contenido…</p> : null}
-      {error ? (
-        <p className="mt-4 text-sm text-[#8d3b28]" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {success ? (
-        <p className="mt-4 text-sm text-[#2d7a46]" role="status">
-          {success}
-        </p>
-      ) : null}
+      {error ? <AdminNotice tone="error">{error}</AdminNotice> : null}
+      {success ? <AdminNotice>{success}</AdminNotice> : null}
 
       {!loading ? (
         <form
@@ -200,7 +336,7 @@ export default function ContenidoForm({ mode, contenidoId }) {
           }}
         >
           <div className="grid gap-4 lg:grid-cols-2">
-            <label className="block rounded-2xl border border-[#e7dfd6] bg-white p-4">
+            <label className="block rounded-sm border border-[#e7dfd6] bg-white p-4">
               <FieldLabel hint={`${form.titulo.length}/${TITULO_MAX_LENGTH}`}>
                 Título *
               </FieldLabel>
@@ -212,19 +348,21 @@ export default function ContenidoForm({ mode, contenidoId }) {
                 required
               />
             </label>
-            <label className="block rounded-2xl border border-[#e7dfd6] bg-white p-4">
+            <label className="block rounded-sm border border-[#e7dfd6] bg-white p-4">
               <FieldLabel>Tipo de contenido *</FieldLabel>
               <select
                 value={form.tipo}
                 onChange={(event) => updateField("tipo", event.target.value)}
                 className={fieldClass}
               >
-                <option value="patrimonio">Patrimonio</option>
-                <option value="noticia">Noticia</option>
-                <option value="capsula_historica">Cápsula histórica</option>
+                {TIPOS_CONTENIDO.map((tipo) => (
+                  <option key={tipo} value={tipo}>
+                    {TIPO_LABELS_ADMIN[tipo]}
+                  </option>
+                ))}
               </select>
             </label>
-            <label className="block rounded-2xl border border-[#e7dfd6] bg-white p-4">
+            <label className="block rounded-sm border border-[#e7dfd6] bg-white p-4">
               <FieldLabel hint={`${form.descripcion.length}/${DESCRIPCION_MAX_LENGTH}`}>
                 Descripción de tarjeta *
               </FieldLabel>
@@ -240,7 +378,7 @@ export default function ContenidoForm({ mode, contenidoId }) {
                 Texto breve que se muestra en el listado de contenidos.
               </p>
             </label>
-            <label className="block rounded-2xl border border-[#e7dfd6] bg-white p-4">
+            <label className="block rounded-sm border border-[#e7dfd6] bg-white p-4">
               <FieldLabel>Estado</FieldLabel>
               <select
                 value={form.estado}
@@ -251,13 +389,13 @@ export default function ContenidoForm({ mode, contenidoId }) {
                 <option value="publicada">Publicado</option>
               </select>
               <p className="mt-4 text-[13px] font-medium text-[#2c1810]">Fecha de publicación</p>
-              <p className="mt-1.5 rounded-xl border border-[#e6ddd4] bg-[#fbfaf8] px-3 py-2.5 text-sm text-[#7c5c47]">
+              <p className="mt-1.5 rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] px-3 py-2.5 text-sm text-[#7c5c47]">
                 {form.fecha_texto || "Se asigna al publicar"}
               </p>
             </label>
           </div>
 
-          <label className="block rounded-2xl border border-[#e7dfd6] bg-white p-4">
+          <label className="block rounded-sm border border-[#e7dfd6] bg-white p-4">
             <FieldLabel hint={`${form.resumen.length}/${RESUMEN_MAX_LENGTH}`}>
               Resumen para pop-up *
             </FieldLabel>
@@ -274,28 +412,93 @@ export default function ContenidoForm({ mode, contenidoId }) {
             </p>
           </label>
 
-          <div className="rounded-2xl border border-[#e7dfd6] bg-white p-4">
+          <div className="rounded-sm border border-[#e7dfd6] bg-white p-4">
             <FieldLabel>Imagen de portada</FieldLabel>
-            <div className="mt-3 flex min-h-28 items-center gap-4 rounded-xl border border-dashed border-[#e6ddd4] bg-[#fbfaf8] p-4">
-              {form.imagen_url ? (
-                <img
-                  src={form.imagen_url}
-                  alt=""
-                  className="h-20 w-28 rounded-lg object-cover"
-                />
+            <div className="mt-3 flex min-h-40 max-w-sm items-center justify-center overflow-hidden rounded-sm border border-dashed border-[#e6ddd4] bg-[#fbfaf8]">
+              {portadaVisible ? (
+                // La vista previa puede ser un archivo local (blob:) antes de subirlo.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={portadaVisible} alt="" className="h-40 w-full object-cover" />
               ) : (
-                <span className="inline-flex h-16 w-16 items-center justify-center rounded-lg bg-[#f3eee8] text-[#b7a394]">
-                  <ImageIcon size={18} strokeWidth={1.8} aria-hidden="true" />
-                </span>
+                <div className="flex flex-col items-center gap-2 px-4 py-8 text-[#b7a394]">
+                  <ImageIcon size={22} strokeWidth={1.6} aria-hidden="true" />
+                  <p className="text-sm text-[#7c5c47]">
+                    {uploading ? "Subiendo imagen..." : "Selecciona una imagen"}
+                  </p>
+                </div>
               )}
-              <p className="max-w-md text-sm leading-relaxed text-[#7c5c47]">
-                La carga de imágenes queda pendiente hasta conectar el almacenamiento. No es
-                obligatoria.
-              </p>
             </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept={PORTADA_TYPES.join(",")}
+              className="sr-only"
+              onChange={choosePortada}
+            />
+            {portadaFile ? (
+              <p className="mt-3 text-sm text-[#4d4036]">
+                {portadaFile.name}
+                <span className="text-[#8d7b6d]"> · {formatFileSize(portadaFile.size)}</span>
+              </p>
+            ) : null}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex min-h-10 items-center rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50"
+              >
+                {portadaVisible ? "Cambiar imagen" : "Seleccionar imagen"}
+              </button>
+              {portadaFile ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    setPortadaFile(null);
+                    setConfirmPortada(false);
+                  }}
+                  className="inline-flex min-h-10 items-center rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50"
+                >
+                  Quitar
+                </button>
+              ) : null}
+              {editing && form.imagen_url && !portadaFile ? (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setConfirmPortada(true)}
+                  className="inline-flex min-h-10 items-center rounded-sm border border-[#f0c7be] bg-[#fff6f3] px-4 text-sm font-medium text-[#8d3b28] disabled:opacity-50"
+                >
+                  {saving === "imagen" ? "Eliminando..." : "Eliminar imagen"}
+                </button>
+              ) : null}
+            </div>
+            {confirmPortada ? (
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#4d4036]">
+                <p>¿Quitar la imagen de portada?</p>
+                <button
+                  type="button"
+                  className="font-medium text-[#8d3b28]"
+                  onClick={removePortada}
+                >
+                  Quitar
+                </button>
+                <button
+                  type="button"
+                  className="text-[#7c5c47]"
+                  onClick={() => setConfirmPortada(false)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : null}
+            <p className="mt-2 text-[12px] text-[#8d7b6d]">
+              JPEG, PNG, WebP o AVIF. Máximo 5 MB. No es obligatoria.
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-[#e7dfd6] bg-white p-4">
+          <div className="rounded-sm border border-[#e7dfd6] bg-white p-4">
             <FieldLabel>Contenido *</FieldLabel>
             <div className="mt-3">
               <ContenidoEditor
@@ -312,7 +515,7 @@ export default function ContenidoForm({ mode, contenidoId }) {
                 type="button"
                 onClick={() => setConfirmDelete(true)}
                 disabled={busy}
-                className="inline-flex min-h-10 items-center rounded-xl border border-[#f0c7be] bg-[#fff6f3] px-4 text-sm font-medium text-[#8d3b28] disabled:opacity-50"
+                className="inline-flex min-h-10 items-center rounded-sm border border-[#f0c7be] bg-[#fff6f3] px-4 text-sm font-medium text-[#8d3b28] disabled:opacity-50"
               >
                 Eliminar
               </button>
@@ -326,7 +529,7 @@ export default function ContenidoForm({ mode, contenidoId }) {
                 type="button"
                 disabled={busy}
                 onClick={() => save("borrador", "draft")}
-                className="inline-flex min-h-10 items-center rounded-xl border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50"
+                className="inline-flex min-h-10 items-center rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50"
               >
                 {saving === "draft" ? "Guardando…" : "Guardar borrador"}
               </button>
@@ -334,7 +537,7 @@ export default function ContenidoForm({ mode, contenidoId }) {
                 type="button"
                 disabled={busy}
                 onClick={() => save(primaryEstado, "primary")}
-                className="inline-flex min-h-10 items-center rounded-xl bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50"
+                className="inline-flex min-h-10 items-center rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50"
               >
                 {saving === "primary" ? "Guardando…" : primaryLabel}
               </button>

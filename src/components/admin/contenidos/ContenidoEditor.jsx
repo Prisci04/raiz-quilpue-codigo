@@ -42,7 +42,7 @@ export default function ContenidoEditor({ initialContent, onChange }) {
   });
 
   return (
-    <div className="contenido-editor overflow-hidden rounded-xl border border-[#e6ddd4] bg-white">
+    <div className="contenido-editor overflow-hidden rounded-sm border border-[#e6ddd4] bg-white">
       {editor ? <ContenidoToolbar editor={editor} /> : <div className="h-12 bg-[#faf7f4]" />}
       <EditorContent editor={editor} />
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Inbox, Search, X } from "lucide-react";
 
@@ -183,13 +184,13 @@ export default function MuseoView({ items = [], error = "" }) {
               {items.length} {items.length === 1 ? "registro" : "registros"} en el archivo
             </p>
           </div>
-          <a
+          <Link
             href="/contenido?tipo=patrimonio"
             className="inline-flex min-h-12 items-center border border-[#bb9c82] px-4 py-3 text-sm font-semibold text-[#704a31] transition-colors hover:border-[#db700f] hover:text-[#db700f]"
           >
             Ver contenidos patrimoniales
             <ArrowRight size={15} className="ml-2" aria-hidden="true" />
-          </a>
+          </Link>
         </div>
       </section>
 

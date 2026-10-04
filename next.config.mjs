@@ -1,3 +1,7 @@
+import { supabaseProjectHostname } from "./src/lib/media/policy.mjs";
+
+const supabaseHost = supabaseProjectHostname();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -6,10 +10,15 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
-      {
-        protocol: "https",
-        hostname: "**.supabase.co",
-      },
+      ...(supabaseHost
+        ? [
+            {
+              protocol: "https",
+              hostname: supabaseHost,
+              pathname: "/storage/v1/object/public/public-media/**",
+            },
+          ]
+        : []),
     ],
   },
   experimental: {

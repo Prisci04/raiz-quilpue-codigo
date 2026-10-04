@@ -128,6 +128,15 @@ body {
   --admin-line: rgba(61, 36, 24, 0.08);
   --admin-ink: #2c1810;
   --admin-muted: #7c5c47;
+  --admin-radius: 6px;
+  --radius-xs: var(--admin-radius);
+  --radius-sm: var(--admin-radius);
+  --radius-md: var(--admin-radius);
+  --radius-lg: var(--admin-radius);
+  --radius-xl: var(--admin-radius);
+  --radius-2xl: var(--admin-radius);
+  --radius-3xl: var(--admin-radius);
+  --radius-4xl: var(--admin-radius);
   background: var(--admin-bg);
   color: var(--admin-ink);
 }
@@ -135,7 +144,7 @@ body {
 .admin-card {
   background: var(--admin-card);
   border: 1px solid var(--admin-line);
-  border-radius: 2px;
+  border-radius: var(--admin-radius);
   box-shadow:
     0 1px 1px rgba(44, 24, 16, 0.03),
     0 10px 28px rgba(44, 24, 16, 0.045);

@@ -14,7 +14,7 @@ export default function UsuarioStatusBadge({ estado }) {
 
   return (
     <span
-      className={`inline-flex min-h-6 items-center px-2 text-[11px] font-medium tracking-[0.12em] uppercase ${tone}`}
+      className={`inline-flex min-h-6 items-center rounded-md px-2 text-[11px] font-medium tracking-[0.12em] uppercase ${tone}`}
     >
       {label}
     </span>

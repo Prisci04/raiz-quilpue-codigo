@@ -10,6 +10,7 @@ import {
   parseEstadoContenido,
   parseUpdateContenido,
 } from "@/lib/contenidos/validation.mjs";
+import { parseOwnedPortadaUrl } from "@/lib/media/policy.mjs";
 import {
   actualizarContenido,
   cambiarEstadoContenido,
@@ -75,6 +76,14 @@ export async function PATCH(request, { params }) {
 
     if (!parsed.ok) {
       throw new ContenidoError("VALIDATION", parsed.message);
+    }
+
+    if (!soloEstado && parsed.value.imagen_url) {
+      const owned = parseOwnedPortadaUrl(parsed.value.imagen_url);
+
+      if (!owned || owned.registroId !== parsedId.value) {
+        throw new ContenidoError("VALIDATION", "La imagen de portada no es válida.");
+      }
     }
 
     const contenido = soloEstado

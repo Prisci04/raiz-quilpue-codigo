@@ -20,7 +20,7 @@ function ActionButton({ children, onClick, tone = "default", disabled, title }) 
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`inline-flex min-h-8 items-center border border-transparent px-2 text-[12px] font-medium tracking-wide transition-colors disabled:opacity-40 ${tones[tone]}`}
+      className={`inline-flex min-h-8 items-center rounded-md border border-transparent px-2 text-[12px] font-medium tracking-wide transition-colors disabled:opacity-40 ${tones[tone]}`}
     >
       {children}
     </button>
@@ -83,7 +83,7 @@ export default function UsuariosTable({
 }) {
   if (usuarios.length === 0) {
     return (
-      <div className="border border-[#bb9c82]/70 bg-[#fffdf9] px-6 py-12 text-sm text-[#7c5c47]">
+      <div className="rounded-md border border-[#bb9c82]/70 bg-[#fffdf9] px-6 py-12 text-sm text-[#7c5c47]">
         Todavía no hay usuarios internos.
       </div>
     );
@@ -102,7 +102,7 @@ export default function UsuariosTable({
         return (
           <li
             key={usuario.id}
-            className="border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-4"
+            className="rounded-md border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-4"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -130,7 +130,7 @@ export default function UsuariosTable({
         );
       })}
     </ul>
-    <div className="hidden overflow-x-auto border border-[#bb9c82]/70 bg-[#fffdf9] md:block">
+    <div className="hidden overflow-x-auto rounded-md border border-[#bb9c82]/70 bg-[#fffdf9] md:block">
       <table className="min-w-full border-t-2 border-[#db700f] text-left text-sm">
         <thead className="bg-[#f7f1ea] font-mono text-[10px] tracking-[0.16em] text-[#946541] uppercase">
           <tr>

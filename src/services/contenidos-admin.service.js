@@ -2,6 +2,7 @@ import "server-only";
 
 import { ContenidoError } from "@/lib/contenidos/errors.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { deleteOwnedPortada } from "@/services/storage.service";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const COLUMNS = "id,titulo,descripcion,tipo,estado,imagen_url,fecha_publicacion";
@@ -199,6 +200,10 @@ export async function actualizarContenido(id, input) {
     throw queryFailed(error);
   }
 
+  if (input.imagen_url !== undefined && current.imagen_url !== input.imagen_url) {
+    await deleteOwnedPortada(current.imagen_url);
+  }
+
   return mapContenidoDetalle(data);
 }
 
@@ -227,19 +232,19 @@ export async function cambiarEstadoContenido(id, estado) {
 }
 
 export async function eliminarContenido(id) {
-  const { data, error } = await adminClient()
-    .from("contenidos")
-    .delete()
-    .eq("id", id)
-    .select("id");
+  const current = await findContenidoRow(id);
+
+  if (!current) {
+    throw new ContenidoError("NOT_FOUND", "Contenido no encontrado.");
+  }
+
+  const { error } = await adminClient().from("contenidos").delete().eq("id", id);
 
   if (error) {
     throw queryFailed(error);
   }
 
-  if (!data?.length) {
-    throw new ContenidoError("NOT_FOUND", "Contenido no encontrado.");
-  }
+  await deleteOwnedPortada(current.imagen_url);
 
   return true;
 }
