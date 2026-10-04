@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar, MapPin, Ticket } from "lucide-react";
 
 function formatShortDate(dateString) {
   if (!dateString) return "";
@@ -77,10 +77,12 @@ export default function ActivityCard({ activity }) {
           </p>
         ) : null}
 
-        <p className="mt-2 hidden items-center gap-1.5 text-[12px] text-[#946541] md:flex">
-          <Clock size={14} strokeWidth={1.7} aria-hidden="true" />
-          {cupos} cupos
-        </p>
+        {cupos > 0 ? (
+          <p className="mt-2 hidden items-center gap-1.5 text-[12px] text-[#946541] md:flex">
+            <Ticket size={14} strokeWidth={1.7} aria-hidden="true" />
+            {cupos} cupos
+          </p>
+        ) : null}
       </div>
     </Link>
   );

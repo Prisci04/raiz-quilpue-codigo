@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowRight, Inbox } from "lucide-react";
+import { ArrowRight, Inbox, X } from "lucide-react";
 
 const FILTERS = [
   { id: "todos", label: "Todos" },
@@ -39,6 +39,60 @@ export default function ContenidoView({
     ? initialTipo
     : "todos";
   const [tipo, setTipo] = useState(initialType);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const closeButtonRef = useRef(null);
+  const dialogRef = useRef(null);
+  const openerRef = useRef(null);
+
+  function openContent(item) {
+    openerRef.current = document.activeElement;
+    setSelectedItem(item);
+  }
+
+  function closeContent() {
+    setSelectedItem(null);
+    openerRef.current?.focus();
+  }
+
+  useEffect(() => {
+    if (!selectedItem) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        setSelectedItem(null);
+        openerRef.current?.focus();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusableElements = dialogRef.current?.querySelectorAll(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusableElements?.length) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedItem]);
 
   const visibleItems = useMemo(() => {
     return items.filter((item) => {
@@ -63,8 +117,7 @@ export default function ContenidoView({
             Contenidos
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-[#946541]">
-            Toda la información que construyen la memoria de Quilpué.
-            Todo el contenido cultural en un solo espacio.
+            Todo lo que queremos compartir sobre Quilpué, reunido en un solo espacio. Explora nuestras noticias, contenidos patrimoniales, cápsulas históricas, expresiones culturales y relatos de la comunidad.
           </p>
         </div>
       </section>
@@ -122,7 +175,13 @@ export default function ContenidoView({
                   {visibleItems
                     .filter((item) => item.tipo === "patrimonio")
                     .map((item, index) => (
-                      <ContentCard key={item.id} item={item} index={index} featured />
+                      <ContentCard
+                        key={item.id}
+                        item={item}
+                        index={index}
+                        featured
+                        onSelect={openContent}
+                      />
                     ))}
                 </div>
               </section>
@@ -141,7 +200,12 @@ export default function ContenidoView({
                   {visibleItems
                     .filter((item) => item.tipo !== "patrimonio")
                     .map((item, index) => (
-                      <ContentCard key={item.id} item={item} index={index} />
+                      <ContentCard
+                        key={item.id}
+                        item={item}
+                        index={index}
+                        onSelect={openContent}
+                      />
                     ))}
                 </div>
               </section>
@@ -155,6 +219,83 @@ export default function ContenidoView({
           </p>
         </div>
       </div>
+      {selectedItem ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#704a31]/70 p-3 backdrop-blur-sm sm:p-6"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeContent();
+          }}
+        >
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="content-modal-title"
+            className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto border border-[#bb9c82] bg-[#e7dcd2] shadow-2xl"
+          >
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={closeContent}
+              aria-label="Cerrar contenido"
+              className="absolute top-3 right-3 z-10 inline-flex min-h-11 min-w-11 items-center justify-center bg-[#e7dcd2] text-[#704a31] shadow-md transition-colors hover:bg-[#704a31] hover:text-[#e7dcd2]"
+            >
+              <X size={20} strokeWidth={1.8} aria-hidden="true" />
+            </button>
+            <div className="relative h-52 overflow-hidden bg-[#bb9c82]/25 sm:h-72 md:h-80">
+              {selectedItem.image ? (
+                <Image
+                  src={selectedItem.image}
+                  alt={selectedItem.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 896px"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center font-mono text-xs tracking-wide text-[#946541] uppercase">
+                  Imagen próximamente
+                </div>
+              )}
+            </div>
+            <div className="p-6 sm:p-10 md:p-12">
+              <div className="mb-5 flex flex-wrap items-center gap-3">
+                <span className="bg-[#946541] px-2.5 py-1 font-mono text-[10px] tracking-wide text-[#e7dcd2] uppercase">
+                  {tipoLabel(selectedItem.tipo)}
+                </span>
+                {selectedItem.date ? (
+                  <span className="font-mono text-xs text-[#946541]">
+                    {formatDate(selectedItem.date)}
+                  </span>
+                ) : null}
+              </div>
+              <h2
+                id="content-modal-title"
+                className="mb-4 font-serif text-3xl leading-tight font-semibold text-[#704a31] sm:text-4xl"
+              >
+                {selectedItem.title}
+              </h2>
+              {selectedItem.description ? (
+                <p className="mb-6 text-lg leading-relaxed text-[#946541]">
+                  {selectedItem.description}
+                </p>
+              ) : null}
+              {selectedItem.content ? (
+                <div className="border-t border-[#bb9c82] pt-6">
+                  <h3 className="mb-3 font-serif text-xl font-semibold text-[#704a31]">
+                    Detalles
+                  </h3>
+                  <p className="text-base leading-loose whitespace-pre-line text-[#704a31]">
+                    {selectedItem.content}
+                  </p>
+                </div>
+              ) : null}
+              <div className="mt-10 border-t border-[#bb9c82] pt-5 font-mono text-xs text-[#946541]">
+                Archivo Raíz Quilpué · {tipoLabel(selectedItem.tipo)}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -174,7 +315,7 @@ function SectionHeading({ eyebrow, title, count, countLabel }) {
   );
 }
 
-function ContentCard({ item, index, featured = false }) {
+function ContentCard({ item, index, featured = false, onSelect }) {
   const imageClassName = featured
     ? "aspect-[4/3]"
     : "h-40 w-40 shrink-0 sm:h-32 sm:w-48";
@@ -218,10 +359,15 @@ function ContentCard({ item, index, featured = false }) {
             {item.description}
           </p>
         ) : null}
-        <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-[#db700f] uppercase">
-          Ver detalle
+        <button
+          type="button"
+          onClick={() => onSelect(item)}
+          aria-label={`Ver detalles de ${item.title}`}
+          className="inline-flex min-h-10 items-center gap-2 self-start border border-[#704a31] bg-[#704a31] px-3 py-2 font-mono text-[9px] font-semibold tracking-wide text-[#e7dcd2] uppercase transition-colors active:border-[#db700f] active:bg-[#db700f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#704a31]"
+        >
+          Ver detalles
           <ArrowRight size={12} strokeWidth={1.8} aria-hidden="true" />
-        </span>
+        </button>
       </div>
     </article>
   );

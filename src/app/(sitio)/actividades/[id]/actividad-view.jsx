@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Clock, MapPin, Ticket } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, MapPin } from "lucide-react";
 
 function formatLongDate(dateString) {
   if (!dateString) return "";
@@ -44,6 +44,32 @@ export default function ActividadView({ activity }) {
 
   const cupos = Number(activity.cupos) || 0;
   const hasCupos = cupos > 0;
+  const pendingDetails = [
+    { label: "Público", value: "Pendiente de completar" },
+    { label: "Edad o requisito de edad", value: "Pendiente de completar" },
+    {
+      label: "Cupos",
+      value: hasCupos ? `${cupos} cupos` : "Pendiente de confirmar",
+    },
+    { label: "Modalidad", value: "Pendiente de completar" },
+    { label: "Valor", value: "Pendiente de completar" },
+    {
+      label: "Información de inscripción",
+      value: "Formulario disponible a continuación",
+    },
+    {
+      label: "¿Requiere inscripción previa?",
+      value: "Pendiente de completar",
+    },
+    { label: "Requisitos de participación", value: "Pendiente de completar" },
+    { label: "Materiales necesarios", value: "Pendiente de completar" },
+    { label: "Recomendaciones", value: "Pendiente de completar" },
+    {
+      label: "Consideraciones de accesibilidad",
+      value: "Pendiente de completar",
+    },
+    { label: "Indicaciones especiales", value: "Pendiente de completar" },
+  ];
 
   function handleFormChange(event) {
     const { name, value } = event.target;
@@ -77,7 +103,7 @@ export default function ActividadView({ activity }) {
         </Link>
 
         <div className="mt-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-12">
-        <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#bb9c82]/40 lg:aspect-[4/5] lg:sticky lg:top-24">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#bb9c82]/40 lg:sticky lg:top-24">
           {activity.image ? (
             <Image
               src={activity.image}
@@ -108,38 +134,48 @@ export default function ActividadView({ activity }) {
         </h1>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {activity.date ? (
-            <span className="inline-flex items-center gap-1.5 bg-[#704a31] px-3 py-1.5 text-xs text-[#e7dcd2]">
-              <Calendar size={13} strokeWidth={1.8} aria-hidden="true" />
-              {formatLongDate(activity.date)}
-            </span>
-          ) : null}
-          {activity.time ? (
-            <span className="inline-flex items-center gap-1.5 border border-[#bb9c82] bg-[#f4ece4] px-3 py-1.5 text-xs">
-              <Clock size={13} strokeWidth={1.8} aria-hidden="true" />
-              {formatTime(activity.time)}
-            </span>
-          ) : null}
+          <span className="inline-flex items-center gap-1.5 bg-[#704a31] px-3 py-1.5 text-xs text-[#e7dcd2]">
+            <Calendar size={13} strokeWidth={1.8} aria-hidden="true" />
+            Fecha: {activity.date ? formatLongDate(activity.date) : "Pendiente de completar"}
+          </span>
+          <span className="inline-flex items-center gap-1.5 border border-[#bb9c82] bg-[#f4ece4] px-3 py-1.5 text-xs">
+            <Clock size={13} strokeWidth={1.8} aria-hidden="true" />
+            Horario: {activity.time ? formatTime(activity.time) : "Pendiente de completar"}
+          </span>
         </div>
 
         <ul className="mt-5 space-y-2 text-sm">
-          {activity.location ? (
-            <li className="flex items-start gap-2">
-              <MapPin size={16} strokeWidth={1.7} className="mt-0.5 shrink-0" aria-hidden="true" />
-              <span>{activity.location}</span>
-            </li>
-          ) : null}
           <li className="flex items-start gap-2">
-            <Ticket size={16} strokeWidth={1.7} className="mt-0.5 shrink-0" aria-hidden="true" />
-            <span>{cupos} cupos</span>
+            <MapPin size={16} strokeWidth={1.7} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <span>
+              <span className="font-semibold">Lugar / punto de encuentro: </span>
+              {activity.location || "Pendiente de completar"}
+            </span>
           </li>
         </ul>
 
-        {activity.fullDescription || activity.description ? (
-          <p className="mt-5 text-[15px] leading-7">
-            {activity.fullDescription || activity.description}
-          </p>
-        ) : null}
+        <p className="mt-5 text-[15px] leading-7">
+          {activity.fullDescription || activity.description || "Descripción pendiente de completar."}
+        </p>
+
+        <section className="mt-7 border-t border-[#bb9c82] pt-6">
+          <h2 className="font-serif text-xl font-semibold text-[#704a31]">
+            Información para participar
+          </h2>
+          <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {pendingDetails.map(({ label, value }) => (
+              <div
+                key={label}
+                className="border border-[#bb9c82] bg-[#f4ece4] px-4 py-3"
+              >
+                <dt className="text-xs font-semibold text-[#704a31]">{label}</dt>
+                <dd className="mt-1 text-sm leading-relaxed text-[#946541]">
+                  {value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
 
         <form
           onSubmit={handleInscriptionSubmit}

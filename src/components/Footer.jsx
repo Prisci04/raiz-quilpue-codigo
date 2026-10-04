@@ -7,6 +7,7 @@ const footerLinks = [
 	{ label: "Quiénes somos", href: "/quienes-somos" },
 	{ label: "Contenidos", href: "/contenido" },
 	{ label: "Actividades", href: "/actividades" },
+	{ label: "Museo Digital", href: "/museo" },
 ];
 
 function InstagramIcon({ className }) {
