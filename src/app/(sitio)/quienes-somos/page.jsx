@@ -10,8 +10,8 @@ const content = {
   missionTitle: "Corporación para la cultura e historia quilpueina Raíz Quilpué",
   // CAMBIAR TEXTO AQUÍ
   missionParagraphs: [
-    'Raíz Quilpué es una corporación cultural sin fines de lucro que nace desde el territorio con el propósito de rescatar, preservar y difundir la historia, la cultura y la identidad quilpueína.',
-  'Creemos que la identidad local se construye a partir de las historias, recuerdos, experiencias y expresiones culturales de quienes habitan la ciudad. Por ello, promovemos espacios de encuentro, participación y creación colectiva que fortalezcan el vínculo entre las personas y su territorio, mediante actividades comunitarias, intervenciones públicas, iniciativas patrimoniales, proyectos artísticos y acciones de difusión cultural, con el objetivo de contribuir al desarrollo de una comunidad más conectada, participativa y consciente de su historia.',
+    'Raíz Quilpué es una corporación cultural e histórica sin fines de lucro que nace desde el territorio con el propósito de rescatar, preservar y difundir la historia, la cultura y la identidad quilpueína.',
+  'Creemos que la identidad local se construye a partir de las historias, recuerdos, experiencias y expresiones culturales de quienes habitan la ciudad. Por ello, promovemos espacios de encuentro, participación y creación colectiva que fortalezcan el vínculo entre las personas y su territorio, mediante actividades comunitarias, intervenciones públicas, iniciativas patrimoniales, proyectos artísticos y acciones de difusión cultural, los cuales tienen el objetivo principal de contribuir al desarrollo de una comunidad más conectada, participativa y consciente de su historia.',
   'Nuestro trabajo se proyecta hacia la creación de un museo y centro cultural comunitario de Quilpué, concebido como un espacio abierto para la memoria, el arte, la educación y la participación ciudadana.'
   ],
   // CAMBIAR TEXTO AQUÍ
@@ -29,7 +29,7 @@ const content = {
       span: "md:col-span-7",
       title: "Identidad y pertenencia territorial",
       description:
-        "Reconocemos el territorio como parte esencial de nuestra identidad y promovemos el vínculo de las personas con Quilpué y su historia.",
+        "Reconocemos el territorio como parte esencial de nuestra identidad y promovemos el vínculo de las personas con Quilpué y su historia",
     },
     {
       icon: BookOpen,
@@ -74,7 +74,7 @@ const content = {
     name: "Millaray Demanet",
     role: "Presidenta",
     description:
-      "Como fundadora, mi propósito es seguir impulsando iniciativas que acerquen el patrimonio a las personas y permitan que nuevas generaciones conozcan y valoren la identidad de Quilpué",
+      "Como presidenta, mi propósito es impulsar un trabajo colaborativo que fortalezca la identidad local, promoviendo espacios donde la comunidad pueda participar, compartir sus memorias y reconocer el valor de su propio territorio.",
     image: "/images/quienes-somos/Presidenta.png",
   },
   // CAMBIAR TEXTO AQUÍ

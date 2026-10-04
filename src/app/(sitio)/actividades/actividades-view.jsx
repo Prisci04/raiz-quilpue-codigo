@@ -68,8 +68,8 @@ export default function ActividadesView({ activities = [], error = "", initialVi
             Actividades
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed sm:mt-6 sm:text-[17px]">
-            Participa en talleres, visitas guiadas, conferencias y festivales que
-            conectan a la comunidad de Quilpué con su patrimonio.
+            Descubre y participa en actividades que mantienen viva la historia y cultura de Quilpué, desde talleres y encuentros hasta muchas otras experiencias para compartir en comunidad.
+
           </p>
           </div>
           <label className="mt-5 flex min-h-12 w-full items-center gap-2 border border-[#bb9c82] bg-[#f4ece4] px-4 text-[#946541] lg:mt-0 lg:w-80 lg:shrink-0">
