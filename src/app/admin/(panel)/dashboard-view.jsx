@@ -5,7 +5,6 @@ import {
   FileText,
   Heart,
   Landmark,
-  MessageCircle,
   Ticket,
 } from "lucide-react";
 import DownloadReportButton from "@/components/admin/DownloadReportButton";
@@ -64,12 +63,6 @@ const QUICK_ACTIONS = [
     label: "Nueva pieza",
     hint: "Sumar al museo digital",
     icon: Landmark,
-  },
-  {
-    href: "/admin/comentarios",
-    label: "Ver comentarios",
-    hint: "Moderar el portal",
-    icon: MessageCircle,
   },
 ];
 

@@ -4,10 +4,8 @@ import {
   FileText,
   Landmark,
   LayoutDashboard,
-  MessageCircle,
   Settings,
   ShoppingBag,
-  Users,
 } from "lucide-react";
 
 export const ADMIN_NAV = [
@@ -21,8 +19,6 @@ export const ADMIN_NAV = [
       { href: "/admin/contenidos", label: "Contenidos", icon: FileText },
       { href: "/admin/actividades", label: "Actividades", icon: CalendarDays },
       { href: "/admin/museo", label: "Museo Digital", icon: Landmark },
-      { href: "/admin/participantes", label: "Participantes", icon: Users },
-      { href: "/admin/comentarios", label: "Comentarios", icon: MessageCircle },
       { href: "/admin/market", label: "Market", icon: ShoppingBag },
     ],
   },

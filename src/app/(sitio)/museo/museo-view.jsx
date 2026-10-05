@@ -1,16 +1,49 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Inbox, Search, X } from "lucide-react";
+import { MUSEO_CATEGORIES } from "@/lib/community-validation.mjs";
 
-const FILTERS = [
-  { id: "noticia", label: "Noticias" },
-  { id: "patrimonio", label: "Patrimonio" },
-  { id: "capsula_historica", label: "Cápsulas históricas" },
-  { id: "cultura", label: "Cultura" },
-  { id: "comunidad", label: "Comunidad" },
+const FILTERS = MUSEO_CATEGORIES;
+// CAMBIAR IMÁGENES DE CATEGORÍAS AQUÍ: se usan rutas de public/images para facilitar su reemplazo.
+const COLLECTIONS = [
+  {
+    id: "fotografias",
+    label: "Fotografías",
+    description: "Calles, barrios, paisajes, edificios y momentos de la vida cotidiana.",
+    image: "/images/contenido/archivo-historico.jpg",
+  },
+  {
+    id: "documentos",
+    label: "Documentos",
+    description: "Afiches, cartas, mapas, periódicos, invitaciones y otros documentos históricos.",
+    image: "/images/contenido/2025.jpeg",
+  },
+  {
+    id: "objetos_piezas",
+    label: "Objetos y piezas",
+    description: "Objetos cotidianos, herramientas y elementos de distintas épocas.",
+    image: "/images/contenido/reloj y vaca Quilpué -01.jpeg",
+  },
+  {
+    id: "memorias_relatos",
+    label: "Memorias y relatos",
+    description: "Recuerdos, testimonios y relatos de personas vinculadas con Quilpué.",
+    image: "/images/contenido/capsula-recuerdos1.jpg",
+  },
+  {
+    id: "lugares_memoria",
+    label: "Lugares con memoria",
+    description: "Espacios, edificios, calles y lugares importantes para la memoria colectiva.",
+    image: "/images/contenido/iglesia desde plaza.jpg",
+  },
+  {
+    id: "cultura_comunidad",
+    label: "Cultura y comunidad",
+    description: "Celebraciones, actividades, organizaciones, tradiciones y expresiones culturales.",
+    image: "/images/contenido/carozzi.jpeg",
+  },
 ];
 
 function tipoLabel(tipo) {
@@ -20,9 +53,10 @@ function tipoLabel(tipo) {
 function formatDate(dateString) {
   if (!dateString) return "";
 
+  if (/^\d{4}$/.test(String(dateString))) return String(dateString);
   const raw = String(dateString).slice(0, 10);
   const [year, month, day] = raw.split("-").map(Number);
-  if (!year || !month || !day) return "";
+  if (!year || !month || !day) return String(dateString);
 
   return new Date(year, month - 1, day).toLocaleDateString("es-CL", {
     day: "numeric",
@@ -35,14 +69,14 @@ export default function MuseoView({ items = [], error = "" }) {
   const [activeTipo, setActiveTipo] = useState("todos");
   const [query, setQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
+  const [showContribution, setShowContribution] = useState(false);
+  const [contributionSent, setContributionSent] = useState(false);
+  const [contributionError, setContributionError] = useState("");
+  const [sendingContribution, setSendingContribution] = useState(false);
+  const contributionRef = useRef(null);
   const closeButtonRef = useRef(null);
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
-
-  const availableFilters = useMemo(() => {
-    const types = new Set(items.map((item) => item.tipo));
-    return FILTERS.filter((filter) => types.has(filter.id));
-  }, [items]);
 
   const visibleItems = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("es-CL");
@@ -65,6 +99,48 @@ export default function MuseoView({ items = [], error = "" }) {
   function closeItem() {
     setSelectedItem(null);
     openerRef.current?.focus();
+  }
+
+  useEffect(() => {
+    if (showContribution) {
+      contributionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [showContribution]);
+
+  async function submitContribution(event) {
+    event.preventDefault();
+    setContributionError("");
+    setSendingContribution(true);
+    const formElement = event.currentTarget;
+    const formData = new FormData(formElement);
+    const file = formData.get("archivo");
+    try {
+      const response = await fetch("/api/museo/aportes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          nombre: formData.get("nombre"),
+          correo: formData.get("correo"),
+          categoria: formData.get("categoria"),
+          titulo: formData.get("titulo"),
+          descripcion: formData.get("descripcion"),
+          fecha_aproximada: formData.get("fecha_aproximada"),
+          lugar: formData.get("lugar"),
+          archivo_nombre: file instanceof File ? file.name : "",
+          informacion_adicional: formData.get("informacion_adicional"),
+        }),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body?.success) {
+        throw new Error(body?.error?.message || "No fue posible enviar el aporte.");
+      }
+      setContributionSent(true);
+      formElement.reset();
+    } catch (submitError) {
+      setContributionError(submitError.message);
+    } finally {
+      setSendingContribution(false);
+    }
   }
 
   useEffect(() => {
@@ -135,8 +211,8 @@ export default function MuseoView({ items = [], error = "" }) {
               <em className="text-[#e48d40]">vive en sus historias</em>
             </h1>
             <p className="mt-6 max-w-2xl text-base leading-relaxed text-[#e7dcd2]/85 sm:text-lg">
-              Un espacio para recorrer los contenidos publicados sobre el
-              patrimonio, la cultura y las historias de Quilpué.
+              Un archivo comunitario de fotografías, documentos, objetos,
+              relatos y lugares que guardan la memoria de Quilpué.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <a
@@ -146,12 +222,19 @@ export default function MuseoView({ items = [], error = "" }) {
                 Explorar el museo
                 <ArrowRight size={16} strokeWidth={1.8} aria-hidden="true" />
               </a>
-              <a
-                href="mailto:raizquilpue@gmail.com?subject=Aporte%20al%20Museo%20Digital"
+              <button
+                type="button"
+                aria-expanded={showContribution}
+                aria-controls="museo-contribution-form"
+                onClick={() => {
+                  setShowContribution((current) => !current);
+                  setContributionSent(false);
+                  setContributionError("");
+                }}
                 className="inline-flex min-h-12 items-center border border-[#e7dcd2]/60 px-5 py-3 text-sm font-semibold text-[#e7dcd2] transition-colors hover:bg-[#e7dcd2] hover:text-[#704a31]"
               >
-                Proponer un aporte
-              </a>
+                Quiero dar mi aporte
+              </button>
             </div>
           </div>
         </div>
@@ -161,37 +244,59 @@ export default function MuseoView({ items = [], error = "" }) {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
-        <div className="grid gap-8 border-b border-[#bb9c82] pb-12 md:grid-cols-[1fr_0.65fr] md:items-end">
-          <div>
-            <p className="mb-3 text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">
-              Un territorio · muchas historias
-            </p>
-            <h2 className="font-serif text-3xl leading-tight font-semibold text-[#704a31] sm:text-4xl">
-              Un archivo que reúne la memoria local
-            </h2>
-          </div>
-          <p className="text-sm leading-relaxed text-[#946541] sm:text-base">
-            Explora imágenes, relatos y publicaciones disponibles. Cada registro
-            conserva la información que se ha compartido hasta ahora.
+        <div className="border-b border-[#bb9c82] pb-8">
+          <p className="mb-3 text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">
+            Un territorio · muchas historias
+          </p>
+          <h2 className="font-serif text-3xl leading-tight font-semibold text-[#704a31] sm:text-4xl">
+            ¿Qué encontrarás en el museo?
+          </h2>
+          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-[#946541] sm:text-base">
+            Seis maneras de recorrer la memoria: cada colección es una puerta a
+            otras voces, lugares y épocas.
           </p>
         </div>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <div className="border-l-2 border-[#db700f] bg-[#bb9c82]/20 px-4 py-3">
-            <p className="font-serif text-lg font-semibold text-[#704a31]">
-              Registros publicados
-            </p>
-            <p className="mt-1 text-sm text-[#946541]">
-              {items.length} {items.length === 1 ? "registro" : "registros"} en el archivo
-            </p>
-          </div>
-          <Link
-            href="/contenido?tipo=patrimonio"
-            className="inline-flex min-h-12 items-center border border-[#bb9c82] px-4 py-3 text-sm font-semibold text-[#704a31] transition-colors hover:border-[#db700f] hover:text-[#db700f]"
-          >
-            Ver contenidos patrimoniales
-            <ArrowRight size={15} className="ml-2" aria-hidden="true" />
-          </Link>
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {COLLECTIONS.map((collection, index) => (
+            <button
+              key={collection.id}
+              type="button"
+              onClick={() => {
+                setActiveTipo(collection.id);
+                document.getElementById("coleccion")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="group overflow-hidden rounded-xl border border-[#bb9c82]/60 bg-[#f8f3ed] text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#db700f]/70 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#db700f]"
+            >
+              <div className="relative h-52 overflow-hidden bg-[#bb9c82]/30">
+                <Image
+                  src={collection.image}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#2c1810]/65 via-transparent to-transparent" />
+                <span className="absolute right-4 bottom-4 rounded-full border border-white/60 bg-[#2c1810]/25 px-3 py-1 font-mono text-[10px] tracking-[0.16em] text-white uppercase backdrop-blur-sm">
+                  Colección {String(index + 1).padStart(2, "0")}
+                </span>
+              </div>
+              <div className="p-5 sm:p-6">
+                <h3 className="font-serif text-xl font-semibold text-[#704a31]">
+                  {collection.label}
+                </h3>
+                <p className="mt-2 min-h-12 text-sm leading-relaxed text-[#946541]">
+                  {collection.description}
+                </p>
+                <span className="mt-5 inline-flex items-center gap-2 border-b border-[#db700f]/40 pb-1 font-mono text-[10px] font-semibold tracking-wide text-[#a4542c] uppercase transition-colors group-hover:border-[#db700f] group-hover:text-[#db700f]">
+                  Explorar colección <ArrowRight size={14} aria-hidden="true" />
+                </span>
+              </div>
+            </button>
+          ))}
         </div>
+        <p className="mt-6 text-sm text-[#946541]">
+          {items.length} {items.length === 1 ? "registro publicado" : "registros publicados"} en el archivo.
+        </p>
       </section>
 
       <section
@@ -222,7 +327,7 @@ export default function MuseoView({ items = [], error = "" }) {
             </p>
           </div>
 
-          <div className="mt-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="mt-8 flex flex-col gap-5">
             <div
               className="flex flex-wrap gap-2"
               role="group"
@@ -240,7 +345,7 @@ export default function MuseoView({ items = [], error = "" }) {
               >
                 Todas
               </button>
-              {availableFilters.map((filter) => (
+              {FILTERS.map((filter) => (
                 <button
                   key={filter.id}
                   type="button"
@@ -256,7 +361,7 @@ export default function MuseoView({ items = [], error = "" }) {
                 </button>
               ))}
             </div>
-            <label className="relative block w-full lg:max-w-sm">
+            <label className="relative block w-full">
               <span className="sr-only">Buscar en el museo</span>
               <Search
                 size={17}
@@ -269,7 +374,7 @@ export default function MuseoView({ items = [], error = "" }) {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Buscar en el archivo..."
-                className="min-h-12 w-full border border-[#e7dcd2]/30 bg-[#e7dcd2]/5 py-3 pr-4 pl-11 text-sm text-[#e7dcd2] outline-none placeholder:text-[#e7dcd2]/50 focus:border-[#e48d40]"
+                className="min-h-12 w-full border border-[#e7dcd2]/30 bg-[#e7dcd2]/5 py-3 pr-4 pl-11 text-sm text-[#e7dcd2] outline-none placeholder:text-[#e7dcd2]/50 focus:border-[#e48d40] sm:max-w-xl"
               />
             </label>
           </div>
@@ -344,31 +449,69 @@ export default function MuseoView({ items = [], error = "" }) {
       </section>
 
       <section className="bg-[#bb9c82]/25 px-6 py-16 sm:py-20">
-        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1fr_0.8fr] lg:items-center">
-          <div>
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
             <p className="mb-3 text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">
               Un museo hecho entre todos
             </p>
             <h2 className="font-serif text-3xl leading-tight font-semibold text-[#704a31] sm:text-4xl">
               ¿Tienes un recuerdo o registro sobre Quilpué?
             </h2>
-          </div>
-          <div>
-            <p className="text-sm leading-relaxed text-[#946541] sm:text-base">
-              Si quieres proponer una fotografía, documento o relato para el
-              archivo, puedes escribir al equipo de Raíz Quilpué. La
-              información se coordinará directamente.
+            <p className="mt-4 text-sm leading-relaxed text-[#946541] sm:text-base">
+              Comparte una fotografía, un documento, un objeto o un recuerdo
+              para que siga viva la memoria de Quilpué.
             </p>
-            <a
-              href="mailto:raizquilpue@gmail.com?subject=Aporte%20al%20Museo%20Digital"
-              className="mt-5 inline-flex min-h-12 items-center gap-2 bg-[#704a31] px-5 py-3 text-sm font-semibold text-[#e7dcd2] transition-colors hover:bg-[#db700f]"
+            <button
+              type="button"
+              aria-expanded={showContribution}
+              aria-controls="museo-contribution-form"
+              onClick={() => {
+                setShowContribution((current) => !current);
+                setContributionSent(false);
+                setContributionError("");
+              }}
+              className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-sm bg-[#704a31] px-6 py-3 text-sm font-semibold text-[#e7dcd2] transition-colors hover:bg-[#db700f]"
             >
-              Contactar a Raíz Quilpué
+              {showContribution ? "Cerrar formulario" : "Quiero dar mi aporte"}
               <ArrowRight size={15} aria-hidden="true" />
-            </a>
+            </button>
           </div>
         </div>
       </section>
+
+      {showContribution ? (
+        <div ref={contributionRef} id="museo-contribution-form" className="bg-[#bb9c82]/25 px-6 py-12 sm:py-16">
+          <section aria-labelledby="contribution-title" className="relative mx-auto max-w-4xl border border-[#bb9c82] bg-[#e7dcd2] p-5 sm:p-8">
+            <button type="button" onClick={() => setShowContribution(false)} aria-label="Cerrar formulario de colaboración" className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center text-[#704a31] hover:bg-[#bb9c82]/30"><X size={20} /></button>
+            {contributionSent ? (
+              <div className="py-12 text-center">
+                <p className="font-mono text-xs uppercase tracking-widest text-[#db700f]">Museo Digital</p>
+                <h2 id="contribution-title" className="mt-3 font-serif text-3xl font-semibold text-[#704a31]">Gracias por compartir tu historia</h2>
+                <p className="mt-3 text-sm leading-relaxed text-[#946541]">Tu aporte fue recibido por Raíz Quilpué. El archivo seleccionado no se envió; el equipo podrá contactarte para coordinarlo.</p>
+                <button type="button" onClick={() => setShowContribution(false)} className="mt-6 min-h-11 bg-[#704a31] px-5 text-sm font-semibold text-[#e7dcd2]">Cerrar</button>
+              </div>
+            ) : (
+              <>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#db700f]">Formulario de colaboración</p>
+                <h2 id="contribution-title" className="mt-2 font-serif text-3xl font-semibold text-[#704a31]">Comparte una pieza de tu historia</h2>
+                <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={submitContribution}>
+                  <label className="grid gap-1.5 text-sm text-[#704a31]">Nombre *<input name="nombre" required maxLength={160} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31]">Correo *<input name="correo" required type="email" maxLength={254} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Tipo de aporte *<select name="categoria" required defaultValue="" className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]"><option value="" disabled>Selecciona una opción</option>{FILTERS.map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Título *<input name="titulo" required maxLength={200} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Descripción *<textarea name="descripcion" required maxLength={10000} rows={4} className="border border-[#bb9c82] bg-[#f4ece4] p-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31]">Fecha aproximada<input name="fecha_aproximada" maxLength={120} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31]">Lugar<input name="lugar" maxLength={250} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Archivo / imagen *<input name="archivo" type="file" required accept="image/*,.pdf,application/pdf" className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] p-2 text-sm" /><span className="text-xs text-[#946541]">Fotografía o documento en imagen o PDF. El archivo no se envía al servidor en esta demostración.</span></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Información adicional<textarea name="informacion_adicional" maxLength={3000} rows={3} className="border border-[#bb9c82] bg-[#f4ece4] p-3 outline-none focus:border-[#db700f]" /></label>
+                  {contributionError ? <p role="alert" className="text-sm font-semibold text-[#a5452d] sm:col-span-2">{contributionError}</p> : null}
+                  <div className="flex justify-end sm:col-span-2"><button type="submit" disabled={sendingContribution} className="inline-flex min-h-12 items-center gap-2 bg-[#704a31] px-6 text-sm font-semibold text-[#e7dcd2] hover:bg-[#db700f] disabled:opacity-50">{sendingContribution ? "Enviando…" : "Enviar aporte"}<ArrowRight size={16} /></button></div>
+                </form>
+              </>
+            )}
+          </section>
+        </div>
+      ) : null}
 
       {selectedItem ? (
         <div

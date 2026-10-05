@@ -10,6 +10,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "f58ed02c-bca7-4fe0-8416-a57caa52aea4-figmacachedpreview.figma.site",
+      },
       ...(supabaseHost
         ? [
             {

@@ -1,7 +1,5 @@
 import { connection } from "next/server";
-import { mapContenidoVista } from "@/lib/contenido";
-import { MAX_LIMIT } from "@/lib/http";
-import { getContenidos } from "@/services/contenido.service";
+import { listPiezasMuseoPublicas } from "@/services/admin-community.service";
 import MuseoView from "./museo-view";
 
 export const metadata = {
@@ -17,8 +15,15 @@ export default async function MuseoPage() {
   let error = "";
 
   try {
-    const result = await getContenidos({ page: 1, limit: MAX_LIMIT });
-    items = result.data.map(mapContenidoVista).filter(Boolean);
+    items = (await listPiezasMuseoPublicas()).map((piece) => ({
+      id: piece.id,
+      title: piece.titulo,
+      description: piece.descripcion,
+      content: [piece.fecha_aproximada, piece.lugar].filter(Boolean).join(" · "),
+      tipo: piece.categoria,
+      image: piece.imagen_url,
+      date: piece.fecha_aproximada,
+    }));
   } catch {
     error =
       "No fue posible cargar el museo digital. Inténtalo de nuevo más tarde.";

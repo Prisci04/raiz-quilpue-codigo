@@ -8,7 +8,7 @@ import ContenidoDocumento from "@/components/contenido/ContenidoDocumento";
 
 const MODALIDAD = {
   presencial: "Presencial",
-  virtual: "Virtual",
+  virtual: "Online",
   hibrida: "Híbrida",
 };
 
@@ -77,6 +77,8 @@ function Dato({ icon: Icon, label, value }) {
 
 export default function ActividadView({ activity }) {
   const [confirmation, setConfirmation] = useState("");
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
@@ -100,16 +102,34 @@ export default function ActividadView({ activity }) {
     setFormData((current) => ({ ...current, [name]: value }));
   }
 
-  function handleInscriptionSubmit(event) {
+  async function handleInscriptionSubmit(event) {
     event.preventDefault();
+    setConfirmation("");
+    setFormError("");
 
     if (!hasCupos) {
-      setConfirmation("No quedan cupos disponibles para esta actividad.");
+      setFormError("No quedan cupos disponibles para esta actividad.");
       return;
     }
 
-    setConfirmation("¡Inscripción realizada correctamente!");
-    setFormData({ nombre: "", apellido: "", email: "", telefono: "" });
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/actividades/${activity.id}/inscripciones`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(formData),
+      });
+      const body = await response.json().catch(() => null);
+      if (!response.ok || !body?.success) {
+        throw new Error(body?.error?.message || "No fue posible registrar la inscripción.");
+      }
+      setConfirmation("¡Inscripción realizada correctamente!");
+      setFormData({ nombre: "", apellido: "", email: "", telefono: "" });
+    } catch (error) {
+      setFormError(error.message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const inputClass =
@@ -209,11 +229,14 @@ export default function ActividadView({ activity }) {
             </div>
             <button
               type="submit"
-              disabled={!hasCupos}
+              disabled={!hasCupos || submitting}
               className="mt-4 inline-flex min-h-12 w-full items-center justify-center bg-[#704a31] px-6 text-[12px] font-semibold tracking-[0.12em] text-[#f4ece4] uppercase disabled:opacity-50 sm:w-auto"
             >
-              Inscribirme
+              {submitting ? "Enviando…" : "Inscribirme"}
             </button>
+            {formError ? (
+              <p role="alert" className="mt-3 text-sm font-semibold text-[#a5452d]">{formError}</p>
+            ) : null}
             {confirmation ? (
               <p className="mt-3 text-sm font-semibold text-[#db700f]">{confirmation}</p>
             ) : null}

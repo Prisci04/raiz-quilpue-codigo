@@ -14,15 +14,9 @@ npm run dev
 
 ## Estado actual
 
-Hasta ahora solo existe el módulo público de **Actividades**.
+El portal público consulta las actividades publicadas y registra las inscripciones y aportes al Museo mediante la API. Las rutas administrativas requieren sesión interna y rol editor o administrador; no se debe consultar Supabase directamente desde el navegador.
 
-- Autenticación: no se usa.
-- Headers: no se requieren.
-- Métodos disponibles: solo `GET`.
-- El frontend debe consumir esta API, no Supabase de forma directa.
-- La página pública `/actividades` ya consume `GET /api/actividades`. El flujo es: página → API → base de datos.
-
-Estos endpoints son públicos porque el portal cultural solo consulta actividades con estado `publicada`.
+Para habilitar inscripciones, piezas del Museo y aportes, ejecutar una vez `database-documentacion/009_actividades_museo.sql` en el editor SQL de Supabase.
 
 ---
 
@@ -138,6 +132,37 @@ En los datos actuales, el `id=1` no está publicado. Por eso `/api/actividades/1
 
 ---
 
+### 3. Inscribirse en una actividad
+
+`POST /api/actividades/{id}/inscripciones`
+
+Registra nombre, apellido, correo y teléfono de una persona en una actividad publicada que requiere inscripción. La API valida que existan cupos.
+
+```json
+{
+  "nombre": "Ana",
+  "apellido": "Pérez",
+  "email": "ana@example.com",
+  "telefono": "+56912345678"
+}
+```
+
+### 4. Enviar un aporte al Museo Digital
+
+`POST /api/museo/aportes`
+
+Recibe los datos del formulario de colaboración y el nombre del archivo seleccionado. Como indica el formulario, el archivo no se transfiere ni almacena en el servidor.
+
+### Administración
+
+Las rutas `GET/POST /api/admin/actividades`, `GET/PATCH/DELETE /api/admin/actividades/{id}` y `GET /api/admin/actividades/{id}/participantes` gestionan actividades e inscripciones.
+
+Las rutas `GET/POST /api/admin/museo`, `GET/PATCH/DELETE /api/admin/museo/{id}`, `GET /api/admin/museo/aportes` y `DELETE /api/admin/museo/aportes/{id}` gestionan piezas y aportes. Estas rutas requieren sesión interna y rol de gestor de contenidos.
+
+Las categorías del museo son `fotografias`, `documentos`, `objetos_piezas`, `memorias_relatos`, `lugares_memoria` y `cultura_comunidad`.
+
+---
+
 ## Formato de errores
 
 ```json
@@ -172,24 +197,20 @@ Códigos actuales:
 
 ---
 
-## Reservado para después
-
-El sitio público sigue usando solo los `GET` de arriba. El service público pasa a llamarse así, sin cambiar la URL:
+## Services públicos
 
 | Función | Ruta actual |
 |---|---|
 | `getActividadesPublicadas({ page, limit })` | `GET /api/actividades` |
 | `getActividadPublicadaById(id)` | `GET /api/actividades/{id}` |
 
-Hoy esas funciones todavía se llaman `getActividades` y `getActividadById`.
+El admin no usa las rutas públicas para editar actividades. Sus rutas administrativas incluyen:
 
-El admin no usa esas rutas. Cuando exista el formulario, el service agrega estas funciones y viven en rutas propias:
-
-| Función | Ruta prevista |
+| Función | Ruta actual |
 |---|---|
-| `getActividadesAdmin({ page, limit })` | `GET /api/admin/actividades` |
-| `createActividad(datos)` | `POST /api/admin/actividades` |
-| `updateActividad(id, datos)` | `PATCH /api/admin/actividades/{id}` |
+| `listActividadesAdmin()` | `GET /api/admin/actividades` |
+| `saveActividad(datos)` | `POST /api/admin/actividades` |
+| `saveActividad(id, datos)` | `PATCH /api/admin/actividades/{id}` |
 | `deleteActividad(id)` | `DELETE /api/admin/actividades/{id}` |
 
-`getActividadesAdmin` lista todos los estados, no solo `publicada`. Crear, editar y borrar no se exponen en `/api/actividades`.
+`listActividadesAdmin` lista todos los estados, no solo `publicada`. Crear, editar y borrar no se exponen en `/api/actividades`.

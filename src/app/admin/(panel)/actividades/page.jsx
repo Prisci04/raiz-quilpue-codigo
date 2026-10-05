@@ -1,15 +1,20 @@
-import AdminPlaceholder from "@/components/admin/AdminPlaceholder";
+import ActividadesPanel from "@/components/admin/actividades/ActividadesPanel";
+import { listActividadesAdmin } from "@/services/admin-community.service";
 
 export const metadata = { title: "Actividades — Admin Raíz Quilpué" };
+export const dynamic = "force-dynamic";
 
-export default function AdminActividadesPage() {
-  return (
-    <AdminPlaceholder
-      eyebrow="Gestión"
-      title="Actividades"
-      description="Desde aquí se administrarán visitas, talleres, conferencias y el resto de la programación de Raíz Quilpué."
-      actionHref="/admin/actividades/nueva"
-      actionLabel="Nueva actividad"
-    />
-  );
+export default async function AdminActividadesPage({ searchParams }) {
+  const query = await searchParams;
+  let activities = [];
+  let error = "";
+  try {
+    activities = await listActividadesAdmin();
+  } catch {
+    error = "No se pudieron cargar las actividades. Revisa la configuración de la base de datos.";
+  }
+  const notice =
+    query.creado === "1" ? "Actividad creada correctamente." :
+      query.eliminado === "1" ? "Actividad eliminada correctamente." : "";
+  return <ActividadesPanel activities={activities} error={error} notice={notice} />;
 }

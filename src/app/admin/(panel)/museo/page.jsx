@@ -1,15 +1,20 @@
-import AdminPlaceholder from "@/components/admin/AdminPlaceholder";
+import MuseoPanel from "@/components/admin/museo/MuseoPanel";
+import { listPiezasMuseoAdmin } from "@/services/admin-community.service";
 
 export const metadata = { title: "Museo Digital — Admin Raíz Quilpué" };
+export const dynamic = "force-dynamic";
 
-export default function AdminMuseoPage() {
-  return (
-    <AdminPlaceholder
-      eyebrow="Colección"
-      title="Museo Digital"
-      description="Este espacio servirá para cargar, clasificar y publicar las piezas del museo digital."
-      actionHref="/admin/museo/nueva"
-      actionLabel="Nueva pieza"
-    />
-  );
+export default async function AdminMuseoPage({ searchParams }) {
+  const query = await searchParams;
+  let pieces = [];
+  let error = "";
+  try {
+    pieces = await listPiezasMuseoAdmin();
+  } catch {
+    error = "No se pudieron cargar las piezas del museo. Revisa la configuración de la base de datos.";
+  }
+  const notice =
+    query.creado === "1" ? "Pieza creada correctamente." :
+      query.eliminado === "1" ? "Pieza eliminada correctamente." : "";
+  return <MuseoPanel pieces={pieces} error={error} notice={notice} />;
 }
