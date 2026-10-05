@@ -4,7 +4,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const ACTIVIDAD_COLUMNS =
-  "id,titulo,descripcion,fecha,hora_inicio,hora_fin,lugar,publico_objetivo,modalidad,tipo_participacion,cupos,tipo_valor,valor_monto,imagen_url,estado,fecha_creacion";
+  "id,titulo,descripcion,fecha,hora_inicio,hora_fin,lugar,publico_objetivo,modalidad,tipo_participacion,cupos,tipo_valor,valor_monto,forma_pago,informacion_adicional,imagen_url,estado,fecha_creacion,fecha_actualizacion";
 const PIEZA_COLUMNS =
   "id,titulo,descripcion,categoria,fecha_aproximada,lugar,imagen_url,estado,fecha_creacion";
 

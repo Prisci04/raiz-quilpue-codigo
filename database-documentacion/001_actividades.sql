@@ -201,6 +201,17 @@ ON public.actividades
 FROM authenticated;
 
 
+/* Permisos para el backend administrativo */
+
+GRANT SELECT, INSERT, UPDATE, DELETE
+ON TABLE public.actividades
+TO service_role;
+
+GRANT USAGE, SELECT
+ON ALL SEQUENCES IN SCHEMA public
+TO service_role;
+
+
 /*
   El portal público solamente necesita consultar.
 */

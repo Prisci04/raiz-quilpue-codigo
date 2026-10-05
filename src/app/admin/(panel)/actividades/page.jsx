@@ -6,15 +6,34 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminActividadesPage({ searchParams }) {
   const query = await searchParams;
+
   let activities = [];
   let error = "";
+
   try {
     activities = await listActividadesAdmin();
-  } catch {
-    error = "No se pudieron cargar las actividades. Revisa la configuración de la base de datos.";
+  } catch (errorCaught) {
+    console.error(
+      "[AdminActividadesPage] Error al cargar actividades:",
+      errorCaught,
+    );
+
+    error =
+      "No se pudieron cargar las actividades. Revisa la configuración de la base de datos.";
   }
+
   const notice =
-    query.creado === "1" ? "Actividad creada correctamente." :
-      query.eliminado === "1" ? "Actividad eliminada correctamente." : "";
-  return <ActividadesPanel activities={activities} error={error} notice={notice} />;
+    query.creado === "1"
+      ? "Actividad creada correctamente."
+      : query.eliminado === "1"
+        ? "Actividad eliminada correctamente."
+        : "";
+
+  return (
+    <ActividadesPanel
+      activities={activities}
+      error={error}
+      notice={notice}
+    />
+  );
 }

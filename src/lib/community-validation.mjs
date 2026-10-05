@@ -93,21 +93,28 @@ export function parseActividadInput(input) {
   if (input.imagen_url && (!imagenUrl || !allowedImageUrl(imagenUrl))) return null;
 
   return {
-    titulo,
-    descripcion,
-    fecha,
-    hora_inicio: horaInicio,
-    hora_fin: horaFin,
-    lugar: text(input.lugar, 250),
-    publico_objetivo: text(input.publico_objetivo, 250),
-    modalidad,
-    tipo_participacion: participacion,
-    cupos,
-    tipo_valor: tipoValor,
-    valor_monto: tipoValor === "pagado" ? valorMonto : null,
-    imagen_url: imagenUrl,
-    estado,
-  };
+  titulo,
+  descripcion,
+  fecha,
+  hora_inicio: horaInicio,
+  hora_fin: horaFin,
+  lugar: text(input.lugar, 250),
+  publico_objetivo: text(input.publico_objetivo, 250),
+  modalidad,
+  tipo_participacion: participacion,
+  cupos,
+  tipo_valor: tipoValor,
+  valor_monto: tipoValor === "pagado" ? valorMonto : null,
+  forma_pago: text(input.forma_pago, 250),
+  informacion_adicional:
+    input.informacion_adicional &&
+    typeof input.informacion_adicional === "object" &&
+    !Array.isArray(input.informacion_adicional)
+      ? input.informacion_adicional
+      : null,
+  imagen_url: imagenUrl,
+  estado,
+};
 }
 
 export function parsePiezaMuseoInput(input) {
