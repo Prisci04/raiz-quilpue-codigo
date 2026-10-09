@@ -117,18 +117,10 @@ export default function MuseoView({ items = [], error = "" }) {
     try {
       const response = await fetch("/api/museo/aportes", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          nombre: formData.get("nombre"),
-          correo: formData.get("correo"),
-          categoria: formData.get("categoria"),
-          titulo: formData.get("titulo"),
-          descripcion: formData.get("descripcion"),
-          fecha_aproximada: formData.get("fecha_aproximada"),
-          lugar: formData.get("lugar"),
-          archivo_nombre: file instanceof File ? file.name : "",
-          informacion_adicional: formData.get("informacion_adicional"),
-        }),
+        headers: {
+          Accept: "application/json",
+        },
+        body: formData,
       });
       const body = await response.json().catch(() => null);
       if (!response.ok || !body?.success) {
