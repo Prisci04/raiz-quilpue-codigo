@@ -1,3 +1,5 @@
+import { compareActividades, cuposDisponibles } from "@/lib/actividades";
+import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const ESTADO_PUBLICADA = "publicada";
@@ -5,7 +7,7 @@ const ACTIVIDAD_LISTADO_COLUMNS =
   "id,titulo,descripcion,fecha,hora_inicio,hora_fin,lugar,publico_objetivo,modalidad,tipo_participacion,cupos,tipo_valor,valor_monto,imagen_url";
 const ACTIVIDAD_DETALLE_COLUMNS = `${ACTIVIDAD_LISTADO_COLUMNS},forma_pago,informacion_adicional`;
 
-function mapActividadPublica(row, { includeDetail = false } = {}) {
+function mapActividadPublica(row, { includeDetail = false, inscritos = 0 } = {}) {
   if (!row) {
     return null;
   }
@@ -22,6 +24,8 @@ function mapActividadPublica(row, { includeDetail = false } = {}) {
     modalidad: row.modalidad ?? null,
     tipo_participacion: row.tipo_participacion,
     cupos: row.cupos ?? null,
+    inscritos,
+    cupos_disponibles: cuposDisponibles(row.cupos, inscritos),
     tipo_valor: row.tipo_valor,
     valor_monto: row.valor_monto ?? null,
     imagen_url: row.imagen_url ?? null,
@@ -40,12 +44,8 @@ function buildPagination(page, limit, total) {
     page,
     limit,
     total,
-    totalPages: Math.ceil(total / limit),
+    totalPages: Math.ceil(total / limit) || 1,
   };
-}
-
-function isRangeNotSatisfiable(error) {
-  return error?.code === "PGRST103";
 }
 
 function publicadasQuery(columns, options) {
@@ -55,46 +55,47 @@ function publicadasQuery(columns, options) {
     .eq("estado", ESTADO_PUBLICADA);
 }
 
-async function getPublicActividadesCount() {
-  const { count, error } = await publicadasQuery("id", {
-    count: "exact",
-    head: true,
-  });
+async function countInscritos(ids) {
+  const counts = new Map(ids.map((id) => [id, 0]));
+
+  if (!ids.length) return counts;
+
+  const { data, error } = await getSupabaseAdminClient()
+    .from("actividad_inscripciones")
+    .select("actividad_id")
+    .in("actividad_id", ids);
 
   if (error) {
-    throw new Error("Failed to count actividades");
+    throw new Error("Failed to count inscripciones");
   }
 
-  return count ?? 0;
+  for (const row of data ?? []) {
+    counts.set(row.actividad_id, (counts.get(row.actividad_id) ?? 0) + 1);
+  }
+
+  return counts;
 }
 
 export async function getActividades({ page, limit }) {
-  const desde = (page - 1) * limit;
-  const hasta = desde + limit - 1;
-
-  const { data, error, count } = await publicadasQuery(ACTIVIDAD_LISTADO_COLUMNS, {
-    count: "exact",
-  })
-    .order("fecha", { ascending: true, nullsFirst: false })
-    .order("hora_inicio", { ascending: true, nullsFirst: false })
-    .order("id", { ascending: true })
-    .range(desde, hasta);
+  const { data, error } = await publicadasQuery(ACTIVIDAD_LISTADO_COLUMNS).order("id", {
+    ascending: true,
+  });
 
   if (error) {
-    if (isRangeNotSatisfiable(error)) {
-      const total = await getPublicActividadesCount();
-      return {
-        data: [],
-        pagination: buildPagination(page, limit, total),
-      };
-    }
-
     throw new Error("Failed to list actividades");
   }
 
+  const rows = data ?? [];
+  const counts = await countInscritos(rows.map((row) => row.id));
+  const sorted = rows
+    .map((row) => mapActividadPublica(row, { inscritos: counts.get(row.id) ?? 0 }))
+    .sort(compareActividades);
+
+  const desde = (page - 1) * limit;
+
   return {
-    data: (data ?? []).map((row) => mapActividadPublica(row)),
-    pagination: buildPagination(page, limit, count ?? 0),
+    data: sorted.slice(desde, desde + limit),
+    pagination: buildPagination(page, limit, sorted.length),
   };
 }
 
@@ -107,5 +108,11 @@ export async function getActividadById(id) {
     throw new Error("Failed to get actividad");
   }
 
-  return mapActividadPublica(data, { includeDetail: true });
+  if (!data) return null;
+
+  const counts = await countInscritos([data.id]);
+  return mapActividadPublica(data, {
+    includeDetail: true,
+    inscritos: counts.get(data.id) ?? 0,
+  });
 }

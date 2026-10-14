@@ -432,6 +432,21 @@ export default function MuseoPanel({
                       className="border-b border-[#f3eee8]"
                     >
                       <td className="px-3 py-4">
+                        <div className="flex items-center gap-3">
+                          {piece.imagen_url ? (
+                            // Miniatura de portada; puede ser Unsplash, /images/ o almacenamiento.
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={piece.imagen_url}
+                              alt=""
+                              className="h-12 w-16 shrink-0 rounded-md object-cover"
+                            />
+                          ) : (
+                            <span className="inline-flex h-12 w-16 shrink-0 items-center justify-center rounded-md bg-[#f3eee8] text-[#b7a394]">
+                              <FileImage size={16} />
+                            </span>
+                          )}
+                          <div className="min-w-0">
                         <p className="font-medium text-[#2c1810]">
                           {piece.titulo}
                         </p>
@@ -439,6 +454,8 @@ export default function MuseoPanel({
                         <p className="mt-1 max-w-xs truncate text-xs text-[#8d7b6d]">
                           {piece.descripcion}
                         </p>
+                          </div>
+                        </div>
                       </td>
 
                       <td className="px-3 py-4 text-[#5c4d42]">
@@ -670,6 +687,8 @@ export default function MuseoPanel({
                               rel="noreferrer"
                               className="block w-fit"
                             >
+                              {/* Miniatura de un archivo de la comunidad; puede ser almacenamiento externo. */}
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={entry.archivo_url}
                                 alt={`Archivo aportado: ${entry.titulo}`}

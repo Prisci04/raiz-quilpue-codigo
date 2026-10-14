@@ -1,10 +1,12 @@
 import { jsonError, jsonSuccess, parsePositiveInteger } from "@/lib/http";
 import { runAdminCommunity, readJsonBody } from "@/lib/admin-community-http";
-import { parseActividadInput } from "@/lib/community-validation.mjs";
+import { parseActividadEstado, parseActividadInput } from "@/lib/community-validation.mjs";
+import { parseOwnedPortadaUrl } from "@/lib/media/policy.mjs";
 import {
   deleteActividadAdmin,
   getActividadAdmin,
   saveActividadAdmin,
+  saveActividadEstadoAdmin,
 } from "@/services/admin-community.service";
 
 export const dynamic = "force-dynamic";
@@ -29,10 +31,26 @@ export async function PATCH(request, { params }) {
   return runAdminCommunity(request, "PATCH /api/admin/actividades/[id]", async () => {
     const parsed = await parseId(params);
     if (!parsed.ok) return jsonError(400, "VALIDATION", "El identificador no es válido.");
+
     const body = await readJsonBody(request);
-    const input = parseActividadInput(body);
-    if (!input) return jsonError(400, "VALIDATION", "Revisa los datos de la actividad.");
-    return jsonSuccess(await saveActividadAdmin(parsed.value, input));
+    const soloEstado = Boolean(body) && Object.keys(body).length === 1 && "estado" in body;
+    const input = soloEstado ? parseActividadEstado(body) : parseActividadInput(body);
+    if (!input.ok) return jsonError(400, "VALIDATION", input.message);
+
+    if (!soloEstado && input.value.imagen_url) {
+      const owned = parseOwnedPortadaUrl(input.value.imagen_url);
+      if (owned && (owned.contexto !== "actividades" || owned.registroId !== parsed.value)) {
+        return jsonError(400, "VALIDATION", "La imagen de la actividad no es válida.");
+      }
+    }
+
+    const saved = soloEstado
+      ? await saveActividadEstadoAdmin(parsed.value, input.value.estado)
+      : await saveActividadAdmin(parsed.value, input.value);
+
+    return saved
+      ? jsonSuccess(saved)
+      : jsonError(404, "NOT_FOUND", "Actividad no encontrada.");
   });
 }
 
@@ -40,7 +58,9 @@ export async function DELETE(request, { params }) {
   return runAdminCommunity(request, "DELETE /api/admin/actividades/[id]", async () => {
     const parsed = await parseId(params);
     if (!parsed.ok) return jsonError(400, "VALIDATION", "El identificador no es válido.");
-    await deleteActividadAdmin(parsed.value);
-    return jsonSuccess({ eliminado: true });
+    const deleted = await deleteActividadAdmin(parsed.value);
+    return deleted
+      ? jsonSuccess({ eliminado: true })
+      : jsonError(404, "NOT_FOUND", "Actividad no encontrada.");
   });
 }

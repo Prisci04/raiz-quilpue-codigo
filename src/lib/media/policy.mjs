@@ -29,19 +29,24 @@ const FOLDERS = {
     galeria: (registroId) => `actividades/${registroId}/galeria`,
   },
   museo: {
-    fotografia: () => "museo/fotografias",
+    portada: (registroId) => `museo/${registroId}/portada`,
   },
 };
 
 export const MEDIA_UPLOADS = {
   contenidos: ["portada"],
+  actividades: ["portada"],
+  museo: ["portada"],
 };
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const OWNED_PORTADA =
-  /^contenidos\/([1-9][0-9]*)\/portada\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.(jpg|png|webp|avif)$/i;
+  /^(contenidos|actividades|museo)\/([1-9][0-9]*)\/portada\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.(jpg|png|webp|avif)$/i;
+
+const APORTE_IMAGE =
+  /^museo\/aportes\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png|webp|avif)$/i;
 
 export function supabaseProjectHostname(envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL) {
   if (typeof envUrl !== "string" || !envUrl.trim()) return null;
@@ -184,15 +189,13 @@ export function buildObjectPath(target, extension) {
   return `${target.folder}/${crypto.randomUUID()}.${extension}`;
 }
 
-export function parseOwnedPortadaUrl(value, envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL) {
+function parseProjectPublicMedia(value, envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL) {
   if (typeof value !== "string" || !value.trim()) return null;
 
   const hostname = supabaseProjectHostname(envUrl);
-
   if (!hostname) return null;
 
   let url;
-
   try {
     url = new URL(value.trim());
   } catch {
@@ -203,25 +206,41 @@ export function parseOwnedPortadaUrl(value, envUrl = process.env.NEXT_PUBLIC_SUP
   if (url.hostname.toLowerCase() !== hostname) return null;
 
   const prefix = `/storage/v1/object/public/${MEDIA_BUCKET}/`;
-
   if (!url.pathname.startsWith(prefix)) return null;
 
   let objectPath;
-
   try {
     objectPath = decodeURIComponent(url.pathname.slice(prefix.length));
   } catch {
     return null;
   }
 
-  const match = OWNED_PORTADA.exec(objectPath);
+  return { objectPath, publicUrl: url.href };
+}
 
-  if (!match || !UUID.test(match[2])) return null;
+export function parseOwnedPortadaUrl(value, envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  const parsed = parseProjectPublicMedia(value, envUrl);
+  if (!parsed) return null;
+
+  const match = OWNED_PORTADA.exec(parsed.objectPath);
+  if (!match || !UUID.test(match[3])) return null;
 
   return {
     bucket: MEDIA_BUCKET,
-    path: objectPath,
-    registroId: Number(match[1]),
-    publicUrl: url.href,
+    contexto: match[1].toLowerCase(),
+    path: parsed.objectPath,
+    registroId: Number(match[2]),
+    publicUrl: parsed.publicUrl,
+  };
+}
+
+export function parseOwnedAporteImageUrl(value, envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  const parsed = parseProjectPublicMedia(value, envUrl);
+  if (!parsed || !APORTE_IMAGE.test(parsed.objectPath)) return null;
+
+  return {
+    bucket: MEDIA_BUCKET,
+    path: parsed.objectPath,
+    publicUrl: parsed.publicUrl,
   };
 }

@@ -43,8 +43,20 @@ function formatHorario(inicio, fin) {
   return "Horario pendiente";
 }
 
-export default function ActivityCard({ activity }) {
+function cuposText(activity) {
+  if (activity.pasada) return "Actividad finalizada";
+  if (activity.tipo_participacion === "inscripcion") {
+    if (!Number.isInteger(activity.cupos)) return "Inscripción abierta";
+    const remaining = Number.isInteger(activity.cupos_disponibles)
+      ? activity.cupos_disponibles
+      : activity.cupos;
+    return remaining > 0 ? `${remaining} cupos disponibles` : "Sin cupos";
+  }
   const cupos = Number.isInteger(activity.cupos) ? activity.cupos : null;
+  return cupos === null ? "Cupos por confirmar" : `Cupos: ${cupos}`;
+}
+
+export default function ActivityCard({ activity }) {
   const modalidad = MODALIDAD[activity.modalidad] ?? null;
 
   return (
@@ -66,7 +78,11 @@ export default function ActivityCard({ activity }) {
             Imagen próximamente
           </div>
         )}
-        {modalidad ? (
+        {activity.pasada ? (
+          <span className="absolute top-3 left-3 bg-[#704a31] px-2 py-1 text-[11px] font-bold tracking-wide text-[#f4ece4] uppercase">
+            Finalizada
+          </span>
+        ) : modalidad ? (
           <span className="absolute top-3 left-3 bg-[#e6b325] px-2 py-1 text-[11px] font-bold tracking-wide text-[#3d2914] uppercase">
             {modalidad}
           </span>
@@ -95,7 +111,7 @@ export default function ActivityCard({ activity }) {
 
         <div className="mt-auto pt-3">
           <p className="text-[13px] text-[#5c331c]">
-            {cupos === null ? "Cupos por confirmar" : `Cupos: ${cupos}`}
+            {cuposText(activity)}
           </p>
 
           <span className="mt-3 inline-flex min-h-11 w-full items-center justify-center bg-[#704a31] px-4 text-[11px] font-semibold tracking-[0.14em] text-[#f4ece4] uppercase">

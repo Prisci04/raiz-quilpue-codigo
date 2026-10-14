@@ -13,11 +13,11 @@ function failed(body, status) {
   return error;
 }
 
-export async function uploadPortada(file, registroId) {
+export async function uploadPortada(file, registroId, contexto = "contenidos") {
   const body = new FormData();
 
   body.set("file", file);
-  body.set("contexto", "contenidos");
+  body.set("contexto", contexto);
   body.set("registroId", String(registroId));
   body.set("tipoImagen", "portada");
 

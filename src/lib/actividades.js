@@ -1,7 +1,53 @@
+export function todayISO() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Santiago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+export function isActividadPasada(fecha) {
+  return Boolean(fecha) && fecha < todayISO();
+}
+
+export function cuposDisponibles(cupos, inscritos) {
+  if (!Number.isInteger(cupos)) return null;
+  const used = Number.isInteger(inscritos) ? inscritos : 0;
+  return Math.max(0, cupos - used);
+}
+
+export function compareActividades(left, right) {
+  const today = todayISO();
+
+  function rank(row) {
+    if (!row.fecha) return 1;
+    return row.fecha >= today ? 0 : 2;
+  }
+
+  const rankDiff = rank(left) - rank(right);
+  if (rankDiff !== 0) return rankDiff;
+
+  if (!left.fecha && !right.fecha) return left.id - right.id;
+  if (rank(left) === 2) {
+    const past = String(right.fecha).localeCompare(String(left.fecha));
+    return past || left.id - right.id;
+  }
+
+  const byDate = String(left.fecha).localeCompare(String(right.fecha));
+  if (byDate) return byDate;
+
+  const byTime = String(left.hora_inicio ?? "").localeCompare(String(right.hora_inicio ?? ""));
+  return byTime || left.id - right.id;
+}
+
 export function mapActividadVista(row) {
   if (!row) {
     return null;
   }
+
+  const inscritos = Number.isInteger(row.inscritos) ? row.inscritos : 0;
+  const disponibles = cuposDisponibles(row.cupos, inscritos);
 
   return {
     id: row.id,
@@ -15,10 +61,13 @@ export function mapActividadVista(row) {
     modalidad: row.modalidad ?? null,
     tipo_participacion: row.tipo_participacion ?? null,
     cupos: row.cupos ?? null,
+    inscritos,
+    cupos_disponibles: disponibles,
     tipo_valor: row.tipo_valor ?? null,
     valor_monto: row.valor_monto ?? null,
     forma_pago: row.forma_pago ?? null,
     informacion_adicional: row.informacion_adicional ?? null,
     imagen_url: row.imagen_url ?? null,
+    pasada: isActividadPasada(row.fecha),
   };
 }

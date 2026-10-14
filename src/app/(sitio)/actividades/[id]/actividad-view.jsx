@@ -87,18 +87,42 @@ export default function ActividadView({ activity }) {
   });
 
   const cupos = Number.isInteger(activity.cupos) ? activity.cupos : null;
-  const hasCupos = cupos === null || cupos > 0;
-  const requiereInscripcion = activity.tipo_participacion === "inscripcion";
+  const disponibles = Number.isInteger(activity.cupos_disponibles)
+    ? activity.cupos_disponibles
+    : cupos;
+  const hasCupos = cupos === null || disponibles > 0;
+  const finalizada = Boolean(activity.pasada);
+  const requiereInscripcion = activity.tipo_participacion === "inscripcion" && !finalizada;
   const modalidad = MODALIDAD[activity.modalidad] ?? "Modalidad pendiente";
   const participacion = PARTICIPACION[activity.tipo_participacion] ?? "Participación pendiente";
   const fecha = formatLongDate(activity.fecha);
   const hora = formatHorario(activity.hora_inicio, activity.hora_fin);
   const lugar = activity.lugar || "Lugar pendiente";
   const valor = formatValor(activity.tipo_valor, activity.valor_monto);
-  const cuposLabel = cupos === null ? "Por confirmar" : `${cupos} cupos`;
+  const cuposLabel = activity.tipo_participacion === "inscripcion"
+    ? cupos === null
+      ? "Inscripción abierta"
+      : hasCupos
+        ? `${disponibles} de ${cupos} disponibles`
+        : "Sin cupos disponibles"
+    : cupos === null
+      ? "Por confirmar"
+      : `${cupos} cupos`;
 
   function handleFormChange(event) {
     const { name, value } = event.target;
+    if (name === "telefono") {
+      let digits = value.replace(/\D/g, "");
+      if (digits.startsWith("56") && digits.length >= 11) digits = digits.slice(2);
+      digits = digits.slice(0, 9);
+      const formatted = digits.length <= 1
+        ? digits
+        : digits.length <= 5
+          ? `${digits.slice(0, 1)} ${digits.slice(1)}`
+          : `${digits.slice(0, 1)} ${digits.slice(1, 5)} ${digits.slice(5)}`;
+      setFormData((current) => ({ ...current, telefono: formatted }));
+      return;
+    }
     setFormData((current) => ({ ...current, [name]: value }));
   }
 
@@ -168,7 +192,7 @@ export default function ActividadView({ activity }) {
             <span className="bg-[#704a31] px-2.5 py-1 font-mono text-[10px] tracking-wide text-[#f4ece4] uppercase">
               {modalidad}
             </span>
-            <span className="font-mono text-[11px] text-[#946541]">{participacion}</span>
+            <span className="font-mono text-[11px] text-[#946541]">{finalizada ? "Finalizada" : participacion}</span>
           </div>
 
           <h1 className="mt-5 font-serif text-4xl leading-tight font-medium text-[#5c331c] sm:text-5xl">
@@ -203,7 +227,11 @@ export default function ActividadView({ activity }) {
           ) : null}
         </div>
 
-        {requiereInscripcion ? (
+        {activity.tipo_participacion === "inscripcion" && finalizada ? (
+          <p className="mt-10 border border-[#bb9c82] bg-[#f4ece4] px-5 py-4 text-sm text-[#704a31]">
+            Las inscripciones de esta actividad ya cerraron.
+          </p>
+        ) : requiereInscripcion ? (
           <form
             onSubmit={handleInscriptionSubmit}
             className="mt-10 border border-[#bb9c82] bg-[#f4ece4] p-5 sm:p-6"
@@ -220,11 +248,40 @@ export default function ActividadView({ activity }) {
               </label>
               <label className="grid gap-1.5 text-sm sm:col-span-2">
                 Correo electrónico
-                <input name="email" type="email" value={formData.email} onChange={handleFormChange} required className={inputClass} />
+                <input
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={formData.email}
+                  onChange={handleFormChange}
+                  required
+                  pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
+                  title="Usa un correo con @ y un dominio como .cl o .com"
+                  className={inputClass}
+                />
               </label>
               <label className="grid gap-1.5 text-sm sm:col-span-2">
                 Teléfono
-                <input name="telefono" type="tel" value={formData.telefono} onChange={handleFormChange} required className={inputClass} />
+                <span className="flex min-h-12 border border-[#bb9c82] bg-[#e7dcd2]">
+                  <span className="flex items-center px-3 text-sm font-medium text-[#704a31]" aria-hidden="true">+56</span>
+                  <input
+                    name="telefono"
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    placeholder="9 1234 5678"
+                    value={formData.telefono}
+                    onChange={handleFormChange}
+                    required
+                    minLength={11}
+                    maxLength={11}
+                    pattern="9 \d{4} \d{4}"
+                    title="Celular de 9 dígitos, por ejemplo 9 1234 5678"
+                    className="min-h-12 min-w-0 flex-1 bg-transparent px-3 text-[#704a31] outline-none"
+                    aria-describedby="telefono-ayuda"
+                  />
+                </span>
+                <span id="telefono-ayuda" className="text-xs text-[#946541]">Celular chileno. El código +56 se agrega solo.</span>
               </label>
             </div>
             <button

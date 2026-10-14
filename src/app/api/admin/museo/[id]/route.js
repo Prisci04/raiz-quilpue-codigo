@@ -1,6 +1,7 @@
 import { jsonError, jsonSuccess, parsePositiveInteger } from "@/lib/http";
 import { runAdminCommunity, readJsonBody } from "@/lib/admin-community-http";
 import { parsePiezaMuseoInput } from "@/lib/community-validation.mjs";
+import { parseOwnedPortadaUrl } from "@/lib/media/policy.mjs";
 import {
   deletePiezaMuseoAdmin,
   getPiezaMuseoAdmin,
@@ -27,10 +28,24 @@ export async function PATCH(request, { params }) {
   return runAdminCommunity(request, "PATCH /api/admin/museo/[id]", async () => {
     const parsed = await parseId(params);
     if (!parsed.ok) return jsonError(400, "VALIDATION", "El identificador no es válido.");
+    const current = await getPiezaMuseoAdmin(parsed.value);
+    if (!current) return jsonError(404, "NOT_FOUND", "Pieza no encontrada.");
     const body = await readJsonBody(request);
-    const input = parsePiezaMuseoInput(body);
-    if (!input) return jsonError(400, "VALIDATION", "Revisa los datos de la pieza.");
-    return jsonSuccess(await savePiezaMuseoAdmin(parsed.value, input));
+    const sameImage = body.imagen_url === current.imagen_url;
+    const input = parsePiezaMuseoInput(sameImage ? { ...body, imagen_url: null } : body);
+    if (!input.ok) return jsonError(400, "VALIDATION", input.message);
+    if (sameImage) {
+      input.value.imagen_url = current.imagen_url;
+    } else if (input.value.imagen_url) {
+      const owned = parseOwnedPortadaUrl(input.value.imagen_url);
+      if (owned && (owned.contexto !== "museo" || owned.registroId !== parsed.value)) {
+        return jsonError(400, "VALIDATION", "La imagen de la pieza no es válida.");
+      }
+    }
+    const saved = await savePiezaMuseoAdmin(parsed.value, input.value);
+    return saved
+      ? jsonSuccess(saved)
+      : jsonError(404, "NOT_FOUND", "Pieza no encontrada.");
   });
 }
 
@@ -38,7 +53,9 @@ export async function DELETE(request, { params }) {
   return runAdminCommunity(request, "DELETE /api/admin/museo/[id]", async () => {
     const parsed = await parseId(params);
     if (!parsed.ok) return jsonError(400, "VALIDATION", "El identificador no es válido.");
-    await deletePiezaMuseoAdmin(parsed.value);
-    return jsonSuccess({ eliminado: true });
+    const deleted = await deletePiezaMuseoAdmin(parsed.value);
+    return deleted
+      ? jsonSuccess({ eliminado: true })
+      : jsonError(404, "NOT_FOUND", "Pieza no encontrada.");
   });
 }

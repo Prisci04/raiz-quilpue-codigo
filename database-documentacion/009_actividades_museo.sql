@@ -7,13 +7,23 @@ CREATE TABLE public.actividad_inscripciones (
     telefono VARCHAR(40) NOT NULL,
     fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT actividad_inscripciones_email_check
-        CHECK (POSITION('@' IN email) > 1),
+        CHECK (email ~* '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'),
     CONSTRAINT actividad_inscripciones_nombre_check
-        CHECK (BTRIM(nombre) <> '' AND BTRIM(apellido) <> '')
+        CHECK (BTRIM(nombre) <> '' AND BTRIM(apellido) <> ''),
+    CONSTRAINT actividad_inscripciones_telefono_check
+        CHECK (
+            BTRIM(telefono) <> ''
+            AND length(regexp_replace(telefono, '\D', '', 'g')) BETWEEN 8 AND 15
+        )
 );
 
 CREATE INDEX idx_actividad_inscripciones_actividad
     ON public.actividad_inscripciones (actividad_id, fecha_creacion DESC);
+
+/* Un correo no se inscribe dos veces en la misma actividad.
+   Los cupos se cierran en public.inscribir_actividad (010). */
+CREATE UNIQUE INDEX actividad_inscripciones_email_unique
+    ON public.actividad_inscripciones (actividad_id, LOWER(email));
 
 ALTER TABLE public.actividad_inscripciones ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.actividad_inscripciones FROM anon, authenticated;
@@ -28,6 +38,8 @@ CREATE TABLE public.museo_piezas (
     fecha_aproximada VARCHAR(120),
     lugar VARCHAR(250),
     imagen_url TEXT,
+    archivo_nombre VARCHAR(255),
+    archivo_url TEXT,
     estado VARCHAR(20) NOT NULL DEFAULT 'borrador',
     fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     fecha_actualizacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -68,6 +80,9 @@ CREATE TABLE public.museo_aportes (
     fecha_aproximada VARCHAR(120),
     lugar VARCHAR(250),
     archivo_nombre VARCHAR(255) NOT NULL,
+    archivo_url TEXT,
+    estado_revision VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+    pieza_id BIGINT REFERENCES public.museo_piezas(id) ON DELETE SET NULL,
     informacion_adicional TEXT,
     fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT museo_aportes_categoria_check CHECK (
@@ -83,6 +98,9 @@ CREATE TABLE public.museo_aportes (
     CONSTRAINT museo_aportes_email_check CHECK (POSITION('@' IN correo) > 1),
     CONSTRAINT museo_aportes_required_check CHECK (
         BTRIM(nombre) <> '' AND BTRIM(titulo) <> '' AND BTRIM(descripcion) <> ''
+    ),
+    CONSTRAINT museo_aportes_estado_revision_check CHECK (
+        estado_revision IN ('pendiente', 'convertido', 'rechazado')
     )
 );
 
@@ -91,7 +109,7 @@ CREATE INDEX idx_museo_aportes_fecha
 
 ALTER TABLE public.museo_aportes ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.museo_aportes FROM anon, authenticated;
-GRANT INSERT, SELECT, DELETE ON public.museo_aportes TO service_role;
+GRANT INSERT, SELECT, UPDATE, DELETE ON public.museo_aportes TO service_role;
 GRANT USAGE, SELECT ON SEQUENCE public.museo_aportes_id_seq TO service_role;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.actividades TO service_role;
