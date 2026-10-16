@@ -58,6 +58,7 @@ function revisionClass(estado) {
 
 export default function MuseoPanel({
   pieces = [],
+  contributionCount: initialContributionCount = null,
   error = "",
   notice = "",
 }) {
@@ -88,7 +89,8 @@ export default function MuseoPanel({
     setActionError("");
 
     try {
-      setContributions(await getAportesMuseo());
+      const aportes = await getAportesMuseo();
+      setContributions(aportes);
       setContributionsLoaded(true);
     } catch (loadError) {
       setActionError(loadError.message);
@@ -346,7 +348,7 @@ export default function MuseoPanel({
             <span className="mt-0.5 block text-2xl font-semibold text-[#2c1810]">
               {contributionsLoaded
                 ? contributions.length
-                : "—"}
+                : initialContributionCount ?? "No disponible"}
             </span>
           </span>
         </button>
@@ -594,7 +596,7 @@ export default function MuseoPanel({
 
                           {convertingId === entry.id
                             ? "Creando…"
-                            : "Crear borrador"}
+                            : "Aceptar aporte"}
                         </button>
 
                         <button

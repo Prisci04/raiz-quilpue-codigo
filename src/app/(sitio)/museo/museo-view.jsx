@@ -73,7 +73,9 @@ export default function MuseoView({ items = [], error = "" }) {
   const [contributionSent, setContributionSent] = useState(false);
   const [contributionError, setContributionError] = useState("");
   const [sendingContribution, setSendingContribution] = useState(false);
-  const contributionRef = useRef(null);
+  const contributionDialogRef = useRef(null);
+  const contributionCloseRef = useRef(null);
+  const contributionOpenerRef = useRef(null);
   const closeButtonRef = useRef(null);
   const dialogRef = useRef(null);
   const openerRef = useRef(null);
@@ -101,11 +103,19 @@ export default function MuseoView({ items = [], error = "" }) {
     openerRef.current?.focus();
   }
 
-  useEffect(() => {
-    if (showContribution) {
-      contributionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, [showContribution]);
+  function openContribution() {
+    contributionOpenerRef.current = document.activeElement;
+    setContributionSent(false);
+    setContributionError("");
+    setShowContribution(true);
+  }
+
+  function closeContribution() {
+    setShowContribution(false);
+    setContributionSent(false);
+    setContributionError("");
+    contributionOpenerRef.current?.focus();
+  }
 
   async function submitContribution(event) {
     event.preventDefault();
@@ -174,6 +184,45 @@ export default function MuseoView({ items = [], error = "" }) {
     };
   }, [selectedItem]);
 
+  useEffect(() => {
+    if (!showContribution) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    contributionCloseRef.current?.focus();
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        closeContribution();
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+
+      const focusableElements = contributionDialogRef.current?.querySelectorAll(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusableElements?.length) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (event.shiftKey && document.activeElement === firstElement) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && document.activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showContribution]);
+
   return (
     <main className="bg-[#e7dcd2] text-[#946541]">
       <section className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-[#704a31] text-[#e7dcd2] sm:min-h-[680px]">
@@ -217,11 +266,7 @@ export default function MuseoView({ items = [], error = "" }) {
                 type="button"
                 aria-expanded={showContribution}
                 aria-controls="museo-contribution-form"
-                onClick={() => {
-                  setShowContribution((current) => !current);
-                  setContributionSent(false);
-                  setContributionError("");
-                }}
+                onClick={openContribution}
                 className="inline-flex min-h-12 items-center border border-[#e7dcd2]/60 px-5 py-3 text-sm font-semibold text-[#e7dcd2] transition-colors hover:bg-[#e7dcd2] hover:text-[#704a31]"
               >
                 Quiero dar mi aporte
@@ -456,14 +501,10 @@ export default function MuseoView({ items = [], error = "" }) {
               type="button"
               aria-expanded={showContribution}
               aria-controls="museo-contribution-form"
-              onClick={() => {
-                setShowContribution((current) => !current);
-                setContributionSent(false);
-                setContributionError("");
-              }}
+              onClick={openContribution}
               className="mt-6 inline-flex min-h-12 items-center gap-2 rounded-sm bg-[#704a31] px-6 py-3 text-sm font-semibold text-[#e7dcd2] transition-colors hover:bg-[#db700f]"
             >
-              {showContribution ? "Cerrar formulario" : "Quiero dar mi aporte"}
+              Quiero dar mi aporte
               <ArrowRight size={15} aria-hidden="true" />
             </button>
           </div>
@@ -471,15 +512,35 @@ export default function MuseoView({ items = [], error = "" }) {
       </section>
 
       {showContribution ? (
-        <div ref={contributionRef} id="museo-contribution-form" className="bg-[#bb9c82]/25 px-6 py-12 sm:py-16">
-          <section aria-labelledby="contribution-title" className="relative mx-auto max-w-4xl border border-[#bb9c82] bg-[#e7dcd2] p-5 sm:p-8">
-            <button type="button" onClick={() => setShowContribution(false)} aria-label="Cerrar formulario de colaboración" className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center text-[#704a31] hover:bg-[#bb9c82]/30"><X size={20} /></button>
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-[#704a31]/75 p-3 backdrop-blur-sm sm:p-6"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) closeContribution();
+          }}
+        >
+          <section
+            ref={contributionDialogRef}
+            id="museo-contribution-form"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="contribution-title"
+            className="relative max-h-[90dvh] w-full max-w-4xl overflow-y-auto border border-[#bb9c82] bg-[#e7dcd2] p-5 shadow-2xl sm:p-8"
+          >
+            <button
+              ref={contributionCloseRef}
+              type="button"
+              onClick={closeContribution}
+              aria-label="Cerrar formulario de colaboración"
+              className="absolute top-3 right-3 inline-flex h-10 w-10 items-center justify-center text-[#704a31] hover:bg-[#bb9c82]/30"
+            >
+              <X size={20} />
+            </button>
             {contributionSent ? (
               <div className="py-12 text-center">
                 <p className="font-mono text-xs uppercase tracking-widest text-[#db700f]">Museo Digital</p>
                 <h2 id="contribution-title" className="mt-3 font-serif text-3xl font-semibold text-[#704a31]">Gracias por compartir tu historia</h2>
                 <p className="mt-3 text-sm leading-relaxed text-[#946541]">Tu aporte y el archivo fueron recibidos por Raíz Quilpué. El equipo los revisará antes de publicarlos en el museo.</p>
-                <button type="button" onClick={() => setShowContribution(false)} className="mt-6 min-h-11 bg-[#704a31] px-5 text-sm font-semibold text-[#e7dcd2]">Cerrar</button>
+                <button type="button" onClick={closeContribution} className="mt-6 min-h-11 bg-[#704a31] px-5 text-sm font-semibold text-[#e7dcd2]">Cerrar</button>
               </div>
             ) : (
               <>
@@ -491,7 +552,7 @@ export default function MuseoView({ items = [], error = "" }) {
                   <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Tipo de aporte *<select name="categoria" required defaultValue="" className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]"><option value="" disabled>Selecciona una opción</option>{FILTERS.map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>
                   <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Título *<input name="titulo" required maxLength={200} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
                   <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Descripción *<textarea name="descripcion" required maxLength={10000} rows={4} className="border border-[#bb9c82] bg-[#f4ece4] p-3 outline-none focus:border-[#db700f]" /></label>
-                  <label className="grid gap-1.5 text-sm text-[#704a31]">Fecha aproximada<input name="fecha_aproximada" maxLength={120} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31]">Fecha aproximada<input name="fecha_aproximada" type="date" className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /><span className="text-xs text-[#946541]">Selecciona la fecha desde el calendario.</span></label>
                   <label className="grid gap-1.5 text-sm text-[#704a31]">Lugar<input name="lugar" maxLength={250} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
                   <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Archivo / imagen *<input name="archivo" type="file" required accept="image/jpeg,image/png,image/webp,image/avif,.pdf,application/pdf" className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] p-2 text-sm" /><span className="text-xs text-[#946541]">Fotografía JPG, PNG, WebP o AVIF, o un PDF. Máximo 5 MB.</span></label>
                   <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Información adicional<textarea name="informacion_adicional" maxLength={3000} rows={3} className="border border-[#bb9c82] bg-[#f4ece4] p-3 outline-none focus:border-[#db700f]" /></label>

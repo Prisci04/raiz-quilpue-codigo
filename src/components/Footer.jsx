@@ -30,9 +30,11 @@ function InstagramIcon({ className }) {
 }
 
 const iconClassName = "size-[1em] shrink-0";
+const gmailComposeUrl =
+	"https://mail.google.com/mail/?view=cm&fs=1&to=raizquilpue%40gmail.com";
 
 const socialLinks = [
-	{ label: "Correo", href: "mailto:raizquilpue@gmail.com", icon: Mail },
+	{ label: "Correo", href: gmailComposeUrl, icon: Mail, external: true },
 	{
 		label: "Instagram",
 		href: "https://www.instagram.com/raizquilpue/",
@@ -91,7 +93,7 @@ export default function Footer() {
 					</div>
 
 					<div>
-						<h4 className="mb-4 font-mono text-[10px] tracking-[0.15em] text-[#ffdf90] uppercase">
+						<h4 className="mb-4 font-mono text-xs tracking-[0.15em] text-[#ffdf90] uppercase">
 							Portal
 						</h4>
 						<ul className="space-y-2">
@@ -109,12 +111,12 @@ export default function Footer() {
 					</div>
 
 					<div>
-						<h4 className="mb-4 font-mono text-[10px] tracking-[0.15em] text-[#ffdf90] uppercase">
+						<h4 className="mb-4 font-mono text-xs tracking-[0.15em] text-[#ffdf90] uppercase">
 							Contacto
 						</h4>
 						<ul className="space-y-2 text-sm text-[#e7dcd2]/55">
 							<li>Quilpué, Región de Valparaíso, Chile</li>
-							<li className="pt-2"><a href="mailto:raizquilpue@gmail.com">raizquilpue@gmail.com</a></li>
+							<li className="pt-2"><a href={gmailComposeUrl} target="_blank" rel="noreferrer">raizquilpue@gmail.com</a></li>
 							<li>+56 9 3940 5350</li>
 						</ul>
 					</div>

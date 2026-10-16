@@ -1,9 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, MapPin, Search, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
+import ActivityCard from "@/components/actividades/ActivityCard";
 import AccessSection from "@/components/home/AccessSection";
 
 const fallbackImage = "/images/inicio/imageninicio.jpg";
@@ -35,10 +37,6 @@ function formatDate(date) {
   });
 }
 
-function getImage(image) {
-  return image || fallbackImage;
-}
-
 export default function HomeView({ contents = [], activities = [] }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -51,16 +49,6 @@ export default function HomeView({ contents = [], activities = [] }) {
     );
     return () => clearInterval(timer);
   }, []);
-
-  const featuredPatrimonio = useMemo(
-    () => contents.filter((item) => item.tipo === "patrimonio").slice(0, 2),
-    [contents],
-  );
-  const featuredNoticias = useMemo(
-    () => contents.filter((item) => item.tipo === "noticia").slice(0, 2),
-    [contents],
-  );
-  const nextActivity = activities[0] ?? null;
 
   function handleSearch(event) {
     event.preventDefault();
@@ -189,28 +177,91 @@ export default function HomeView({ contents = [], activities = [] }) {
 
       <section className="bg-[#bb9c82]/25 px-6 py-16">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-8 flex items-center justify-between"><div><div className="section-label mb-1">Colección patrimonial</div><h2 className="font-serif text-3xl font-semibold text-[#946541]">Patrimonio destacado</h2></div><button type="button" onClick={() => router.push("/contenido?tipo=patrimonio")} className="btn-outline hidden px-3 py-2 md:flex">Ver todo el patrimonio</button></div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {featuredPatrimonio.map((item) => <ContentCard key={item.id} item={item} router={router} />)}
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <div className="section-label mb-1">Publicaciones recientes</div>
+              <h2 className="font-serif text-3xl font-semibold text-[#946541]">
+                Últimos contenidos
+              </h2>
+            </div>
+            <Link href="/contenido" className="btn-outline hidden px-3 py-2 md:flex">
+              Ver todos
+            </Link>
           </div>
-          {featuredPatrimonio.length === 0 && <p className="text-[#946541]">Aún no hay patrimonio publicado.</p>}
+          {contents.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {contents.slice(0, 3).map((item) => (
+                <ContentCard key={item.id} item={item} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-[#946541]">Aún no hay contenidos publicados.</p>
+          )}
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-6 py-16">
-        <div className="mb-8 flex items-center justify-between"><div><div className="section-label mb-1">Publicaciones</div><h2 className="font-serif text-3xl font-semibold text-[#946541]">Últimas noticias</h2></div><button type="button" onClick={() => router.push("/contenido?tipo=noticia")} className="btn-outline hidden px-3 py-2 md:flex">Ver todas</button></div>
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {featuredNoticias.map((item) => <ContentCard key={item.id} item={item} router={router} compact />)}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <div className="section-label mb-1">Encuentros y experiencias</div>
+            <h2 className="font-serif text-3xl font-semibold text-[#946541]">
+              Actividades recientes
+            </h2>
+          </div>
+          <Link href="/actividades" className="btn-outline hidden px-3 py-2 md:flex">
+            Ver todas
+          </Link>
         </div>
-        {featuredNoticias.length === 0 && <p className="text-[#946541]">Aún no hay noticias publicadas.</p>}
+        {activities.length > 0 ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {activities.slice(0, 3).map((activity) => (
+              <ActivityCard key={activity.id} activity={activity} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-[#946541]">Aún no hay actividades publicadas.</p>
+        )}
       </section>
-
-          {nextActivity && <section className="bg-[#bb9c82]/25 px-6 py-16"><div className="mx-auto max-w-7xl"><div className="mb-10 flex items-center gap-4"><div className="section-label">Próxima actividad</div><div className="h-px flex-1" style={{ background: "var(--border)" }} /><button type="button" onClick={() => router.push("/actividades?vista=calendario")} className="btn-outline hidden px-3 py-2 md:flex">Ver calendario</button></div><div className="grid grid-cols-1 overflow-hidden lg:grid-cols-2"><div className="relative min-h-[380px] bg-[#bb9c82]/30"><Image src={getImage(nextActivity.imagen_url)} alt={nextActivity.titulo} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" unoptimized={getImage(nextActivity.imagen_url).startsWith("/")} /><div className="absolute top-4 left-4 bg-[#ffdf90] px-3 py-1.5 font-mono text-[10px] tracking-wide text-[#946541] uppercase">Actividad</div></div><div className="flex flex-col justify-center border border-[#bb9c82] bg-[#e7dcd2] p-10"><div className="section-label mb-3">{[formatDate(nextActivity.fecha), nextActivity.hora_inicio ? String(nextActivity.hora_inicio).slice(0, 5) : ""].filter(Boolean).join(" · ")}</div><h2 className="mb-4 font-serif text-3xl font-semibold text-[#946541]">{nextActivity.titulo}</h2><p className="mb-5 text-sm leading-relaxed text-[#946541]">{nextActivity.descripcion}</p><div className="mb-6 flex flex-wrap gap-4 text-sm text-[#946541]"><span className="inline-flex items-center gap-1.5"><MapPin size={15} strokeWidth={1.7} aria-hidden="true" /> {nextActivity.lugar}</span><span className="inline-flex items-center gap-1.5"><Users size={15} strokeWidth={1.7} aria-hidden="true" /> {nextActivity.cupos} cupos</span></div><button type="button" onClick={() => router.push("/actividades")} className="btn-primary self-start inline-flex items-center gap-2 px-4 py-3">Ver actividades <ArrowRight size={14} strokeWidth={1.8} aria-hidden="true" /></button></div></div></div></section>}
 
     </div>
   );
 }
 
-function ContentCard({ item, router, compact = false }) {
-  return <button type="button" onClick={() => router.push(`/contenido?tipo=${item.tipo}`)} className={`museum-card group border text-left ${compact ? "flex gap-4 p-4" : ""}`} style={{ background: "var(--card)", borderColor: "var(--border)" }}><div className={compact ? "h-[90px] w-[120px] shrink-0 overflow-hidden" : "relative aspect-video overflow-hidden"}><Image src={getImage(item.image)} alt={item.title} width={1200} height={700} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" unoptimized={getImage(item.image).startsWith("/")} /></div><div className={compact ? "min-w-0 flex-1 p-0" : "p-5"}><div className="mb-2 flex items-center gap-2"><span className="bg-[#ffdf90] px-2 py-0.5 font-mono text-[9px] text-[#946541] uppercase">{item.tipo}</span><span className="font-mono text-[9px] text-[#946541]">{formatDate(item.date)}</span></div><h3 className="mb-2 font-serif text-xl leading-snug font-semibold text-[#946541]">{item.title}</h3><p className="line-clamp-2 text-sm leading-relaxed text-[#946541]">{item.description}</p></div></button>;
+function ContentCard({ item }) {
+  const image = item.image || fallbackImage;
+
+  return (
+    <Link
+      href={`/contenido/${item.id}`}
+      className="museum-card group block border text-left"
+      style={{ background: "var(--card)", borderColor: "var(--border)" }}
+    >
+      <div className="relative aspect-video overflow-hidden">
+        <Image
+          src={image}
+          alt={item.title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          unoptimized={image.startsWith("/")}
+        />
+      </div>
+      <div className="p-5">
+        <div className="mb-2 flex items-center gap-2">
+          <span className="bg-[#ffdf90] px-2 py-0.5 font-mono text-[9px] text-[#946541] uppercase">
+            {item.tipo}
+          </span>
+          <span className="font-mono text-[9px] text-[#946541]">
+            {formatDate(item.date || item.createdAt)}
+          </span>
+        </div>
+        <h3 className="mb-2 font-serif text-xl leading-snug font-semibold text-[#946541]">
+          {item.title}
+        </h3>
+        <p className="line-clamp-2 text-sm leading-relaxed text-[#946541]">
+          {item.description}
+        </p>
+      </div>
+    </Link>
+  );
 }

@@ -11,6 +11,7 @@ export function mapContenidoVista(row) {
     tipo: row.tipo ?? "",
     image: row.imagen_url ?? null,
     date: row.fecha_publicacion ?? null,
+    createdAt: row.fecha_creacion ?? null,
   };
 }
 

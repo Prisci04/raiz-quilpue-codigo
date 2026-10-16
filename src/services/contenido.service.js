@@ -2,9 +2,9 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const ESTADO_PUBLICADA = "publicada";
 const CONTENIDO_LIST_COLUMNS =
-  "id,titulo,descripcion,resumen,tipo,imagen_url,fecha_publicacion";
+  "id,titulo,descripcion,resumen,tipo,imagen_url,fecha_publicacion,fecha_creacion";
 const CONTENIDO_DETAIL_COLUMNS =
-  "id,titulo,descripcion,resumen,contenido,tipo,imagen_url,fecha_publicacion";
+  "id,titulo,descripcion,resumen,contenido,tipo,imagen_url,fecha_publicacion,fecha_creacion";
 
 function mapContenidoPublico(row, { includeContenido = false } = {}) {
   if (!row) {
@@ -18,7 +18,8 @@ function mapContenidoPublico(row, { includeContenido = false } = {}) {
     resumen: row.resumen ?? null,
     tipo: row.tipo,
     imagen_url: row.imagen_url ?? null,
-    fecha_publicacion: row.fecha_publicacion,
+    fecha_publicacion: row.fecha_publicacion ?? null,
+    fecha_creacion: row.fecha_creacion ?? null,
   };
 
   if (includeContenido) {
@@ -68,7 +69,8 @@ export async function getContenidos({ page, limit }) {
   const { data, error, count } = await publicadasQuery(CONTENIDO_LIST_COLUMNS, {
     count: "exact",
   })
-    .order("fecha_publicacion", { ascending: false })
+    .order("fecha_publicacion", { ascending: false, nullsFirst: false })
+    .order("fecha_creacion", { ascending: false })
     .order("id", { ascending: false })
     .range(desde, hasta);
 

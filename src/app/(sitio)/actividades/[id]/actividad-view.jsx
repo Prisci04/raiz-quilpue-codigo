@@ -236,7 +236,7 @@ export default function ActividadView({ activity }) {
             onSubmit={handleInscriptionSubmit}
             className="mt-10 border border-[#bb9c82] bg-[#f4ece4] p-5 sm:p-6"
           >
-            <h2 className="font-serif text-2xl font-medium text-[#5c331c]">Inscripción</h2>
+            <h2 className="font-sans text-xl font-medium text-[#5c331c]">Inscripción</h2>
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm">
                 Nombre

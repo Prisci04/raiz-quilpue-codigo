@@ -114,7 +114,7 @@ export default function AdminHeader({
           <Menu size={20} strokeWidth={1.8} aria-hidden="true" />
         </button>
 
-        <div ref={searchRef} className="relative w-full max-w-md">
+        <div ref={searchRef} className="relative min-w-0 w-full max-w-sm flex-1">
           <label htmlFor={searchId} className="sr-only">
             Buscar en el panel
           </label>
@@ -187,8 +187,8 @@ export default function AdminHeader({
             <span className="flex h-9 w-9 items-center justify-center rounded-sm bg-[#2c1810] text-[12px] font-semibold text-[#feca2b]">
               {initials(displayName)}
             </span>
-            <span className="hidden max-w-40 truncate text-left sm:block">
-              <span className="block text-[13px] leading-tight font-medium">{displayName}</span>
+            <span className="hidden max-w-56 truncate text-left sm:block">
+              <span className="block truncate whitespace-nowrap text-[13px] leading-tight font-medium">{displayName}</span>
               <span className="block text-[11px] leading-tight text-[#7c5c47]">Cuenta</span>
             </span>
             <ChevronDown size={15} strokeWidth={1.8} className="text-[#a4846c]" aria-hidden="true" />

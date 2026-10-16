@@ -68,6 +68,7 @@ export function mapActividadVista(row) {
     forma_pago: row.forma_pago ?? null,
     informacion_adicional: row.informacion_adicional ?? null,
     imagen_url: row.imagen_url ?? null,
+    fecha_creacion: row.fecha_creacion ?? null,
     pasada: isActividadPasada(row.fecha),
   };
 }

@@ -291,21 +291,21 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
           }}
         >
           <div className="grid gap-4 lg:grid-cols-2">
-            <Field label="Nombre de la actividad *">
+            <Field label="Nombre de la actividad *" className="lg:col-span-2">
               <input required maxLength={180} value={form.titulo} onChange={(event) => update("titulo", event.target.value)} className={inputClass} />
-            </Field>
-            <Field label="Modalidad *">
-              <select value={form.modalidad} onChange={(event) => update("modalidad", event.target.value)} className={inputClass}>
-                <option value="presencial">Presencial</option>
-                <option value="virtual">Online</option>
-                <option value="hibrida">Híbrida</option>
-              </select>
             </Field>
             <Field label="Tipo de participación *">
               <select value={form.tipo_participacion} onChange={(event) => update("tipo_participacion", event.target.value)} className={inputClass}>
                 <option value="abierta">Participación abierta</option>
                 <option value="inscripcion">Inscripción previa</option>
                 <option value="pendiente">Por confirmar</option>
+              </select>
+            </Field>
+            <Field label="Modalidad *">
+              <select value={form.modalidad} onChange={(event) => update("modalidad", event.target.value)} className={inputClass}>
+                <option value="presencial">Presencial</option>
+                <option value="virtual">Online</option>
+                <option value="hibrida">Híbrida</option>
               </select>
             </Field>
             {editing ? (
@@ -342,7 +342,7 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
             <Field label="Público">
               <input maxLength={250} placeholder="Público general, personas mayores..." value={form.publico_objetivo ?? ""} onChange={(event) => update("publico_objetivo", event.target.value)} className={inputClass} />
             </Field>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-4">
               <Field label="Valor">
                 <select value={form.tipo_valor} onChange={(event) => update("tipo_valor", event.target.value)} className={inputClass}>
                   <option value="gratuito">Gratuito</option>
@@ -443,14 +443,9 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
             ) : (
               <Link href="/admin/actividades" className="text-sm text-[#7c5c47]">Cancelar</Link>
             )}
-            <div className="flex flex-wrap gap-2">
-              <button type="button" disabled={busy} onClick={() => save("borrador")} className="min-h-10 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50">
-                {busy ? "Guardando…" : "Guardar borrador"}
-              </button>
-              <button type="submit" disabled={busy} className="min-h-10 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50">
-                {busy ? "Guardando…" : editing ? "Guardar cambios" : "Publicar actividad"}
-              </button>
-            </div>
+            <button type="submit" disabled={busy} className="min-h-10 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50">
+              {busy ? "Guardando…" : editing ? "Guardar cambios" : "Publicar actividad"}
+            </button>
           </div>
         </form>
       ) : null}

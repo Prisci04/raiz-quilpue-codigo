@@ -4,7 +4,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 const ESTADO_PUBLICADA = "publicada";
 const ACTIVIDAD_LISTADO_COLUMNS =
-  "id,titulo,descripcion,fecha,hora_inicio,hora_fin,lugar,publico_objetivo,modalidad,tipo_participacion,cupos,tipo_valor,valor_monto,imagen_url";
+  "id,titulo,descripcion,fecha,hora_inicio,hora_fin,lugar,publico_objetivo,modalidad,tipo_participacion,cupos,tipo_valor,valor_monto,imagen_url,fecha_creacion";
 const ACTIVIDAD_DETALLE_COLUMNS = `${ACTIVIDAD_LISTADO_COLUMNS},forma_pago,informacion_adicional`;
 
 function mapActividadPublica(row, { includeDetail = false, inscritos = 0 } = {}) {
@@ -29,6 +29,7 @@ function mapActividadPublica(row, { includeDetail = false, inscritos = 0 } = {})
     tipo_valor: row.tipo_valor,
     valor_monto: row.valor_monto ?? null,
     imagen_url: row.imagen_url ?? null,
+    fecha_creacion: row.fecha_creacion ?? null,
   };
 
   if (includeDetail) {
@@ -76,10 +77,12 @@ async function countInscritos(ids) {
   return counts;
 }
 
-export async function getActividades({ page, limit }) {
-  const { data, error } = await publicadasQuery(ACTIVIDAD_LISTADO_COLUMNS).order("id", {
-    ascending: true,
-  });
+export async function getActividades({ page, limit, orderBy = "fecha" }) {
+  const ordenarPorCreacion = orderBy === "fecha_creacion";
+  const { data, error } = await publicadasQuery(ACTIVIDAD_LISTADO_COLUMNS).order(
+    ordenarPorCreacion ? "fecha_creacion" : "id",
+    { ascending: !ordenarPorCreacion },
+  );
 
   if (error) {
     throw new Error("Failed to list actividades");
@@ -89,7 +92,14 @@ export async function getActividades({ page, limit }) {
   const counts = await countInscritos(rows.map((row) => row.id));
   const sorted = rows
     .map((row) => mapActividadPublica(row, { inscritos: counts.get(row.id) ?? 0 }))
-    .sort(compareActividades);
+    .sort(
+      orderBy === "fecha_creacion"
+        ? (left, right) =>
+            String(right.fecha_creacion ?? "").localeCompare(
+              String(left.fecha_creacion ?? ""),
+            ) || left.id - right.id
+        : compareActividades,
+    );
 
   const desde = (page - 1) * limit;
 

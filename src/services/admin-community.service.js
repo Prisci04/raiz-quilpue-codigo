@@ -428,6 +428,22 @@ export async function listAportesMuseoAdmin() {
   return data ?? [];
 }
 
+export async function countAportesMuseoAdmin() {
+  const { count, error } = await admin()
+    .from("museo_aportes")
+    .select("id", { count: "exact", head: true });
+
+  if (error) {
+    throw new Error(`Failed to count museo aportes: ${error.message}`);
+  }
+
+  if (!Number.isInteger(count)) {
+    throw new Error("Supabase did not return an exact museo aportes count.");
+  }
+
+  return count;
+}
+
 export async function deleteAporteMuseoAdmin(id) {
   const aporte = assertQuery(
     await admin()

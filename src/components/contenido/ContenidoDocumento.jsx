@@ -149,8 +149,8 @@ function renderNode(node, key) {
     const Tag = level > 2 ? "h3" : "h2";
     const className =
       Tag === "h2"
-        ? "mt-8 font-serif text-2xl font-semibold text-[#5c331c]"
-        : "mt-6 font-serif text-xl font-semibold text-[#5c331c]";
+        ? "mt-8 font-sans text-2xl font-semibold text-[#5c331c]"
+        : "mt-6 font-sans text-xl font-semibold text-[#5c331c]";
 
     return (
       <Tag key={key} className={className}>
@@ -183,7 +183,7 @@ function renderNode(node, key) {
     return (
       <blockquote
         key={key}
-        className="border-l-2 border-[#c4a04a] pl-4 font-serif italic"
+        className="border-l-2 border-[#c4a04a] pl-4 font-sans italic"
       >
         {children}
       </blockquote>

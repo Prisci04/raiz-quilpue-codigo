@@ -167,10 +167,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
         router.push("/admin/museo?creado=1");
         return null;
       }
-      setPortadaFile(null);
-      setForm(formFromPiece(saved));
-      setSuccess("Pieza guardada correctamente.");
-      router.refresh();
+      router.push("/admin/museo?guardado=1");
       return saved;
     } catch (saveError) {
       if (uploaded?.url) await discardUploadedPortada(uploaded.url).catch(() => {});
@@ -253,7 +250,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
           className="mt-5 space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
-            save(editing ? form.estado : "publicada");
+            save(form.estado);
           }}
         >
           <div className="grid gap-4 lg:grid-cols-2">
@@ -275,12 +272,6 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
             </Field>
             <Field label="Lugar">
               <input maxLength={250} value={form.lugar ?? ""} onChange={(event) => update("lugar", event.target.value)} className={inputClass} />
-            </Field>
-            <Field label="Estado">
-              <select value={form.estado} onChange={(event) => update("estado", event.target.value)} className={inputClass}>
-                <option value="borrador">Borrador</option>
-                <option value="publicada">Publicada</option>
-              </select>
             </Field>
           </div>
 
@@ -343,6 +334,13 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
             ) : null}
           </div>
 
+          <Field label="Estado">
+            <select value={form.estado} onChange={(event) => update("estado", event.target.value)} className={inputClass}>
+              <option value="borrador">Borrador</option>
+              <option value="publicada">Publicada</option>
+            </select>
+          </Field>
+
           <div className="flex flex-wrap items-center justify-between gap-3">
             {editing ? (
               <button type="button" onClick={() => setDeleteConfirm(true)} disabled={busy} className="min-h-10 rounded-sm border border-[#f0c7be] bg-[#fff6f3] px-4 text-sm font-medium text-[#8d3b28]">
@@ -351,14 +349,9 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
             ) : (
               <Link href="/admin/museo" className="text-sm text-[#7c5c47]">Cancelar</Link>
             )}
-            <div className="flex flex-wrap gap-2">
-              <button type="button" disabled={busy} onClick={() => save("borrador")} className="min-h-10 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810]">
-                {busy ? "Guardando…" : "Guardar borrador"}
-              </button>
-              <button type="submit" disabled={busy} className="min-h-10 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white">
-                {busy ? "Guardando…" : editing ? "Guardar cambios" : "Publicar pieza"}
-              </button>
-            </div>
+            <button type="submit" disabled={busy} className="min-h-10 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white">
+              {busy ? "Guardando…" : "Guardar"}
+            </button>
           </div>
         </form>
       ) : null}

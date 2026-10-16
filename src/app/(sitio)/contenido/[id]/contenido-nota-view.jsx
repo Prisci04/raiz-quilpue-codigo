@@ -72,7 +72,7 @@ export default function ContenidoNotaView({ contenido }) {
           <div className="mt-5 h-px w-16 bg-[#c4a04a]" />
 
           {summary ? (
-            <p className="mt-6 font-serif text-lg leading-relaxed text-[#704a31] italic">
+            <p className="mt-6 font-sans text-lg leading-relaxed text-[#704a31] italic">
               {summary}
             </p>
           ) : null}

@@ -1,9 +1,7 @@
 import Link from "next/link";
 import {
   CalendarDays,
-  Eye,
   FileText,
-  Heart,
   Landmark,
   Ticket,
 } from "lucide-react";
@@ -13,11 +11,6 @@ import {
   AdminDonutChart,
   AdminLineChart,
 } from "@/components/admin/AdminCharts";
-import {
-  ENROLLMENTS_BY_ACTIVITY,
-  REACTIONS_BY_MONTH,
-  VISITS_BY_MONTH,
-} from "@/lib/admin-dashboard";
 
 const KPI_TONES = {
   gold: { icon: "bg-[#feca2b]/20 text-[#9a7a12]", value: "text-[#9a7a12]" },
@@ -68,13 +61,28 @@ const QUICK_ACTIONS = [
 
 export default function AdminDashboardView({
   dateLabel,
-  uniqueVisitors,
-  enrollments,
   publishedContents,
   totalContents,
-  museumReactions,
+  publishedActivities,
+  totalEnrollments,
+  publishedMuseumPieces,
   contentSlices,
+  museumSlices,
+  enrollmentsByActivity,
+  monthlyEnrollments,
 }) {
+  const activityMax = Math.max(1, ...enrollmentsByActivity.map((item) => item.value));
+  const monthlyMax = Math.max(1, ...monthlyEnrollments.map((item) => item.value));
+  const monthlyTicks = [
+    ...new Set([
+      0,
+      Math.ceil(monthlyMax / 4),
+      Math.ceil(monthlyMax / 2),
+      Math.ceil((monthlyMax * 3) / 4),
+      monthlyMax,
+    ]),
+  ];
+
   return (
     <div className="space-y-7">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -87,66 +95,69 @@ export default function AdminDashboardView({
           </h1>
           <p className="mt-1 text-sm text-[#7c5c47]">{dateLabel}</p>
         </div>
-        <DownloadReportButton />
+        <DownloadReportButton
+          dateLabel={dateLabel}
+          publishedContents={publishedContents}
+          totalContents={totalContents}
+          publishedActivities={publishedActivities}
+          totalEnrollments={totalEnrollments}
+          publishedMuseumPieces={publishedMuseumPieces}
+          contentSlices={contentSlices}
+          museumSlices={museumSlices}
+          enrollmentsByActivity={enrollmentsByActivity}
+          monthlyEnrollments={monthlyEnrollments}
+        />
       </header>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          value={uniqueVisitors}
-          label="Visitantes únicos"
-          hint="Septiembre 2026"
-          tone="gold"
-          icon={Eye}
-        />
-        <KpiCard
-          value={enrollments}
-          label="Inscritos actividades"
-          hint="Total histórico"
-          tone="brown"
-          icon={Ticket}
-        />
-        <KpiCard
           value={publishedContents}
           label="Contenidos publicados"
-          hint={`De ${totalContents} totales`}
-          tone="forest"
+          hint={`De ${totalContents} contenidos`}
+          tone="gold"
           icon={FileText}
         />
         <KpiCard
-          value={museumReactions}
-          label="Reacciones museo"
-          hint="Me interesa"
+          value={publishedActivities}
+          label="Actividades publicadas"
+          hint="Visibles en el sitio"
+          tone="brown"
+          icon={CalendarDays}
+        />
+        <KpiCard
+          value={totalEnrollments}
+          label="Inscripciones"
+          hint="Total histórico"
           tone="terracotta"
-          icon={Heart}
+          icon={Ticket}
+        />
+        <KpiCard
+          value={publishedMuseumPieces}
+          label="Piezas del museo"
+          hint="Publicadas"
+          tone="forest"
+          icon={Landmark}
         />
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <AdminLineChart
-          title="Visitas por mes"
-          series={VISITS_BY_MONTH}
-          color="#c4a04a"
-          max={1200}
-          yTicks={[300, 600, 900, 1200]}
-          highlight="1.020 este mes"
-        />
         <AdminBarChart
           title="Inscritos por actividad"
-          series={ENROLLMENTS_BY_ACTIVITY}
-          max={100}
-          highlight="Actual"
+          series={enrollmentsByActivity}
+          max={activityMax}
+        />
+        <AdminLineChart
+          title="Inscripciones por mes"
+          series={monthlyEnrollments}
+          color="#c4a04a"
+          max={monthlyMax}
+          yTicks={monthlyTicks}
         />
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <AdminDonutChart title="Contenidos por categoría" slices={contentSlices} />
-        <AdminLineChart
-          title="Reacciones museo por mes"
-          series={REACTIONS_BY_MONTH}
-          color="#c45a3a"
-          max={320}
-          yTicks={[80, 160, 240, 320]}
-        />
+        <AdminDonutChart title="Piezas del museo por categoría" slices={museumSlices} />
       </section>
 
       <section>

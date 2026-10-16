@@ -119,12 +119,6 @@ function avatarClass(person) {
   return AVATARS[Math.abs(Number(person.id) || 0) % AVATARS.length];
 }
 
-function csvCell(value) {
-  const text = String(value ?? "");
-  if (/[",\n]/.test(text)) return `"${text.replaceAll('"', '""')}"`;
-  return text;
-}
-
 function daysAgo(isoDay, amount) {
   const [year, month, day] = isoDay.split("-").map(Number);
   const date = new Date(year, month - 1, day);
@@ -230,29 +224,128 @@ export default function ParticipantesPanel({
     ));
   }
 
-  function exportCsv(rows) {
+  async function exportPdf(rows) {
     if (!rows.length) return;
-    const header = ["Nombre", "Apellido", "Correo", "Teléfono", "Fecha de inscripción"];
-    const body = rows.map((person) => {
-      const when = inscriptionDateTime(person.fecha_creacion);
-      return [
-        csvCell(person.nombre),
-        csvCell(person.apellido),
-        csvCell(person.email),
-        csvCell(person.telefono),
-        csvCell(`${when.date} ${when.time}`.trim()),
-      ].join(",");
-    });
-    const blob = new Blob([`\uFEFF${[header.join(","), ...body].join("\n")}`], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `participantes-${activity.id}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    setMenu(null);
+    setActionError("");
+    try {
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 14;
+      const tableWidth = pageWidth - margin * 2;
+      const columns = [
+        { label: "NOMBRE", width: 58 },
+        { label: "CORREO", width: 102 },
+        { label: "TELÉFONO", width: 43 },
+        { label: "INSCRIPCIÓN", width: tableWidth - 203 },
+      ];
+      let y = 41;
+
+      function drawPageHeading() {
+        pdf.setFillColor(241, 234, 226);
+        pdf.rect(0, 0, pageWidth, 36, "F");
+        pdf.setTextColor(107, 122, 66);
+        pdf.setFont("times", "bold");
+        pdf.setFontSize(19);
+        pdf.text("Raíz Quilpué · Participantes", margin, 13);
+        pdf.setTextColor(148, 102, 64);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(10);
+        pdf.text(
+          `${activity.titulo} · ${fechaActividad} · ${rows.length} ${
+            rows.length === 1 ? "participante" : "participantes"
+          }`,
+          margin,
+          22,
+          { maxWidth: tableWidth },
+        );
+        pdf.setFillColor(219, 112, 15);
+        pdf.rect(margin, 30, tableWidth, 1, "F");
+      }
+
+      function drawTableHeading() {
+        pdf.setFillColor(249, 245, 240);
+        pdf.rect(margin, y, tableWidth, 10, "F");
+        pdf.setTextColor(64, 56, 49);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(8);
+        let x = margin + 3;
+        for (const column of columns) {
+          pdf.text(column.label, x, y + 6.5);
+          x += column.width;
+        }
+        y += 10;
+      }
+
+      function wrappedCell(value, width) {
+        const lines = pdf.splitTextToSize(String(value || "—"), width - 6);
+        if (lines.length > 3) {
+          return [...lines.slice(0, 2), `${lines[2].slice(0, 36)}…`];
+        }
+        return lines;
+      }
+
+      drawPageHeading();
+      drawTableHeading();
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8.5);
+
+      rows.forEach((person, index) => {
+        const when = inscriptionDateTime(person.fecha_creacion);
+        const values = [
+          `${person.nombre ?? ""} ${person.apellido ?? ""}`.trim() || "—",
+          person.email,
+          person.telefono,
+          `${when.date}${when.time ? ` · ${when.time}` : ""}`,
+        ];
+        const cells = values.map((value, cellIndex) =>
+          wrappedCell(value, columns[cellIndex].width),
+        );
+        const rowHeight = Math.max(10, ...cells.map((lines) => lines.length * 4 + 4));
+
+        if (y + rowHeight > pageHeight - 16) {
+          pdf.addPage();
+          drawPageHeading();
+          y = 41;
+          drawTableHeading();
+        }
+
+        if (index % 2 === 0) {
+          pdf.setFillColor(249, 245, 240);
+          pdf.rect(margin, y, tableWidth, rowHeight, "F");
+        }
+        pdf.setTextColor(64, 56, 49);
+        let x = margin + 3;
+        cells.forEach((lines, cellIndex) => {
+          pdf.text(lines, x, y + 5.5);
+          x += columns[cellIndex].width;
+        });
+        y += rowHeight;
+      });
+
+      const pageCount = pdf.getNumberOfPages();
+      for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+        pdf.setPage(pageNumber);
+        pdf.setTextColor(148, 102, 64);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.text(
+          `Raíz Quilpué · ${new Intl.DateTimeFormat("es-CL").format(new Date())}`,
+          margin,
+          pageHeight - 7,
+        );
+        pdf.text(`${pageNumber} / ${pageCount}`, pageWidth - margin, pageHeight - 7, {
+          align: "right",
+        });
+      }
+
+      pdf.save(`participantes-${activity.id}.pdf`);
+      setMenu(null);
+    } catch (exportError) {
+      console.error("[ParticipantesPanel] No fue posible generar el PDF:", exportError);
+      setActionError("No fue posible generar el PDF de participantes. Inténtalo nuevamente.");
+    }
   }
 
   async function removeParticipant(person) {
@@ -404,9 +497,9 @@ export default function ParticipantesPanel({
             </h2>
             <p className="mt-1 text-sm text-[#8d7b6d]">Lista de personas inscritas en esta actividad.</p>
           </div>
-          <div ref={menuRef} className="flex flex-wrap items-center gap-2">
-            <label className="flex h-10 min-w-[14rem] flex-1 items-center gap-2 rounded-xl border border-[#eadfd4] bg-[#fbf8f5] px-3 lg:max-w-xs">
-              <Search size={16} className="shrink-0 text-[#a4846c]" aria-hidden="true" />
+          <div ref={menuRef} className="flex w-full min-w-0 flex-nowrap items-center gap-1.5 lg:w-auto">
+            <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#eadfd4] bg-[#fbf8f5] px-2.5 sm:px-3 lg:w-56 lg:flex-none">
+              <Search size={15} className="shrink-0 text-[#a4846c]" aria-hidden="true" />
               <input
                 value={query}
                 onChange={(event) => {
@@ -423,15 +516,15 @@ export default function ParticipantesPanel({
                 type="button"
                 onClick={() => setMenu((current) => (current === "filter" ? null : "filter"))}
                 aria-expanded={menu === "filter"}
-                className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-sm ${
+                className={`inline-flex h-9 items-center gap-1 rounded-xl border px-2.5 text-xs whitespace-nowrap ${
                   filter === "todos"
                     ? "border-[#eadfd4] bg-white text-[#5c4636] hover:bg-[#faf6f1]"
                     : "border-[#1e4536] bg-[#1e4536] text-white"
                 }`}
               >
-                <ListFilter size={15} aria-hidden="true" />
+                <ListFilter size={14} aria-hidden="true" />
                 Filtrar
-                <ChevronDown size={14} aria-hidden="true" />
+                <ChevronDown size={13} aria-hidden="true" />
               </button>
               {menu === "filter" ? (
                 <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-xl border border-[#efe6dc] bg-white py-1 shadow-lg">
@@ -456,11 +549,11 @@ export default function ParticipantesPanel({
             </div>
             <button
               type="button"
-              onClick={() => exportCsv(filtered)}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#2c1810] px-3.5 text-sm font-medium text-[#f4ebe3] hover:bg-[#3d2418]"
+              onClick={() => exportPdf(filtered)}
+              className="inline-flex h-8 items-center gap-1 rounded-xl bg-[#2c1810] px-2 text-[11px] font-medium whitespace-nowrap text-[#f4ebe3] hover:bg-[#3d2418] sm:px-2.5"
             >
-              <Download size={15} aria-hidden="true" />
-              Exportar
+              <Download size={12} aria-hidden="true" />
+              Descargar participantes
             </button>
           </div>
         </div>

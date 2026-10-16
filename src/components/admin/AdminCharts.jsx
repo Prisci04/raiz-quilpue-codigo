@@ -126,45 +126,52 @@ export function AdminBarChart({ title, series, max, highlight }) {
 
   return (
     <ChartFrame title={title} highlight={highlight}>
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-44 w-full sm:h-52" role="img" aria-label={title}>
-        {[0, max / 4, max / 2, (max * 3) / 4, max].map((tick) => {
-          const y = pad.top + innerH - (tick / max) * innerH;
-          return (
-            <g key={tick}>
-              <line
-                x1={pad.left}
-                x2={width - pad.right}
-                y1={y}
-                y2={y}
-                stroke="rgba(44,24,16,0.08)"
-                strokeWidth="1"
-              />
-              <text x={pad.left - 8} y={y + 3} textAnchor="end" fill="#7c5c47" fontSize="10">
-                {tick}
-              </text>
-            </g>
-          );
-        })}
-        {series.map((item, index) => {
-          const barHeight = Math.max((item.value / max) * innerH, item.value > 0 ? 4 : 0);
-          const x = pad.left + index * (barWidth + gap);
-          const y = pad.top + innerH - barHeight;
-          return (
-            <g key={item.label}>
-              <rect x={x} y={y} width={barWidth} height={barHeight} rx="8" fill="#2c1810" opacity={item.value ? 0.88 : 0.12} />
-              <text
-                x={x + barWidth / 2}
-                y={height - 8}
-                textAnchor="middle"
-                fill="#7c5c47"
-                fontSize="9"
-              >
-                {item.label}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
+      {series.length ? (
+        <svg viewBox={`0 0 ${width} ${height}`} className="h-44 w-full sm:h-52" role="img" aria-label={title}>
+          {[0, max / 4, max / 2, (max * 3) / 4, max].map((tick) => {
+            const y = pad.top + innerH - (tick / max) * innerH;
+            return (
+              <g key={tick}>
+                <line
+                  x1={pad.left}
+                  x2={width - pad.right}
+                  y1={y}
+                  y2={y}
+                  stroke="rgba(44,24,16,0.08)"
+                  strokeWidth="1"
+                />
+                <text x={pad.left - 8} y={y + 3} textAnchor="end" fill="#7c5c47" fontSize="10">
+                  {tick}
+                </text>
+              </g>
+            );
+          })}
+          {series.map((item, index) => {
+            const barHeight = Math.max((item.value / max) * innerH, item.value > 0 ? 4 : 0);
+            const x = pad.left + index * (barWidth + gap);
+            const y = pad.top + innerH - barHeight;
+            return (
+              <g key={item.label}>
+                <title>{`${item.label}: ${item.value}`}</title>
+                <rect x={x} y={y} width={barWidth} height={barHeight} rx="8" fill="#2c1810" opacity={item.value ? 0.88 : 0.12} />
+                <text
+                  x={x + barWidth / 2}
+                  y={height - 8}
+                  textAnchor="middle"
+                  fill="#7c5c47"
+                  fontSize="9"
+                >
+                  {item.label.length > 14 ? `${item.label.slice(0, 13)}…` : item.label}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      ) : (
+        <p className="flex h-44 items-center justify-center text-sm text-[#7c5c47] sm:h-52">
+          Aún no hay actividades publicadas.
+        </p>
+      )}
     </ChartFrame>
   );
 }
@@ -185,11 +192,12 @@ function describeArc(cx, cy, radius, startAngle, endAngle) {
 }
 
 export function AdminDonutChart({ title, slices }) {
-  const total = slices.reduce((sum, slice) => sum + slice.value, 0) || 1;
+  const total = slices.reduce((sum, slice) => sum + slice.value, 0);
   const cx = 92;
   const cy = 92;
   const radius = 58;
   const arcs = slices.reduce((result, slice) => {
+    if (total === 0) return result;
     const sweep = (slice.value / total) * 360;
     const startAngle = result.cursor;
     const endAngle = startAngle + Math.max(sweep, 0.8);

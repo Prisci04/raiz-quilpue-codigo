@@ -15,13 +15,15 @@
   --terracotta: #e48d40;
   --orange-strong: #db700f;
   --forest: #db700f;
+  --font-raiz: var(--font-raiz-local), Georgia, "Times New Roman", serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-poppins);
+  --font-serif: var(--font-raiz);
+  --font-mono: var(--font-poppins);
 }
 
 html {
@@ -31,7 +33,23 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-poppins), sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-raiz);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 .nav-link {
@@ -94,7 +112,7 @@ body {
 }
 
 .section-label {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-family: var(--font-poppins), sans-serif;
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.2em;

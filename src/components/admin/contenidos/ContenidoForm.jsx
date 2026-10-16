@@ -182,7 +182,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
     try {
       const saved = await updateContenido(contenidoId, nextPayload);
       applySaved(saved);
-      setSuccess("Contenido actualizado correctamente.");
+      router.push("/admin/contenidos?guardado=1");
     } catch (saveError) {
       if (uploaded?.url) {
         await discardUploadedPortada(uploaded.url).catch(() => {});
@@ -282,8 +282,6 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
 
   const busy = Boolean(saving) || uploading;
   const portadaVisible = portadaPreview || form.imagen_url || "";
-  const primaryEstado = editing ? form.estado : "publicada";
-  const primaryLabel = editing ? "Guardar cambios" : "Publicar";
 
   return (
     <section>
@@ -332,7 +330,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
           className="mt-5 space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
-            save(primaryEstado, "primary");
+            save(form.estado, "primary");
           }}
         >
           <div className="grid gap-4 lg:grid-cols-2">
@@ -524,24 +522,13 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
                 Cancelar
               </Link>
             )}
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => save("borrador", "draft")}
-                className="inline-flex min-h-10 items-center rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50"
-              >
-                {saving === "draft" ? "Guardando…" : "Guardar borrador"}
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => save(primaryEstado, "primary")}
-                className="inline-flex min-h-10 items-center rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50"
-              >
-                {saving === "primary" ? "Guardando…" : primaryLabel}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={busy}
+              className="inline-flex min-h-10 items-center rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {busy ? "Guardando…" : "Guardar"}
+            </button>
           </div>
         </form>
       ) : null}

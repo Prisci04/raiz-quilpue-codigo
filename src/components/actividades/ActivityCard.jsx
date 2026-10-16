@@ -114,7 +114,7 @@ export default function ActivityCard({ activity }) {
             {cuposText(activity)}
           </p>
 
-          <span className="mt-3 inline-flex min-h-11 w-full items-center justify-center bg-[#704a31] px-4 text-[11px] font-semibold tracking-[0.14em] text-[#f4ece4] uppercase">
+          <span className="mt-3 inline-flex min-h-9 w-full items-center justify-center bg-[#704a31] px-3 text-[10px] font-medium tracking-wide text-[#f4ece4] uppercase">
             Ver actividad
           </span>
         </div>
