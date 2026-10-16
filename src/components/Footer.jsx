@@ -53,7 +53,7 @@ export default function Footer() {
 							<div className="flex h-9 w-9 items-center justify-center rounded-[2px] bg-[#ffdf90]">
 								{/* CAMBIAR IMAGEN AQUÍ: usa el mismo logo oficial del Header. */}
 								<Image
-									src="/images/logo/logoraizquilpue.png"
+									src="/images/logo/LogoRaizQuilpue.png"
 									alt="Logo de Raíz Quilpué"
 									width={36}
 									height={36}

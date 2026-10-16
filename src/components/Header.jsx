@@ -51,7 +51,7 @@ export default function Header() {
             >
               {/* CAMBIAR IMAGEN AQUÍ: sube el logo oficial con este nombre. */}
               <Image
-                src="/images/logo/logoraizquilpue.png"
+                src="/images/logo/LogoRaizQuilpue.png"
                 alt="Logo de Raíz Quilpué"
                 width={32}
                 height={32}
