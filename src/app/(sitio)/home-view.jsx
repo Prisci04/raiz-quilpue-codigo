@@ -13,7 +13,7 @@ const fallbackImage = "/images/inicio/imageninicio.jpg";
 const heroSlides = [
   {
     // CAMBIAR IMAGEN AQUÍ: agrega aquí la primera foto histórica del inicio.
-    image: "/images/inicio/imgini1.jpg",
+    image: "/images/inicio/imagen-carrusel1.jpg",
     caption: "Calle comercial de Quilpué",
   },
   {
