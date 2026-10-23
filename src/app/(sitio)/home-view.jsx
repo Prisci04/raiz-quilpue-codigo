@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, MapPin, Search, Users } from "lucide-react";
 import AccessSection from "@/components/home/AccessSection";
+import { getProximaActividad } from "@/lib/proxima-actividad.mjs";
 
 const fallbackImage = "/images/inicio/imageninicio.jpg";
 
 const heroSlides = [
   {
     // CAMBIAR IMAGEN AQUÍ: agrega aquí la primera foto histórica del inicio.
-    image: "/images/inicio/imgini3.jpg",
+    image: "/images/inicio/imgini3.JPG",
     caption: "Calle comercial de Quilpué",
   },
   {
@@ -29,6 +30,7 @@ const heroSlides = [
 function formatDate(date) {
   if (!date) return "";
   return new Date(date).toLocaleDateString("es-CL", {
+    ...(/^\d{4}-\d{2}-\d{2}$/.test(date) ? { timeZone: "UTC" } : {}),
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -60,7 +62,7 @@ export default function HomeView({ contents = [], activities = [] }) {
     () => contents.filter((item) => item.tipo === "noticia").slice(0, 2),
     [contents],
   );
-  const nextActivity = activities[0] ?? null;
+  const nextActivity = getProximaActividad(activities);
 
   function handleSearch(event) {
     event.preventDefault();
@@ -152,7 +154,7 @@ export default function HomeView({ contents = [], activities = [] }) {
             </form>
           </div>
           <div className="mt-10 grid max-w-3xl grid-cols-2 gap-px md:grid-cols-4">
-            {[{ label: "Comienzo", value: "2026" }, { label: "Años de historia", value: "1" }, { label: "Actividades 2026", value: String(activities.length) }, { label: "Contenidos publicados", value: String(contents.length) }].map((stat) => (
+            {[{ label: "Comienzo", value: "2026" }, { label: "Años de historia", value: "1" }, { label: "Actividades disponibles", value: String(activities.length) }, { label: "Contenidos publicados", value: String(contents.length) }].map((stat) => (
               <div key={stat.label} className="px-4 py-3" style={{ background: "rgba(148,101,65,0.65)", backdropFilter: "blur(4px)" }}>
                 <div className="font-serif text-2xl font-bold text-white">{stat.value}</div>
                 <div className="mt-0.5 font-mono text-[9px] tracking-wide text-[#e7dcd2]/55 uppercase">{stat.label}</div>

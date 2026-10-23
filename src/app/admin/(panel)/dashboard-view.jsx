@@ -8,16 +8,7 @@ import {
   Ticket,
 } from "lucide-react";
 import DownloadReportButton from "@/components/admin/DownloadReportButton";
-import {
-  AdminBarChart,
-  AdminDonutChart,
-  AdminLineChart,
-} from "@/components/admin/AdminCharts";
-import {
-  ENROLLMENTS_BY_ACTIVITY,
-  REACTIONS_BY_MONTH,
-  VISITS_BY_MONTH,
-} from "@/lib/admin-dashboard";
+import { AdminDonutChart } from "@/components/admin/AdminCharts";
 
 const KPI_TONES = {
   gold: { icon: "bg-[#feca2b]/20 text-[#9a7a12]", value: "text-[#9a7a12]" },
@@ -66,13 +57,21 @@ const QUICK_ACTIONS = [
   },
 ];
 
+function PendingChart({ title }) {
+  return (
+    <article className="admin-card p-5 sm:p-6">
+      <h2 className="text-[15px] font-semibold tracking-tight text-[#2c1810]">{title}</h2>
+      <p className="mt-4 flex min-h-44 items-center text-sm text-[#7c5c47]">
+        Sin datos disponibles. Esta métrica todavía no tiene una fuente conectada.
+      </p>
+    </article>
+  );
+}
+
 export default function AdminDashboardView({
   dateLabel,
-  uniqueVisitors,
-  enrollments,
   publishedContents,
-  totalContents,
-  museumReactions,
+  contentError,
   contentSlices,
 }) {
   return (
@@ -92,61 +91,54 @@ export default function AdminDashboardView({
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          value={uniqueVisitors}
+          value="—"
           label="Visitantes únicos"
-          hint="Septiembre 2026"
+          hint="Sin fuente de datos conectada"
           tone="gold"
           icon={Eye}
         />
         <KpiCard
-          value={enrollments}
+          value="—"
           label="Inscritos actividades"
-          hint="Total histórico"
+          hint="Sin fuente de datos conectada"
           tone="brown"
           icon={Ticket}
         />
         <KpiCard
-          value={publishedContents}
+          value={publishedContents ?? "—"}
           label="Contenidos publicados"
-          hint={`De ${totalContents} totales`}
+          hint={contentError ? "Error al cargar" : "Total de publicaciones"}
           tone="forest"
           icon={FileText}
         />
         <KpiCard
-          value={museumReactions}
+          value="—"
           label="Reacciones museo"
-          hint="Me interesa"
+          hint="Sin fuente de datos conectada"
           tone="terracotta"
           icon={Heart}
         />
       </section>
 
+      {contentError ? <p role="alert" className="text-sm text-[#8d3b28]">{contentError}</p> : null}
+
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <AdminLineChart
-          title="Visitas por mes"
-          series={VISITS_BY_MONTH}
-          color="#c4a04a"
-          max={1200}
-          yTicks={[300, 600, 900, 1200]}
-          highlight="1.020 este mes"
-        />
-        <AdminBarChart
-          title="Inscritos por actividad"
-          series={ENROLLMENTS_BY_ACTIVITY}
-          max={100}
-          highlight="Actual"
-        />
+        <PendingChart title="Visitas por mes" />
+        <PendingChart title="Inscritos por actividad" />
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <AdminDonutChart title="Contenidos por categoría" slices={contentSlices} />
-        <AdminLineChart
-          title="Reacciones museo por mes"
-          series={REACTIONS_BY_MONTH}
-          color="#c45a3a"
-          max={320}
-          yTicks={[80, 160, 240, 320]}
-        />
+        {contentSlices.length ? (
+          <AdminDonutChart title="Publicaciones cargadas por categoría" slices={contentSlices} />
+        ) : (
+          <article className="admin-card p-5 sm:p-6">
+            <h2 className="text-[15px] font-semibold text-[#2c1810]">Publicaciones cargadas por categoría</h2>
+            <p className="mt-4 flex min-h-44 items-center text-sm text-[#7c5c47]">
+              {contentError ? "No se pudo cargar la distribución." : "Aún no hay contenidos publicados."}
+            </p>
+          </article>
+        )}
+        <PendingChart title="Reacciones museo por mes" />
       </section>
 
       <section>

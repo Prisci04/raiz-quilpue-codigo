@@ -22,6 +22,8 @@ export default async function MuseoPage() {
       content: [piece.fecha_aproximada, piece.lugar].filter(Boolean).join(" · "),
       tipo: piece.categoria,
       image: piece.imagen_url,
+      fileName: piece.archivo_nombre,
+      fileUrl: piece.archivo_url,
       date: piece.fecha_aproximada,
     }));
   } catch {

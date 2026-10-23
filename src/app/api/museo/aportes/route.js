@@ -3,6 +3,7 @@ import { noStore } from "@/lib/contenidos/respond";
 import { parseAporteMuseoInput } from "@/lib/community-validation.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createAporteMuseo } from "@/services/admin-community.service";
+import { inspectMuseoFile } from "@/lib/media/museo-policy.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -16,16 +17,6 @@ const ALLOWED_TYPES = new Set([
   "image/avif",
   "application/pdf",
 ]);
-
-function safeExtension(file) {
-  const extension = file.name.split(".").pop()?.toLowerCase();
-
-  if (!extension || !/^[a-z0-9]+$/.test(extension)) {
-    return "";
-  }
-
-  return `.${extension}`;
-}
 
 export async function POST(request) {
   let uploadedPath = null;
@@ -82,14 +73,15 @@ export async function POST(request) {
       );
     }
 
-    const supabase = getSupabaseAdminClient();
-
-    const fileId = crypto.randomUUID();
-    const extension = safeExtension(file);
-
-    uploadedPath = `museo/aportes/${fileId}${extension}`;
-
     const buffer = Buffer.from(await file.arrayBuffer());
+    const inspected = inspectMuseoFile({ bytes: buffer, type: file.type, name: file.name, size: file.size });
+    if (!inspected.ok) {
+      return noStore(jsonError(400, inspected.code, inspected.message));
+    }
+
+    const supabase = getSupabaseAdminClient();
+    const fileId = crypto.randomUUID();
+    uploadedPath = `museo/aportes/${fileId}.${inspected.extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)

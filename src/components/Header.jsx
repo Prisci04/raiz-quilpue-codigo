@@ -12,11 +12,9 @@ const navItems = [
   { href: "/contenido", label: "Contenidos" },
   { href: "/actividades", label: "Actividades" },
   { href: "/museo", label: "Museo Digital" },
-  { href: "/", label: "Market", placeholder: true },
 ];
 
 function isActive(pathname, item) {
-  if (item.placeholder) return false;
   if (item.href === "/") return pathname === "/";
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
@@ -51,11 +49,11 @@ export default function Header() {
             >
               {/* CAMBIAR IMAGEN AQUÍ: sube el logo oficial con este nombre. */}
               <Image
-                src="/images/logo/logoraizquilpue.png"
+                src="/images/logo/LogoRaizQuilpue.png"
                 alt="Logo de Raíz Quilpué"
                 width={32}
                 height={32}
-                className="h-8 w-8 object-contain"
+                className="h-auto w-8 object-contain"
               />
             </div>
             <div className="leading-tight">
@@ -86,9 +84,6 @@ export default function Header() {
               {item.label}
             </Link>
           ))}
-          <Link href="/" className="nav-link" style={{ color: "var(--active-indicator)" }}>
-            Asistente
-          </Link>
         </nav>
 
         <div className="flex flex-1 items-center justify-end gap-3">
@@ -143,14 +138,6 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            <Link
-              href="/"
-              className="border-b py-2.5 text-left text-sm font-medium"
-              style={{ borderColor: "var(--border)", color: "var(--active-indicator)" }}
-              onClick={() => setMenuOpen(false)}
-            >
-              Asistente
-            </Link>
             <Link
               href="/admin/login"
               className="btn-outline mt-3 w-full py-2 text-center"

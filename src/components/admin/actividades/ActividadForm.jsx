@@ -19,6 +19,8 @@ const EMPTY = {
   cupos: "",
   tipo_valor: "gratuito",
   valor_monto: "",
+  forma_pago: null,
+  informacion_adicional: null,
   imagen_url: "",
   estado: "borrador",
 };
@@ -48,7 +50,9 @@ export default function ActividadForm({ activityId = null }) {
         if (!active) return;
         setForm(Object.fromEntries(Object.keys(EMPTY).map((key) => [
           key,
-          key.startsWith("hora_") && activity[key] ? activity[key].slice(0, 5) : activity[key] ?? "",
+          key === "forma_pago" || key === "informacion_adicional"
+            ? activity[key]
+            : key.startsWith("hora_") && activity[key] ? activity[key].slice(0, 5) : activity[key] ?? "",
         ])));
       })
       .catch((loadError) => { if (active) { setError(loadError.message); setLoadError(true); } })
@@ -77,7 +81,9 @@ export default function ActividadForm({ activityId = null }) {
       }
       setForm(Object.fromEntries(Object.keys(EMPTY).map((key) => [
         key,
-        key.startsWith("hora_") && saved[key] ? saved[key].slice(0, 5) : saved[key] ?? "",
+        key === "forma_pago" || key === "informacion_adicional"
+          ? saved[key]
+          : key.startsWith("hora_") && saved[key] ? saved[key].slice(0, 5) : saved[key] ?? "",
       ])));
       setSuccess("Actividad guardada correctamente.");
       router.refresh();

@@ -276,7 +276,7 @@ export async function deleteAporteMuseoAdmin(id) {
     await admin()
       .from("museo_aportes")
       .select(
-        "id,archivo_url,estado_revision,pieza_id",
+        "id,archivo_url,pieza_id",
       )
       .eq("id", id)
       .single(),
@@ -287,15 +287,6 @@ export async function deleteAporteMuseoAdmin(id) {
     return;
   }
 
-  if (
-    aporte.estado_revision === "convertido" &&
-    aporte.pieza_id
-  ) {
-    throw new Error(
-      "No puedes eliminar un aporte mientras tenga una pieza asociada.",
-    );
-  }
-
   assertQuery(
     await admin()
       .from("museo_aportes")
@@ -304,7 +295,8 @@ export async function deleteAporteMuseoAdmin(id) {
     "Failed to delete museo aporte",
   );
 
-  if (!aporte.archivo_url) {
+  // La pieza conserva el archivo compartido aunque se elimine el aporte original.
+  if (aporte.pieza_id || !aporte.archivo_url) {
     return;
   }
 

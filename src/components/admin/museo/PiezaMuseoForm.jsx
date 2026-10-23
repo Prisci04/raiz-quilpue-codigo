@@ -18,6 +18,7 @@ export default function PiezaMuseoForm({ pieceId = null }) {
   const editing = Boolean(pieceId);
   const router = useRouter();
   const [form, setForm] = useState(EMPTY);
+  const [archivo, setArchivo] = useState(null);
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -29,7 +30,7 @@ export default function PiezaMuseoForm({ pieceId = null }) {
     if (!editing) return undefined;
     let active = true;
     getPiezaMuseo(pieceId)
-      .then((piece) => { if (active) setForm(Object.fromEntries(Object.keys(EMPTY).map((key) => [key, piece[key] ?? ""]))); })
+      .then((piece) => { if (active) { setForm(Object.fromEntries(Object.keys(EMPTY).map((key) => [key, piece[key] ?? ""]))); setArchivo(piece); } })
       .catch((loadError) => { if (active) { setError(loadError.message); setLoadError(true); } })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -46,6 +47,7 @@ export default function PiezaMuseoForm({ pieceId = null }) {
         return;
       }
       setForm(Object.fromEntries(Object.keys(EMPTY).map((key) => [key, saved[key] ?? ""])));
+      setArchivo(saved);
       setSuccess("Pieza guardada correctamente.");
       router.refresh();
     } catch (saveError) {
@@ -68,6 +70,10 @@ export default function PiezaMuseoForm({ pieceId = null }) {
     }
   }
 
+  const archivoLabel = /\.(jpe?g|png|webp|avif)$/i.test(archivo?.archivo_nombre ?? "")
+    ? "Abrir imagen"
+    : /\.pdf$/i.test(archivo?.archivo_nombre ?? "") ? "Abrir PDF" : "Abrir documento";
+
   return (
     <section>
       <div><p className="text-[13px] text-[#8d7b6d]"><Link href="/admin" className="hover:text-[#2c1810]">Gestión</Link><span className="px-1.5" aria-hidden="true">›</span><Link href="/admin/museo" className="hover:text-[#2c1810]">Museo Digital</Link><span className="px-1.5" aria-hidden="true">›</span>{editing ? "Editar pieza" : "Nueva pieza"}</p><h1 className="mt-2 font-serif text-[clamp(2rem,3vw,2.4rem)] font-semibold tracking-tight text-[#2c1810]">{editing ? "Editar pieza" : "Nueva pieza"}</h1><p className="mt-1 text-sm text-[#7c6a5c]">Crea una ficha para la colección digital de Raíz Quilpué.</p></div>
@@ -80,6 +86,15 @@ export default function PiezaMuseoForm({ pieceId = null }) {
           <Field label="Fecha aproximada"><input maxLength={120} placeholder="Ej.: década de 1950" value={form.fecha_aproximada ?? ""} onChange={(event) => setForm((state) => ({ ...state, fecha_aproximada: event.target.value }))} className={inputClass} /></Field>
           <Field label="Lugar"><input maxLength={250} value={form.lugar ?? ""} onChange={(event) => setForm((state) => ({ ...state, lugar: event.target.value }))} className={inputClass} /></Field>
           <Field label="Imagen (URL)" className="lg:col-span-2"><input type="text" maxLength={2000} placeholder="/images/... o https://..." value={form.imagen_url ?? ""} onChange={(event) => setForm((state) => ({ ...state, imagen_url: event.target.value }))} className={inputClass} /><span className="mt-1 block text-xs text-[#8d7b6d]">Usa una imagen del sitio, del almacenamiento público de Supabase o de Unsplash.</span></Field>
+          {archivo?.archivo_url ? (
+            <div className="rounded-sm border border-[#e7dfd6] bg-white p-4 lg:col-span-2">
+              <p className="text-[13px] font-medium text-[#2c1810]">Archivo de la pieza</p>
+              {archivo.archivo_nombre ? <p className="mt-1 break-words text-sm text-[#7c6a5c]">{archivo.archivo_nombre}</p> : null}
+              <a href={archivo.archivo_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-10 items-center text-sm font-medium text-[#a5452d] underline underline-offset-2">
+                {archivoLabel}
+              </a>
+            </div>
+          ) : null}
           <Field label="Estado"><select value={form.estado} onChange={(event) => setForm((state) => ({ ...state, estado: event.target.value }))} className={inputClass}><option value="borrador">Borrador</option><option value="publicada">Publicada</option></select></Field>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">{editing ? <button type="button" onClick={() => setDeleteConfirm(true)} disabled={saving} className="min-h-10 rounded-sm border border-[#f0c7be] bg-[#fff6f3] px-4 text-sm font-medium text-[#8d3b28]">Eliminar pieza</button> : <Link href="/admin/museo" className="text-sm text-[#7c5c47]">Cancelar</Link>}<div className="flex flex-wrap gap-2"><button type="button" disabled={saving} onClick={() => save("borrador")} className="min-h-10 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810]">{saving ? "Guardando…" : "Guardar borrador"}</button><button type="submit" disabled={saving} className="min-h-10 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white">{saving ? "Guardando…" : editing ? "Guardar cambios" : "Publicar pieza"}</button></div></div>

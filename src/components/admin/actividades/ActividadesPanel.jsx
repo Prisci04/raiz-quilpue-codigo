@@ -79,7 +79,12 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
     setActionError("");
     try {
       const next = activity.estado === "publicada" ? "borrador" : "publicada";
-      await saveActividad({ ...activity, estado: next }, activity.id);
+      await saveActividad({
+        ...activity,
+        hora_inicio: typeof activity.hora_inicio === "string" ? activity.hora_inicio.slice(0, 5) : activity.hora_inicio,
+        hora_fin: typeof activity.hora_fin === "string" ? activity.hora_fin.slice(0, 5) : activity.hora_fin,
+        estado: next,
+      }, activity.id);
       setNoticeText(next === "publicada" ? "Actividad publicada correctamente." : "Actividad guardada como borrador.");
       router.refresh();
     } catch (saveError) {

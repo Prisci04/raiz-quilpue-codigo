@@ -222,6 +222,8 @@ export default function MuseoPanel({
       if (deleteTarget.kind === "pieza") {
         await deletePiezaMuseo(deleteTarget.entry.id);
 
+        setContributions([]);
+        setContributionsLoaded(false);
         router.refresh();
       } else {
         await deleteAporteMuseo(deleteTarget.entry.id);
@@ -751,6 +753,14 @@ export default function MuseoPanel({
             <p className="mt-2 text-sm text-[#7c6a5c]">
               “{deleteTarget.entry.titulo}” se eliminará de forma permanente.
             </p>
+
+            {deleteTarget.kind === "aporte" && deleteTarget.entry.pieza_id ? (
+              <p className="mt-2 text-sm text-[#7c6a5c]">
+                Este aporte ya tiene una pieza asociada en el Museo. Se eliminará
+                únicamente el aporte original; la pieza, su estado y su archivo
+                se conservarán.
+              </p>
+            ) : null}
 
             <div className="mt-6 flex justify-end gap-2">
               <button
