@@ -1,7 +1,9 @@
 import "server-only";
 
+import { isActividadPasada } from "@/lib/actividades";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { deleteOwnedPortada } from "@/services/storage.service";
 
 const ACTIVIDAD_COLUMNS =
   "id,titulo,descripcion,fecha,hora_inicio,hora_fin,lugar,publico_objetivo,modalidad,tipo_participacion,cupos,tipo_valor,valor_monto,forma_pago,informacion_adicional,imagen_url,estado,fecha_creacion,fecha_actualizacion";
@@ -25,6 +27,25 @@ function admin() {
    ACTIVIDADES
 ========================= */
 
+async function countInscritosAdmin(ids) {
+  const counts = new Map(ids.map((id) => [id, 0]));
+  if (!ids.length) return counts;
+
+  const data = assertQuery(
+    await admin()
+      .from("actividad_inscripciones")
+      .select("actividad_id")
+      .in("actividad_id", ids),
+    "Failed to count inscripciones",
+  );
+
+  for (const row of data ?? []) {
+    counts.set(row.actividad_id, (counts.get(row.actividad_id) ?? 0) + 1);
+  }
+
+  return counts;
+}
+
 export async function listActividadesAdmin() {
   const data = assertQuery(
     await admin()
@@ -35,7 +56,13 @@ export async function listActividadesAdmin() {
     "Failed to list actividades",
   );
 
-  return data ?? [];
+  const rows = data ?? [];
+  const counts = await countInscritosAdmin(rows.map((row) => row.id));
+
+  return rows.map((row) => ({
+    ...row,
+    inscritos: counts.get(row.id) ?? 0,
+  }));
 }
 
 export async function getActividadAdmin(id) {
@@ -50,25 +77,58 @@ export async function getActividadAdmin(id) {
 }
 
 export async function saveActividadAdmin(id, input) {
-  const row = { ...input };
+  if (id) {
+    const current = await getActividadAdmin(id);
+    if (!current) return null;
 
-  const result = id
-    ? await admin()
+    const data = assertQuery(
+      await admin()
         .from("actividades")
-        .update(row)
+        .update(input)
         .eq("id", id)
         .select(ACTIVIDAD_COLUMNS)
-        .single()
-    : await admin()
-        .from("actividades")
-        .insert(row)
-        .select(ACTIVIDAD_COLUMNS)
-        .single();
+        .maybeSingle(),
+      "Failed to save actividad",
+    );
 
-  return assertQuery(result, "Failed to save actividad");
+    if (!data) return null;
+
+    if (input.imagen_url !== undefined && current.imagen_url !== input.imagen_url) {
+      await deleteOwnedPortada(current.imagen_url);
+    }
+
+    return data;
+  }
+
+  return assertQuery(
+    await admin()
+      .from("actividades")
+      .insert(input)
+      .select(ACTIVIDAD_COLUMNS)
+      .single(),
+    "Failed to save actividad",
+  );
+}
+
+export async function saveActividadEstadoAdmin(id, estado) {
+  const current = await getActividadAdmin(id);
+  if (!current) return null;
+
+  return assertQuery(
+    await admin()
+      .from("actividades")
+      .update({ estado })
+      .eq("id", id)
+      .select(ACTIVIDAD_COLUMNS)
+      .maybeSingle(),
+    "Failed to save actividad estado",
+  );
 }
 
 export async function deleteActividadAdmin(id) {
+  const current = await getActividadAdmin(id);
+  if (!current) return null;
+
   assertQuery(
     await admin()
       .from("actividades")
@@ -76,6 +136,9 @@ export async function deleteActividadAdmin(id) {
       .eq("id", id),
     "Failed to delete actividad",
   );
+
+  await deleteOwnedPortada(current.imagen_url);
+  return true;
 }
 
 /* =========================
@@ -96,21 +159,45 @@ export async function listParticipantesAdmin(actividadId) {
 }
 
 export async function crearInscripcion(actividadId, input) {
+  const rpc = await admin().rpc("inscribir_actividad", {
+    p_actividad_id: actividadId,
+    p_nombre: input.nombre,
+    p_apellido: input.apellido,
+    p_email: input.email,
+    p_telefono: input.telefono,
+  });
+
+  if (!rpc.error) {
+    if (rpc.data?.error) return { error: rpc.data.error };
+    return rpc.data;
+  }
+
+  const missingFn =
+    rpc.error.code === "PGRST202" ||
+    /inscribir_actividad/i.test(rpc.error.message ?? "");
+
+  if (!missingFn) {
+    if (rpc.error.code === "23505") return { error: "ALREADY_REGISTERED" };
+    if (rpc.error.code === "23514") return { error: "INVALID_CONTACT" };
+    throw new Error(`Failed to create inscripcion: ${rpc.error.message}`);
+  }
+
   const actividad = assertQuery(
     await getSupabaseServerClient()
       .from("actividades")
-      .select("id,estado,tipo_participacion,cupos")
+      .select("id,estado,tipo_participacion,cupos,fecha")
       .eq("id", actividadId)
       .eq("estado", "publicada")
       .maybeSingle(),
     "Failed to verify actividad",
   );
 
-  if (
-    !actividad ||
-    actividad.tipo_participacion !== "inscripcion"
-  ) {
+  if (!actividad || actividad.tipo_participacion !== "inscripcion") {
     return { error: "ACTIVITY_UNAVAILABLE" };
+  }
+
+  if (isActividadPasada(actividad.fecha)) {
+    return { error: "ACTIVITY_ENDED" };
   }
 
   const { count, error: countError } = await admin()
@@ -125,24 +212,74 @@ export async function crearInscripcion(actividadId, input) {
     throw new Error("Failed to count inscripciones");
   }
 
-  if (
-    Number.isInteger(actividad.cupos) &&
-    (count ?? 0) >= actividad.cupos
-  ) {
+  if (Number.isInteger(actividad.cupos) && (count ?? 0) >= actividad.cupos) {
     return { error: "NO_PLACES" };
   }
 
-  return assertQuery(
+  const existing = await admin()
+    .from("actividad_inscripciones")
+    .select("id")
+    .eq("actividad_id", actividadId)
+    .ilike("email", input.email)
+    .maybeSingle();
+
+  if (existing.data) {
+    return { error: "ALREADY_REGISTERED" };
+  }
+
+  const inserted = await admin()
+    .from("actividad_inscripciones")
+    .insert({
+      ...input,
+      actividad_id: actividadId,
+    })
+    .select("id")
+    .single();
+
+  if (inserted.error?.code === "23505") {
+    return { error: "ALREADY_REGISTERED" };
+  }
+  if (inserted.error?.code === "23514") {
+    return { error: "INVALID_CONTACT" };
+  }
+
+  const row = assertQuery(inserted, "Failed to create inscripcion");
+
+  if (!Number.isInteger(actividad.cupos)) {
+    return row;
+  }
+
+  const listed = assertQuery(
     await admin()
       .from("actividad_inscripciones")
-      .insert({
-        ...input,
-        actividad_id: actividadId,
-      })
       .select("id")
-      .single(),
-    "Failed to create inscripcion",
+      .eq("actividad_id", actividadId)
+      .order("id", { ascending: true }),
+    "Failed to list inscripciones after insert",
   );
+
+  const kept = new Set((listed ?? []).slice(0, actividad.cupos).map((item) => item.id));
+  if (kept.has(row.id)) {
+    return row;
+  }
+
+  await admin().from("actividad_inscripciones").delete().eq("id", row.id);
+  return { error: "NO_PLACES" };
+}
+
+export async function deleteParticipanteAdmin(actividadId, inscripcionId) {
+  const data = assertQuery(
+    await admin()
+      .from("actividad_inscripciones")
+      .delete()
+      .eq("id", inscripcionId)
+      .eq("actividad_id", actividadId)
+      .select("id")
+      .maybeSingle(),
+    "Failed to delete inscripcion",
+  );
+
+  return data ?? null;
 }
 
 /* =========================
@@ -175,26 +312,43 @@ export async function getPiezaMuseoAdmin(id) {
 }
 
 export async function savePiezaMuseoAdmin(id, input) {
-  const result = id
-    ? await admin()
+  if (id) {
+    const current = await getPiezaMuseoAdmin(id);
+    if (!current) return null;
+
+    const data = assertQuery(
+      await admin()
         .from("museo_piezas")
         .update(input)
         .eq("id", id)
         .select(PIEZA_COLUMNS)
-        .single()
-    : await admin()
-        .from("museo_piezas")
-        .insert(input)
-        .select(PIEZA_COLUMNS)
-        .single();
+        .maybeSingle(),
+      "Failed to save museo pieza",
+    );
+
+    if (!data) return null;
+
+    if (input.imagen_url !== undefined && current.imagen_url !== input.imagen_url) {
+      await deleteOwnedPortada(current.imagen_url);
+    }
+
+    return data;
+  }
 
   return assertQuery(
-    result,
+    await admin()
+      .from("museo_piezas")
+      .insert(input)
+      .select(PIEZA_COLUMNS)
+      .single(),
     "Failed to save museo pieza",
   );
 }
 
 export async function deletePiezaMuseoAdmin(id) {
+  const current = await getPiezaMuseoAdmin(id);
+  if (!current) return null;
+
   const aportesRelacionados = assertQuery(
     await admin()
       .from("museo_aportes")
@@ -223,6 +377,9 @@ export async function deletePiezaMuseoAdmin(id) {
       .eq("id", id),
     "Failed to delete museo pieza",
   );
+
+  await deleteOwnedPortada(current.imagen_url);
+  return true;
 }
 
 export async function listPiezasMuseoPublicas() {
@@ -269,6 +426,22 @@ export async function listAportesMuseoAdmin() {
   );
 
   return data ?? [];
+}
+
+export async function countAportesMuseoAdmin() {
+  const { count, error } = await admin()
+    .from("museo_aportes")
+    .select("id", { count: "exact", head: true });
+
+  if (error) {
+    throw new Error(`Failed to count museo aportes: ${error.message}`);
+  }
+
+  if (!Number.isInteger(count)) {
+    throw new Error("Supabase did not return an exact museo aportes count.");
+  }
+
+  return count;
 }
 
 export async function deleteAporteMuseoAdmin(id) {

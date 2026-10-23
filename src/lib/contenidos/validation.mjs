@@ -62,7 +62,11 @@ function readImagen(value, { allowOmit }) {
 
   const owned = parseOwnedPortadaUrl(value.trim());
 
-  if (!owned || owned.publicUrl.length > IMAGEN_URL_MAX_LENGTH) {
+  if (
+    !owned ||
+    owned.contexto !== "contenidos" ||
+    owned.publicUrl.length > IMAGEN_URL_MAX_LENGTH
+  ) {
     return fail("La imagen de portada no es válida.");
   }
 

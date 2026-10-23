@@ -147,7 +147,7 @@ export default function ContenidoPreviewModal({ item, tipoLabel, onClose }) {
           {summary ? (
             <p
               id={summaryId}
-              className="mt-6 font-serif text-base leading-relaxed text-[#704a31] italic sm:text-lg"
+              className="mt-6 font-sans text-base leading-relaxed text-[#704a31] italic sm:text-lg"
             >
               {summary}
             </p>

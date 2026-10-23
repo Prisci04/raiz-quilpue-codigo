@@ -6,6 +6,7 @@ import {
   buildObjectPath,
   inspectImageFile,
   mediaTarget,
+  parseOwnedAporteImageUrl,
   parseOwnedPortadaUrl,
   supabaseProjectHostname,
 } from "../src/lib/media/policy.mjs";
@@ -67,15 +68,34 @@ test("el nombre del usuario no entra en la ruta y el archivo lleva uuid", () => 
   assert.equal(path.includes("foto"), false);
   assert.equal(mediaTarget("contenidos", "portada", "../15"), null);
   assert.equal(mediaTarget("museo", "fotografia", "1"), null);
+  assert.match(
+    buildObjectPath(mediaTarget("actividades", "portada", "8"), "webp"),
+    /^actividades\/8\/portada\/[0-9a-f-]{36}\.webp$/,
+  );
+  assert.match(
+    buildObjectPath(mediaTarget("museo", "portada", "4"), "jpg"),
+    /^museo\/4\/portada\/[0-9a-f-]{36}\.jpg$/,
+  );
 });
 
 test("solo acepta la URL pública de la portada de este proyecto", () => {
   const owned = parseOwnedPortadaUrl(PORTADA, HOST);
 
   assert.equal(owned.registroId, 15);
+  assert.equal(owned.contexto, "contenidos");
   assert.equal(owned.bucket, "public-media");
   assert.equal(parseOwnedPortadaUrl("https://otro.supabase.co/storage/v1/object/public/public-media/contenidos/15/portada/550e8400-e29b-41d4-a716-446655440000.webp", HOST), null);
   assert.equal(parseOwnedPortadaUrl("https://proyecto.supabase.co/storage/v1/object/public/public-media/contenidos/15/portada/../../secret.webp", HOST), null);
+
+  const museoPortada =
+    "https://proyecto.supabase.co/storage/v1/object/public/public-media/museo/4/portada/550e8400-e29b-41d4-a716-446655440000.jpg";
+  assert.equal(parseOwnedPortadaUrl(museoPortada, HOST).contexto, "museo");
+  assert.equal(parseOwnedPortadaUrl(museoPortada, HOST).registroId, 4);
+
+  const aporte =
+    "https://proyecto.supabase.co/storage/v1/object/public/public-media/museo/aportes/550e8400-e29b-41d4-a716-446655440000.png";
+  assert.equal(parseOwnedAporteImageUrl(aporte, HOST)?.path, "museo/aportes/550e8400-e29b-41d4-a716-446655440000.png");
+  assert.equal(parseOwnedPortadaUrl(aporte, HOST), null);
 
   const previous = process.env.NEXT_PUBLIC_SUPABASE_URL;
   process.env.NEXT_PUBLIC_SUPABASE_URL = HOST;

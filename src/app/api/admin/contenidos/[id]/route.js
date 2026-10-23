@@ -81,7 +81,7 @@ export async function PATCH(request, { params }) {
     if (!soloEstado && parsed.value.imagen_url) {
       const owned = parseOwnedPortadaUrl(parsed.value.imagen_url);
 
-      if (!owned || owned.registroId !== parsedId.value) {
+      if (!owned || owned.contexto !== "contenidos" || owned.registroId !== parsedId.value) {
         throw new ContenidoError("VALIDATION", "La imagen de portada no es válida.");
       }
     }

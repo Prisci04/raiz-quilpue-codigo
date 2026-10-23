@@ -75,7 +75,7 @@ export default function ContenidoView({
       <div
         className="sticky top-16 z-40 border-b border-[#bb9c82] bg-[#e7dcd2]/95 px-6 py-3 backdrop-blur-md"
       >
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2">
+        <div className="mx-auto flex w-full max-w-7xl flex-nowrap items-center gap-1 overflow-x-auto">
           {FILTERS.map((filter) => {
             const active = tipo === filter.id;
 
@@ -86,7 +86,7 @@ export default function ContenidoView({
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTipo(filter.id)}
-                className={`px-3.5 py-2 text-[11px] font-semibold tracking-[0.12em] uppercase transition-colors ${
+                className={`shrink-0 whitespace-nowrap px-2 py-1 font-sans text-[9px] font-medium tracking-normal uppercase transition-colors sm:px-2.5 ${
                   active
                     ? "bg-[#704a31] text-[#e7dcd2]"
                     : "border border-[#bb9c82] bg-transparent text-[#946541] hover:border-[#db700f] hover:text-[#db700f]"
@@ -96,7 +96,7 @@ export default function ContenidoView({
               </button>
             );
           })}
-          <span className="ml-auto font-mono text-[10px] text-[#946541]">
+          <span className="ml-auto shrink-0 whitespace-nowrap pl-2 font-sans text-[9px] text-[#946541]">
             {visibleItems.length} {visibleItems.length === 1 ? "publicación" : "publicaciones"}
           </span>
         </div>
@@ -108,7 +108,7 @@ export default function ContenidoView({
             <div className="mb-4 flex justify-center text-[#946541]" aria-hidden="true">
               <Inbox size={36} strokeWidth={1.5} />
             </div>
-            <p className="font-serif text-xl text-[#946541]">{emptyMessage}</p>
+            <p className="font-sans text-base text-[#946541]">{emptyMessage}</p>
           </div>
         ) : (
           <>
@@ -185,7 +185,7 @@ function SectionHeading({ eyebrow, title, count, countLabel }) {
     <div className="mb-8 flex items-center gap-4">
       <div>
         <div className="section-label mb-0.5">{eyebrow}</div>
-        <h2 className="font-serif text-2xl font-semibold text-[#704a31]">{title}</h2>
+        <h2 className="font-sans text-xl font-semibold text-[#704a31]">{title}</h2>
       </div>
       <div className="h-px flex-1 bg-[#bb9c82]" />
       <span className="font-mono text-[9px] text-[#946541]">
@@ -231,7 +231,7 @@ function ContentCard({ item, index, featured = false, onOpen }) {
             {item.date ? formatDate(item.date) : ""}
           </span>
         </div>
-        <h3 className={`${featured ? "text-lg" : "text-lg"} mb-2 font-serif leading-snug font-semibold text-[#946541]`}>
+        <h3 className="mb-2 font-serif text-lg leading-snug font-semibold text-[#946541]">
           {item.title}
         </h3>
         {item.description ? (
@@ -242,10 +242,10 @@ function ContentCard({ item, index, featured = false, onOpen }) {
         <button
           type="button"
           onClick={() => onOpen(item.id)}
-          className="inline-flex min-h-11 items-center gap-1 font-mono text-[9px] tracking-wide text-[#db700f] uppercase"
+          className="inline-flex min-h-7 items-center gap-1 font-sans text-[8px] font-medium tracking-normal text-[#db700f] uppercase"
         >
           Ver detalle
-          <ArrowRight size={12} strokeWidth={1.8} aria-hidden="true" />
+          <ArrowRight size={10} strokeWidth={1.8} aria-hidden="true" />
         </button>
       </div>
     </article>

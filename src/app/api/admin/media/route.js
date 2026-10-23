@@ -8,6 +8,7 @@ import {
   parseOwnedPortadaUrl,
 } from "@/lib/media/policy.mjs";
 import { noStore } from "@/lib/contenidos/respond";
+import { getActividadAdmin, getPiezaMuseoAdmin } from "@/services/admin-community.service";
 import { obtenerContenidoAdmin } from "@/services/contenidos-admin.service";
 import { deleteImage, uploadImage } from "@/services/storage.service";
 
@@ -30,6 +31,25 @@ function textField(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+async function loadMediaOwner(contexto, registroId) {
+  if (contexto === "contenidos") return obtenerContenidoAdmin(registroId);
+  if (contexto === "actividades") return getActividadAdmin(registroId);
+  if (contexto === "museo") return getPiezaMuseoAdmin(registroId);
+  return null;
+}
+
+function notFoundLabel(contexto) {
+  if (contexto === "actividades") return "Actividad no encontrada.";
+  if (contexto === "museo") return "Pieza no encontrada.";
+  return "Contenido no encontrado.";
+}
+
+function assignedLabel(contexto) {
+  if (contexto === "actividades") return "La imagen sigue asignada a la actividad.";
+  if (contexto === "museo") return "La imagen sigue asignada a la pieza.";
+  return "La imagen sigue asignada al contenido.";
+}
+
 export async function POST(request) {
   try {
     const auth = await requireGestorContenido(request);
@@ -47,10 +67,10 @@ export async function POST(request) {
       throw new MediaError(400, "INVALID_FILE", "La solicitud no es válida.");
     }
 
-    const contenido = await obtenerContenidoAdmin(target.registroId);
+    const owner = await loadMediaOwner(target.contexto, target.registroId);
 
-    if (!contenido) {
-      throw new MediaError(404, "NOT_FOUND", "Contenido no encontrado.");
+    if (!owner) {
+      throw new MediaError(404, "NOT_FOUND", notFoundLabel(target.contexto));
     }
 
     const file = form.get("file");
@@ -102,16 +122,16 @@ export async function DELETE(request) {
       throw new MediaError(400, "INVALID_FILE", "La imagen no es válida.");
     }
 
-    const contenido = await obtenerContenidoAdmin(owned.registroId);
+    const owner = await loadMediaOwner(owned.contexto, owned.registroId);
 
-    if (!contenido) {
-      throw new MediaError(404, "NOT_FOUND", "Contenido no encontrado.");
+    if (!owner) {
+      throw new MediaError(404, "NOT_FOUND", notFoundLabel(owned.contexto));
     }
 
-    const current = parseOwnedPortadaUrl(contenido.imagen_url);
+    const current = parseOwnedPortadaUrl(owner.imagen_url);
 
     if (current?.path === owned.path) {
-      throw new MediaError(400, "INVALID_FILE", "La imagen sigue asignada al contenido.");
+      throw new MediaError(400, "INVALID_FILE", assignedLabel(owned.contexto));
     }
 
     await deleteImage(owned.path);

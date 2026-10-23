@@ -50,8 +50,19 @@ export const saveActividad = (payload, id) =>
     },
   );
 
+export const saveActividadEstado = (id, estado) =>
+  request(`/api/admin/actividades/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ estado }),
+  });
+
 export const deleteActividad = (id) =>
   request(`/api/admin/actividades/${id}`, {
+    method: "DELETE",
+  });
+
+export const deleteParticipante = (actividadId, inscripcionId) =>
+  request(`/api/admin/actividades/${actividadId}/participantes/${inscripcionId}`, {
     method: "DELETE",
   });
 

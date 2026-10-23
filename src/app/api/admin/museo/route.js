@@ -16,8 +16,11 @@ export async function GET(request) {
 
 export async function POST(request) {
   return runAdminCommunity(request, "POST /api/admin/museo", async () => {
-    const input = parsePiezaMuseoInput(await readJsonBody(request));
-    if (!input) return jsonError(400, "VALIDATION", "Revisa los datos de la pieza.");
-    return jsonSuccess(await savePiezaMuseoAdmin(null, input), {}, 201);
+    const parsed = parsePiezaMuseoInput(await readJsonBody(request));
+    if (!parsed.ok) return jsonError(400, "VALIDATION", parsed.message);
+    if (parsed.value.imagen_url) {
+      return jsonError(400, "VALIDATION", "Sube la imagen después de crear la pieza.");
+    }
+    return jsonSuccess(await savePiezaMuseoAdmin(null, parsed.value), {}, 201);
   });
 }

@@ -6,19 +6,25 @@ import { crearInscripcion } from "@/services/admin-community.service";
 
 export const dynamic = "force-dynamic";
 
+const INSCRIPTION_ERRORS = {
+  NO_PLACES: [409, "NO_PLACES", "No quedan cupos disponibles."],
+  ALREADY_REGISTERED: [409, "ALREADY_REGISTERED", "Este correo ya está inscrito en la actividad."],
+  INVALID_CONTACT: [400, "VALIDATION", "Revisa el correo y el teléfono. Usa un dominio como .cl o .com y un celular 9 1234 5678."],
+  ACTIVITY_ENDED: [409, "ACTIVITY_ENDED", "Las inscripciones de esta actividad ya cerraron."],
+  ACTIVITY_UNAVAILABLE: [404, "ACTIVITY_UNAVAILABLE", "La actividad no acepta inscripciones."],
+};
+
 export async function POST(request, { params }) {
   try {
     const { id } = await params;
     const parsedId = parsePositiveInteger(id, { min: 1 });
     if (!parsedId.ok) return noStore(jsonError(400, "VALIDATION", "La actividad no es válida."));
-    const input = parseInscripcionInput(await readContenidoBody(request));
-    if (!input) return noStore(jsonError(400, "VALIDATION", "Revisa los datos de inscripción."));
-    const result = await crearInscripcion(parsedId.value, input);
-    if (result.error === "NO_PLACES") {
-      return noStore(jsonError(409, "NO_PLACES", "No quedan cupos disponibles."));
-    }
+    const parsed = parseInscripcionInput(await readContenidoBody(request));
+    if (!parsed.ok) return noStore(jsonError(400, "VALIDATION", parsed.message));
+    const result = await crearInscripcion(parsedId.value, parsed.value);
     if (result.error) {
-      return noStore(jsonError(404, "ACTIVITY_UNAVAILABLE", "La actividad no acepta inscripciones."));
+      const mapped = INSCRIPTION_ERRORS[result.error] ?? INSCRIPTION_ERRORS.ACTIVITY_UNAVAILABLE;
+      return noStore(jsonError(...mapped));
     }
     return noStore(jsonSuccess({ inscrito: true }, {}, 201));
   } catch {

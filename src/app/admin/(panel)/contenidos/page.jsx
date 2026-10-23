@@ -12,9 +12,11 @@ export default async function AdminContenidosPage({ searchParams }) {
   const notice =
     query.creado === "1"
       ? "Contenido creado correctamente."
-      : query.eliminado === "1"
-        ? "Contenido eliminado correctamente."
-        : "";
+      : query.guardado === "1"
+        ? "Contenido guardado correctamente."
+        : query.eliminado === "1"
+          ? "Contenido eliminado correctamente."
+          : "";
 
   try {
     contenidos = await listContenidosPanel();

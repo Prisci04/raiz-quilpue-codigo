@@ -288,3 +288,17 @@ export function parseDocumento(value) {
 
   return { ok: true, value: { type: "doc", content: content.value } };
 }
+
+export function parseOptionalDocumento(value) {
+  if (value == null || value === "") {
+    return { ok: true, value: null };
+  }
+
+  const parsed = parseDocumento(value);
+
+  if (!parsed.ok && parsed.message === "El contenido completo es obligatorio.") {
+    return { ok: true, value: null };
+  }
+
+  return parsed;
+}
