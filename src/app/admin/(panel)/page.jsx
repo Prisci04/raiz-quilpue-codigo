@@ -1,8 +1,11 @@
+import { requireGestorContenidoPage } from "@/lib/auth/page-guard";
 import { formatDashboardDate } from "@/lib/admin-dashboard";
 import { getAdminDashboardData } from "@/services/admin-dashboard.service";
 import AdminDashboardView from "./dashboard-view";
 
 export default async function AdminDashboardPage() {
+  await requireGestorContenidoPage();
+
   let dashboard = {};
   let contentError = "";
 

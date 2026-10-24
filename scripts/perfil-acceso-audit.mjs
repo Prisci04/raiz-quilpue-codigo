@@ -1,3 +1,5 @@
+import { generatePassword } from "../src/lib/usuarios/generate-password.mjs";
+
 const base = process.env.AUDIT_BASE ?? "http://localhost:3000";
 const adminEmail = process.env.AUDIT_ADMIN_EMAIL;
 const adminPassword = process.env.AUDIT_ADMIN_PASSWORD;
@@ -164,8 +166,8 @@ async function main() {
     );
   }
 
-  const editorPassword = "Editor#Manual12";
-  const editorNext = "Editor#Nueva34";
+  const editorPassword = generatePassword();
+  const editorNext = generatePassword();
   const editorEmail = `perfil.editor.${Date.now()}@raizquilpue.cl`;
   const created = await request("/api/admin/usuarios", {
     method: "POST",

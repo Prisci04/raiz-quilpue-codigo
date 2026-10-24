@@ -1,3 +1,4 @@
+import { requireGestorContenidoPage } from "@/lib/auth/page-guard";
 import ContenidosPanel from "@/components/admin/contenidos/ContenidosPanel";
 import { listContenidosPanel } from "@/services/contenidos-admin.service";
 
@@ -6,6 +7,8 @@ export const metadata = { title: "Contenidos — Admin Raíz Quilpué" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminContenidosPage({ searchParams }) {
+  await requireGestorContenidoPage();
+
   const query = await searchParams;
   let contenidos = [];
   let error = "";

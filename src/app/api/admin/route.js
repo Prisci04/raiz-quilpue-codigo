@@ -1,7 +1,8 @@
 import { jsonError, jsonSuccess, logInternalError } from "@/lib/http";
 import { requireInternalSession } from "@/lib/auth/guard";
 
-// Cada ruta nueva bajo /api/admin debe llamar requireInternalSession.
+// Esta ruta solo comprueba la sesión. Las rutas de gestión deben exigir
+// requireGestorContenido o requireAdministrador según el recurso.
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

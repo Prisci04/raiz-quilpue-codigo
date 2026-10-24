@@ -20,7 +20,8 @@ const USUARIO_LIST_COLUMNS = `
   usuario_roles (
     roles (
       codigo,
-      nombre
+      nombre,
+      estado
     )
   )
 `;
@@ -41,7 +42,7 @@ function queryFailed(error) {
 function mapRoles(links) {
   return (links ?? [])
     .map((link) => link?.roles)
-    .filter((rol) => rol?.codigo && rol?.nombre)
+    .filter((rol) => rol?.codigo && rol?.nombre && rol.estado === "activo")
     .map((rol) => ({
       codigo: rol.codigo,
       nombre: rol.nombre,
@@ -223,9 +224,10 @@ async function assertKeepsAnActiveAdmin(usuario, nextRolCodigo) {
 export async function usuarioTieneRol(usuarioId, codigo) {
   const { data, error } = await client()
     .from("usuario_roles")
-    .select("roles!inner(codigo)")
+    .select("roles!inner(codigo,estado)")
     .eq("usuario_id", usuarioId)
     .eq("roles.codigo", codigo)
+    .eq("roles.estado", "activo")
     .limit(1);
 
   if (error) {
@@ -233,6 +235,15 @@ export async function usuarioTieneRol(usuarioId, codigo) {
   }
 
   return Array.isArray(data) && data.length > 0;
+}
+
+export async function usuarioEsGestorContenido(usuarioId) {
+  const [isAdministrador, isEditor] = await Promise.all([
+    usuarioTieneRol(usuarioId, "administrador"),
+    usuarioTieneRol(usuarioId, "editor"),
+  ]);
+
+  return isAdministrador || isEditor;
 }
 
 export async function listUsuariosInternos() {

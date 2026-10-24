@@ -206,7 +206,7 @@ async function main() {
     `${lastAdmin.status} ${lastAdmin.json?.error?.code ?? ""}`,
   );
 
-  const editorPassword = "Editor#Manual12";
+  const editorPassword = generatePassword();
   const editorEmail = `audit.editor.${Date.now()}@raizquilpue.cl`;
   const createdEditor = await request("/api/admin/usuarios", {
     method: "POST",
