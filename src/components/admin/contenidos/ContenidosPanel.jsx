@@ -170,7 +170,18 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
           <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
         </span>
       )}
-      <div className="relative" ref={menuRef}>
+      <div className="relative" ref={menuRef}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.stopPropagation();
+            setOpen(false);
+            menuRef.current?.querySelector("button")?.focus();
+          }
+        }}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+        }}
+      >
         <button
           type="button"
           disabled={busy}
@@ -197,6 +208,7 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
               type="button"
               className="block min-h-10 w-full px-3 py-2 text-left text-[13px] text-[#8d3b28] hover:bg-[#faf7f4]"
               onClick={() => {
+                menuRef.current?.querySelector("button")?.focus();
                 setOpen(false);
                 onDelete(contenido);
               }}
@@ -465,7 +477,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
               ))}
             </ul>
 
-            <div className="admin-table-scroll mt-2 hidden overflow-x-auto md:block">
+            <div tabIndex={0} role="region" aria-label="Listado de contenidos" className="admin-table-scroll mt-2 hidden overflow-x-auto md:block">
               <table className="admin-table w-full min-w-[720px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-[#e6dcd0] text-[13px] text-[#8a7968]">
@@ -581,6 +593,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
       {pendingDelete ? (
         <DeleteContenidoDialog
           titulo={pendingDelete.titulo}
+          error={actionError}
           busy={busyId === pendingDelete.id}
           onCancel={() => {
             if (busyId !== pendingDelete.id) setPendingDelete(null);

@@ -1,11 +1,11 @@
 "use client";
 
+import AdminDialog from "@/components/admin/AdminDialog";
 import ContenidoDocumento from "@/components/contenido/ContenidoDocumento";
 
 export default function ContenidoPreviewDialog({ titulo, resumen, contenido, onClose }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#2c1810]/40 p-3 sm:items-center sm:p-6">
-      <div
+      <AdminDialog onClose={onClose}
         role="dialog"
         aria-modal="true"
         aria-labelledby="vista-previa-titulo"
@@ -18,7 +18,7 @@ export default function ContenidoPreviewDialog({ titulo, resumen, contenido, onC
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-[#7c5c47] hover:text-[#2c1810]"
+            className="inline-flex min-h-11 items-center rounded-sm px-3 text-sm text-[#7c5c47] hover:text-[#2c1810]"
           >
             Cerrar
           </button>
@@ -33,7 +33,6 @@ export default function ContenidoPreviewDialog({ titulo, resumen, contenido, onC
           <p className="mt-4 font-serif text-lg leading-relaxed text-[#704a31] italic">{resumen}</p>
         ) : null}
         <ContenidoDocumento documento={contenido} />
-      </div>
-    </div>
+      </AdminDialog>
   );
 }

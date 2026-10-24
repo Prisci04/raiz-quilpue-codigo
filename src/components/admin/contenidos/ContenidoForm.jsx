@@ -50,10 +50,10 @@ const fieldClass =
 
 function FieldLabel({ children, hint }) {
   return (
-    <div className="flex items-baseline justify-between gap-3">
+    <span className="flex items-baseline justify-between gap-3">
       <span className="text-[13px] font-medium text-[#2c1810]">{children}</span>
       {hint ? <span className="text-[12px] text-[#8d7b6d]">{hint}</span> : null}
-    </div>
+    </span>
   );
 }
 
@@ -430,6 +430,8 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
             </div>
             <input
               ref={fileRef}
+              tabIndex={-1}
+              aria-label="Imagen de portada"
               type="file"
               accept={PORTADA_TYPES.join(",")}
               className="sr-only"

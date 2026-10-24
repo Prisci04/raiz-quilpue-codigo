@@ -1,6 +1,7 @@
 import { MEDIA_MAX_BYTES, MEDIA_TYPES, fileExtension, matchesImageSignature } from "./policy.mjs";
 
-const TYPES = { ...MEDIA_TYPES, "application/pdf": "pdf" };
+export const MUSEO_FILE_TYPES = { ...MEDIA_TYPES, "application/pdf": "pdf" };
+const TYPES = MUSEO_FILE_TYPES;
 const EXTENSIONS = { ...Object.fromEntries(Object.entries(TYPES).map(([mime, ext]) => [ext, mime])), jpeg: "image/jpeg" };
 
 function matchesAvif(data) {

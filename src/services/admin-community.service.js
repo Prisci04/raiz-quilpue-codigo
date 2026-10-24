@@ -1,5 +1,9 @@
 import "server-only";
 
+import { MuseoIntegrityError } from "@/lib/museo/errors.mjs";
+import { parseOwnedAporteFileUrl, parseOwnedPortadaUrl } from "@/lib/media/policy.mjs";
+import { logInternalError } from "@/lib/http";
+import { deleteImage } from "@/services/storage.service";
 import { isActividadPasada } from "@/lib/actividades";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -345,40 +349,24 @@ export async function savePiezaMuseoAdmin(id, input) {
   );
 }
 
-export async function deletePiezaMuseoAdmin(id) {
-  const current = await getPiezaMuseoAdmin(id);
-  if (!current) return null;
-
-  const aportesRelacionados = assertQuery(
-    await admin()
-      .from("museo_aportes")
-      .select("id")
-      .eq("pieza_id", id),
-    "Failed to list museo aportes linked to pieza",
-  );
-
-  if (aportesRelacionados?.length) {
-    assertQuery(
-      await admin()
-        .from("museo_aportes")
-        .update({
-          estado_revision: "pendiente",
-          pieza_id: null,
-        })
-        .eq("pieza_id", id),
-      "Failed to restore museo aportes linked to pieza",
-    );
+async function museoRpc(name, params) {
+  const { data, error } = await admin().rpc(name, params);
+  if (error) {
+    if (["PGRST202", "42883", "42501"].includes(error.code)) throw new MuseoIntegrityError();
+    throw new Error("Museo transaction failed");
   }
+  if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("Invalid Museo transaction result");
+  return data;
+}
 
-  assertQuery(
-    await admin()
-      .from("museo_piezas")
-      .delete()
-      .eq("id", id),
-    "Failed to delete museo pieza",
-  );
-
-  await deleteOwnedPortada(current.imagen_url);
+export async function deletePiezaMuseoAdmin(id) {
+  const result = await museoRpc("eliminar_pieza_museo", { p_pieza_id: id });
+  if (!result.eliminado) return null;
+  // Original contribution files remain available for the restored pending aporte.
+  const owned = parseOwnedPortadaUrl(result.pieza?.imagen_url);
+  if (owned?.contexto === "museo" && owned.registroId === Number(id)) {
+    await deleteOwnedPortada(result.pieza.imagen_url);
+  }
   return true;
 }
 
@@ -445,164 +433,20 @@ export async function countAportesMuseoAdmin() {
 }
 
 export async function deleteAporteMuseoAdmin(id) {
-  const aporte = assertQuery(
-    await admin()
-      .from("museo_aportes")
-      .select(
-        "id,archivo_url,pieza_id",
-      )
-      .eq("id", id)
-      .single(),
-    "Failed to get museo aporte before delete",
-  );
-
-  if (!aporte) {
-    return;
-  }
-
-  assertQuery(
-    await admin()
-      .from("museo_aportes")
-      .delete()
-      .eq("id", id),
-    "Failed to delete museo aporte",
-  );
-
-  // La pieza conserva el archivo compartido aunque se elimine el aporte original.
-  if (aporte.pieza_id || !aporte.archivo_url) {
-    return;
-  }
-
+  const result = await museoRpc("eliminar_aporte_museo", { p_aporte_id: id });
+  if (!result.eliminado || result.conservar_archivo !== false || !result.archivo_url) return;
+  const owned = parseOwnedAporteFileUrl(result.archivo_url);
+  if (!owned) return;
+  // DB already committed. Storage cleanup is best effort, never a DB rollback.
   try {
-    const url = new URL(aporte.archivo_url);
-
-    const marker =
-      "/storage/v1/object/public/public-media/";
-
-    const markerIndex =
-      url.pathname.indexOf(marker);
-
-    if (markerIndex === -1) {
-      return;
-    }
-
-    const storagePath = decodeURIComponent(
-      url.pathname.slice(
-        markerIndex + marker.length,
-      ),
-    );
-
-    if (
-      !storagePath.startsWith(
-        "museo/aportes/",
-      )
-    ) {
-      return;
-    }
-
-    const { error } = await admin()
-      .storage
-      .from("public-media")
-      .remove([storagePath]);
-
-    if (error) {
-      console.error(
-        "Failed to delete museo aporte file:",
-        error.message,
-      );
-    }
-  } catch (error) {
-    console.error(
-      "Failed to resolve museo aporte storage path:",
-      error,
-    );
+    await deleteImage(owned.path);
+  } catch {
+    logInternalError("museo aporte cleanup pending");
   }
 }
 
-/* =========================
-   CONVERTIR APORTE A BORRADOR
-========================= */
-
 export async function convertirAporteEnBorradorAdmin(id) {
-  const aporte = assertQuery(
-    await admin()
-      .from("museo_aportes")
-      .select(
-        "id,titulo,descripcion,categoria,fecha_aproximada,lugar,archivo_nombre,archivo_url,estado_revision,pieza_id",
-      )
-      .eq("id", id)
-      .single(),
-    "Failed to get museo aporte for conversion",
-  );
-
-  if (!aporte) {
-    return {
-      error: "NOT_FOUND",
-    };
-  }
-
-  if (
-    aporte.estado_revision !== "pendiente" ||
-    aporte.pieza_id
-  ) {
-    return {
-      error: "ALREADY_PROCESSED",
-    };
-  }
-
-  const archivoNombre =
-    aporte.archivo_nombre?.toLowerCase() || "";
-
-  const esImagen =
-    archivoNombre.endsWith(".jpg") ||
-    archivoNombre.endsWith(".jpeg") ||
-    archivoNombre.endsWith(".png") ||
-    archivoNombre.endsWith(".webp") ||
-    archivoNombre.endsWith(".avif");
-
-  const pieza = assertQuery(
-    await admin()
-      .from("museo_piezas")
-      .insert({
-        titulo: aporte.titulo,
-        descripcion: aporte.descripcion,
-        categoria: aporte.categoria,
-        fecha_aproximada:
-          aporte.fecha_aproximada,
-        lugar: aporte.lugar,
-
-        archivo_nombre:
-          aporte.archivo_nombre,
-
-        archivo_url:
-          aporte.archivo_url,
-
-        imagen_url:
-          esImagen && aporte.archivo_url
-            ? aporte.archivo_url
-            : null,
-
-        estado: "borrador",
-      })
-      .select(PIEZA_COLUMNS)
-      .single(),
-    "Failed to create museo pieza from aporte",
-  );
-
-  assertQuery(
-    await admin()
-      .from("museo_aportes")
-      .update({
-        estado_revision: "convertido",
-        pieza_id: pieza.id,
-      })
-      .eq("id", id),
-    "Failed to mark museo aporte as converted",
-  );
-
-  return {
-    pieza,
-  };
+  return museoRpc("convertir_aporte_museo", { p_aporte_id: id });
 }
 
 export async function rechazarAporteMuseoAdmin(id) {
@@ -630,16 +474,22 @@ export async function rechazarAporteMuseoAdmin(id) {
     };
   }
 
-  assertQuery(
+  const rejected = assertQuery(
     await admin()
       .from("museo_aportes")
       .update({
         estado_revision: "rechazado",
         pieza_id: null,
       })
-      .eq("id", id),
+      .eq("id", id)
+      .eq("estado_revision", "pendiente")
+      .is("pieza_id", null)
+      .select("id")
+      .maybeSingle(),
     "Failed to reject museo aporte",
   );
+
+  if (!rejected) return { error: "ALREADY_PROCESSED" };
 
   return {
     rechazado: true,

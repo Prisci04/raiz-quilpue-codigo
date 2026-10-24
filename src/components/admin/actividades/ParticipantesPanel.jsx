@@ -1,5 +1,6 @@
 "use client";
 
+import AdminDialog from "@/components/admin/AdminDialog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -125,7 +126,7 @@ function daysAgo(isoDay, amount) {
 
 function SortHead({ label, active, direction, onClick, className = "" }) {
   return (
-    <th className={`px-3 py-3 ${className}`}>
+    <th aria-sort={active ? (direction === "asc" ? "ascending" : "descending") : undefined} className={`px-3 py-3 ${className}`}>
       <button
         type="button"
         onClick={onClick}
@@ -150,6 +151,7 @@ export default function ParticipantesPanel({
   const [removedIds, setRemovedIds] = useState(() => new Set());
   const [actionError, setActionError] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const [removeTarget, setRemoveTarget] = useState(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("todos");
   const [sort, setSort] = useState({ key: "fecha_creacion", direction: "desc" });
@@ -346,6 +348,7 @@ export default function ParticipantesPanel({
     setActionError("");
     try {
       await deleteParticipante(activity.id, person.id);
+      setRemoveTarget(null);
       setRemovedIds((current) => {
         const next = new Set(current);
         next.add(person.id);
@@ -490,7 +493,18 @@ export default function ParticipantesPanel({
             </h2>
             <p className="mt-1 text-sm text-[#8d7b6d]">Lista de personas inscritas en esta actividad.</p>
           </div>
-          <div ref={menuRef} className="flex w-full min-w-0 flex-wrap items-center gap-1.5 lg:w-auto">
+          <div ref={menuRef}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.stopPropagation();
+                setMenu(null);
+                menuRef.current?.querySelector("button")?.focus();
+              }
+            }}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setMenu(null);
+            }}
+            className="flex w-full min-w-0 flex-wrap items-center gap-1.5 lg:w-auto">
             <label className="flex min-h-11 min-w-0 basis-full sm:basis-auto flex-1 items-center gap-2 rounded-xl border border-[#eadfd4] bg-[#fbf8f5] px-2.5 sm:px-3 lg:w-56 lg:flex-none">
               <Search size={15} className="shrink-0 text-[#a4846c]" aria-hidden="true" />
               <input
@@ -553,7 +567,7 @@ export default function ParticipantesPanel({
 
         {pageRows.length ? (
           <>
-            <div className="admin-table-scroll mt-4 overflow-x-auto">
+            <div tabIndex={0} role="region" aria-label="Listado de participantes" className="admin-table-scroll mt-4 overflow-x-auto">
               <table className="admin-table w-full min-w-[780px] border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-y border-[#efe6dc] text-xs text-[#8d7b6d]">
@@ -587,7 +601,7 @@ export default function ParticipantesPanel({
                           <button
                             type="button"
                             disabled={busyId === person.id}
-                            onClick={() => removeParticipant(person)}
+                            onClick={() => { setActionError(""); setRemoveTarget(person); }}
                             className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-medium text-[#a5452d] hover:bg-[#fff3f0] disabled:opacity-50"
                           >
                             <Trash2 size={14} aria-hidden="true" />
@@ -637,6 +651,21 @@ export default function ParticipantesPanel({
           </p>
         )}
       </div>
+      {removeTarget ? (
+        <AdminDialog onClose={() => setRemoveTarget(null)} busy={busyId !== null} role="alertdialog"
+          aria-labelledby="remove-participant-title" aria-describedby="remove-participant-description"
+          className="max-w-md rounded-md border border-[#e6ddd4] bg-white p-6">
+          <h2 id="remove-participant-title" className="font-serif text-xl font-semibold">Eliminar inscripción</h2>
+          <p id="remove-participant-description" className="mt-3 text-sm text-[#7c5c47]">
+            Se eliminará la inscripción de {removeTarget.nombre} {removeTarget.apellido}. Esta acción no se puede deshacer.
+          </p>
+          {actionError ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{actionError}</p> : null}
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <button type="button" disabled={busyId !== null} onClick={() => setRemoveTarget(null)} className="min-h-11 rounded-sm border border-[#e6ddd4] px-4 text-sm">Cancelar</button>
+            <button type="button" disabled={busyId !== null} onClick={() => removeParticipant(removeTarget)} className="min-h-11 rounded-sm bg-[#8d3b28] px-4 text-sm text-white">{busyId !== null ? "Eliminando…" : "Eliminar"}</button>
+          </div>
+        </AdminDialog>
+      ) : null}
     </section>
   );
 }

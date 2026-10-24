@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import AdminDialog from "@/components/admin/AdminDialog";
+import { useId, useState } from "react";
 import PasswordField from "@/components/admin/usuarios/PasswordField";
 import {
   parseCreateUsuario,
@@ -49,16 +50,6 @@ export default function UsuarioFormModal({
     setError("");
   }
 
-  useEffect(() => {
-    function onKeyDown(event) {
-      if (event.key === "Escape" && !submitting) {
-        onClose();
-      }
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose, submitting]);
 
   function updateField(name, value) {
     setForm((current) => ({ ...current, [name]: value }));
@@ -82,17 +73,17 @@ export default function UsuarioFormModal({
   const title = mode === "create" ? "Crear usuario" : "Editar usuario";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#2c1810]/40 p-3 sm:items-center sm:p-6">
-      <div
+      <AdminDialog onClose={onClose} busy={submitting}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={`${titleId}-description`}
         className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-md border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-5 sm:p-6"
       >
         <h2 id={titleId} className="text-lg font-semibold text-[#2c1810]">
           {title}
         </h2>
-        <p className="mt-1 text-sm text-[#7c5c47]">
+        <p id={`${titleId}-description`} className="mt-1 text-sm text-[#7c5c47]">
           {mode === "create"
             ? "La persona quedará como usuaria interna del portal."
             : "La contraseña no se modifica desde esta pantalla."}
@@ -214,7 +205,6 @@ export default function UsuarioFormModal({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </AdminDialog>
   );
 }

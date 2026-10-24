@@ -1,5 +1,6 @@
 "use client";
 
+import AdminDialog from "@/components/admin/AdminDialog";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -106,7 +107,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row xl:ml-auto xl:max-w-md"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar actividades..." aria-label="Buscar actividades" className="min-h-11 min-w-0 flex-1 rounded-sm border border-[#eadfd4] bg-[#fbf8f5] px-3 text-sm outline-none focus:border-[#c4a484]" /><Link href="/admin/actividades/nueva" className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-sm bg-[#c45c38] px-4 text-sm font-medium text-white hover:bg-[#a84c2c]"><Plus size={15} />Nueva actividad</Link></div>
         </div>
         {visible.length ? (
-          <div className="admin-table-scroll mt-4 overflow-x-auto">
+          <div tabIndex={0} role="region" aria-label="Listado de actividades" className="admin-table-scroll mt-4 overflow-x-auto">
             <table className="admin-table w-full min-w-[1040px] table-fixed border-collapse text-left text-sm">
               <thead>
                 <tr className="border-y border-[#efe6dc] text-xs uppercase tracking-wide text-[#8d7b6d]">
@@ -196,7 +197,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
           <p className="admin-empty px-3 py-12 text-center text-sm text-[#7c5c47]">No hay actividades con ese criterio.</p>
         )}
       </div>
-      {deleteTarget ? <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2c1810]/55 p-4"><section role="alertdialog" aria-modal="true" aria-labelledby="delete-activity-title" className="w-full max-w-md rounded-xl border border-[#efe6dc] bg-white p-6 shadow-2xl"><h2 id="delete-activity-title" className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar actividad?</h2><p className="mt-2 text-sm leading-relaxed text-[#7c6a5c]">Se eliminará “{deleteTarget.titulo}” y su listado de participantes. Esta acción no se puede deshacer.</p><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setDeleteTarget(null)} className="min-h-10 rounded-sm border border-[#e6ddd4] px-4 text-sm">Cancelar</button><button type="button" disabled={busyId === deleteTarget.id} onClick={removeActivity} className="min-h-10 rounded-sm bg-[#a5452d] px-4 text-sm font-medium text-white disabled:opacity-50">{busyId === deleteTarget.id ? "Eliminando…" : "Eliminar"}</button></div></section></div> : null}
+      {deleteTarget ? <AdminDialog onClose={() => setDeleteTarget(null)} busy={busyId === deleteTarget.id} role="alertdialog" aria-modal="true" aria-labelledby="delete-activity-title" aria-describedby="delete-activity-description" className="w-full max-w-md rounded-xl border border-[#efe6dc] bg-white p-6 shadow-2xl"><h2 id="delete-activity-title" className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar actividad?</h2><p id="delete-activity-description" className="mt-2 text-sm leading-relaxed text-[#7c6a5c]">Se eliminará “{deleteTarget.titulo}” y su listado de participantes. Esta acción no se puede deshacer.</p>{actionError ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{actionError}</p> : null}<div className="mt-6 flex justify-end gap-2"><button type="button" disabled={busyId === deleteTarget.id} onClick={() => setDeleteTarget(null)} className="min-h-10 rounded-sm border border-[#e6ddd4] px-4 text-sm">Cancelar</button><button type="button" disabled={busyId === deleteTarget.id} onClick={removeActivity} className="min-h-10 rounded-sm bg-[#a5452d] px-4 text-sm font-medium text-white disabled:opacity-50">{busyId === deleteTarget.id ? "Eliminando…" : "Eliminar"}</button></div></AdminDialog> : null}
     </section>
   );
 }

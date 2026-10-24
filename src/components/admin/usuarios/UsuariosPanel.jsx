@@ -1,5 +1,6 @@
 "use client";
 
+import AdminDialog from "@/components/admin/AdminDialog";
 import { useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import UsuarioFormModal from "@/components/admin/usuarios/UsuarioFormModal";
@@ -261,17 +262,17 @@ export default function UsuariosPanel() {
       ) : null}
 
       {confirm && confirmCopy ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-[#2c1810]/40 p-3 sm:items-center sm:p-6">
-          <div
+          <AdminDialog onClose={() => setConfirm(null)} busy={busyId !== null}
             role="dialog"
             aria-modal="true"
             aria-labelledby="usuario-confirm-title"
+            aria-describedby="usuario-confirm-description"
             className="w-full max-w-md rounded-md border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-5 sm:p-6"
           >
             <h2 id="usuario-confirm-title" className="text-lg font-semibold text-[#2c1810]">
               {confirmCopy.title}
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-[#7c5c47]">{confirmCopy.body}</p>
+            <p id="usuario-confirm-description" className="mt-2 text-sm leading-relaxed text-[#7c5c47]">{confirmCopy.body}</p>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button
                 type="button"
@@ -294,8 +295,7 @@ export default function UsuariosPanel() {
                 {busyId !== null ? "Procesando…" : confirmCopy.action}
               </button>
             </div>
-          </div>
-        </div>
+          </AdminDialog>
       ) : null}
     </section>
   );

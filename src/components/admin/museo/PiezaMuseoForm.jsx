@@ -1,5 +1,6 @@
 "use client";
 
+import AdminDialog from "@/components/admin/AdminDialog";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -299,7 +300,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
                 </div>
               )}
             </button>
-            <input ref={fileRef} type="file" accept={PORTADA_TYPES.join(",")} className="sr-only" onChange={choosePortada} />
+            <input ref={fileRef} tabIndex={-1} aria-label="Imagen de portada" type="file" accept={PORTADA_TYPES.join(",")} className="sr-only" onChange={choosePortada} />
             {portadaFile ? (
               <p className="mt-3 text-sm text-[#4d4036]">
                 {portadaFile.name}
@@ -362,16 +363,15 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
         </form>
       ) : null}
       {deleteConfirm ? (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2c1810]/55 p-4">
-          <section role="alertdialog" aria-modal="true" className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-            <h2 className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar pieza?</h2>
-            <p className="mt-2 text-sm text-[#7c6a5c]">Esta acción no se puede deshacer.</p>
+          <AdminDialog onClose={() => setDeleteConfirm(false)} busy={busy} role="alertdialog" aria-labelledby="delete-pieza-title" aria-describedby="delete-pieza-description" className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+            <h2 id="delete-pieza-title" className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar pieza?</h2>
+            <p id="delete-pieza-description" className="mt-2 text-sm text-[#7c6a5c]">Esta acción no se puede deshacer.</p>
+            {error ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{error}</p> : null}
             <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={() => setDeleteConfirm(false)} className="min-h-10 border border-[#e6ddd4] px-4 text-sm">Cancelar</button>
+              <button type="button" disabled={busy} onClick={() => setDeleteConfirm(false)} className="min-h-10 border border-[#e6ddd4] px-4 text-sm">Cancelar</button>
               <button type="button" disabled={busy} onClick={remove} className="min-h-10 bg-[#a5452d] px-4 text-sm text-white">Eliminar</button>
             </div>
-          </section>
-        </div>
+          </AdminDialog>
       ) : null}
     </section>
   );

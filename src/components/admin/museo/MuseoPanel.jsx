@@ -1,5 +1,6 @@
 "use client";
 
+import AdminDialog from "@/components/admin/AdminDialog";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -393,7 +394,7 @@ export default function MuseoPanel({
 
         {tab === "piezas" ? (
           visiblePieces.length ? (
-            <div className="admin-table-scroll mt-4 overflow-x-auto">
+            <div tabIndex={0} role="region" aria-label="Listado de piezas del Museo" className="admin-table-scroll mt-4 overflow-x-auto">
               <table className="admin-table w-full min-w-[700px] border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-y border-[#efe6dc] text-xs uppercase tracking-wide text-[#8d7b6d]">
@@ -729,11 +730,11 @@ export default function MuseoPanel({
       </div>
 
       {deleteTarget ? (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2c1810]/55 p-4">
-          <section
+          <AdminDialog onClose={() => setDeleteTarget(null)} busy={busy}
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="delete-museum-title"
+            aria-describedby="delete-museum-description"
             className="w-full max-w-md rounded-xl border border-[#efe6dc] bg-white p-6 shadow-2xl"
           >
             <h2
@@ -747,7 +748,7 @@ export default function MuseoPanel({
               ?
             </h2>
 
-            <p className="mt-2 text-sm text-[#7c6a5c]">
+            <p id="delete-museum-description" className="mt-2 text-sm text-[#7c6a5c]">
               “{deleteTarget.entry.titulo}” se eliminará de forma permanente.
             </p>
 
@@ -759,6 +760,7 @@ export default function MuseoPanel({
               </p>
             ) : null}
 
+            {actionError ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{actionError}</p> : null}
             <div className="mt-6 flex justify-end gap-2">
               <button
                 type="button"
@@ -782,8 +784,7 @@ export default function MuseoPanel({
                   : "Eliminar"}
               </button>
             </div>
-          </section>
-        </div>
+          </AdminDialog>
       ) : null}
     </section>
   );

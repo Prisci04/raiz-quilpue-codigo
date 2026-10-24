@@ -126,6 +126,26 @@
   overflow-y: auto;
 }
 
+.admin-shell .admin-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: calc(100% - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: var(--admin-ink);
+}
+
+.admin-shell .admin-dialog::backdrop {
+  background: rgb(44 24 16 / 50%);
+}
+
+.admin-shell .admin-table-scroll:focus-visible {
+  outline: 2px solid #946541;
+  outline-offset: 3px;
+}
+
 .admin-shell .admin-badge {
   display: inline-flex;
   align-items: center;

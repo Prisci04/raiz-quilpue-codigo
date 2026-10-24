@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { adminNavForRole } from "@/lib/admin-nav";
+import { trapTabKey } from "@/lib/ui/dialog.mjs";
 
 function isActive(pathname, href) {
   if (href === "/admin") return pathname === "/admin";
@@ -13,6 +15,47 @@ function isActive(pathname, href) {
 export default function AdminSidebar({ open, onClose, isAdministrador }) {
   const pathname = usePathname();
   const navigation = adminNavForRole(isAdministrador);
+  const ref = useRef(null);
+  const dismiss = useEffectEvent(onClose);
+
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    let release = () => {};
+    function sync() {
+      release();
+      release = () => {};
+      const sidebar = ref.current;
+      sidebar.inert = !desktop.matches && !open;
+      if (desktop.matches || !open) return;
+      const opener = document.activeElement;
+      const content = sidebar.closest(".admin-shell")?.lastElementChild;
+      const previousInert = content?.inert;
+      const overflow = document.body.style.overflow;
+      if (content) content.inert = true;
+      document.body.style.overflow = "hidden";
+      sidebar.querySelector("button")?.focus();
+      function onKeyDown(event) {
+        trapTabKey(sidebar, event);
+        if (event.key === "Escape") {
+          event.preventDefault();
+          dismiss();
+        }
+      }
+      sidebar.addEventListener("keydown", onKeyDown);
+      release = () => {
+        sidebar.removeEventListener("keydown", onKeyDown);
+        if (content) content.inert = previousInert;
+        document.body.style.overflow = overflow;
+        if (opener?.isConnected) opener.focus();
+      };
+    }
+    sync();
+    desktop.addEventListener("change", sync);
+    return () => {
+      release();
+      desktop.removeEventListener("change", sync);
+    };
+  }, [open]);
 
   return (
     <>
@@ -26,6 +69,7 @@ export default function AdminSidebar({ open, onClose, isAdministrador }) {
       ) : null}
 
       <aside
+        ref={ref}
         id="admin-sidebar"
         className={`admin-sidebar fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-[#2c1810] text-[#f4ebe3] transition-transform duration-200 ${
           open ? "is-open" : ""
