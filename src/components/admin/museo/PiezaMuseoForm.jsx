@@ -27,7 +27,7 @@ const inputClass =
 
 function Field({ label, children, className = "" }) {
   return (
-    <label className={`block rounded-sm border border-[#e7dfd6] bg-white p-4 ${className}`}>
+    <label className={`admin-field block min-w-0 ${className}`}>
       <span className="text-[13px] font-medium text-[#2c1810]">{label}</span>
       {children}
     </label>
@@ -230,7 +230,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
   const portadaVisible = portadaPreview || form.imagen_url || "";
 
   return (
-    <section>
+    <section className="admin-page">
       <div>
         <p className="text-[13px] text-[#8d7b6d]">
           <Link href="/admin" className="hover:text-[#2c1810]">Gestión</Link>
@@ -247,16 +247,18 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
       {error ? <AdminNotice tone="error">{error}</AdminNotice> : null}
       {success ? <AdminNotice>{success}</AdminNotice> : null}
       {loading ? (
-        <p className="mt-6 text-sm text-[#7c5c47]">Cargando pieza…</p>
+        <p className="admin-empty mt-6 text-sm text-[#7c5c47]">Cargando pieza…</p>
       ) : !loadError ? (
         <form
-          className="mt-5 space-y-4"
+          className="admin-form mt-6 space-y-5"
           onSubmit={(event) => {
             event.preventDefault();
             save(form.estado);
           }}
         >
-          <div className="grid gap-4 lg:grid-cols-2">
+          <p className="text-xs leading-relaxed text-[#7c5c47]">Los campos con * son obligatorios. Los demás son opcionales.</p>
+          <div className="admin-card grid gap-5 p-4 sm:p-6 lg:grid-cols-2">
+            <h2 className="font-serif text-xl font-semibold text-[#2c1810] lg:col-span-2">Datos de la pieza</h2>
             <Field label="Título *">
               <input required maxLength={200} value={form.titulo} onChange={(event) => update("titulo", event.target.value)} className={inputClass} />
             </Field>
@@ -278,7 +280,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
             </Field>
           </div>
 
-          <div className="rounded-sm border border-[#e7dfd6] bg-white p-4">
+          <div className="admin-card p-4 sm:p-6">
             <span className="text-[13px] font-medium text-[#2c1810]">Imagen de la pieza</span>
             <button
               type="button"
@@ -338,20 +340,20 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
             ) : null}
           </div>
 
-          <Field label="Estado">
+          <Field label="Estado" className="admin-card p-4 sm:p-6">
             <select value={form.estado} onChange={(event) => update("estado", event.target.value)} className={inputClass}>
               <option value="borrador">Borrador</option>
               <option value="publicada">Publicada</option>
             </select>
           </Field>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="admin-form-actions flex flex-wrap items-center justify-end gap-3">
             {editing ? (
               <button type="button" onClick={() => setDeleteConfirm(true)} disabled={busy} className="min-h-10 rounded-sm border border-[#f0c7be] bg-[#fff6f3] px-4 text-sm font-medium text-[#8d3b28]">
                 Eliminar pieza
               </button>
             ) : (
-              <Link href="/admin/museo" className="text-sm text-[#7c5c47]">Cancelar</Link>
+              <Link href="/admin/museo" className="inline-flex min-h-11 items-center rounded-sm px-4 text-sm text-[#7c5c47]">Cancelar</Link>
             )}
             <button type="submit" disabled={busy} className="min-h-10 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white">
               {busy ? "Guardando…" : "Guardar"}

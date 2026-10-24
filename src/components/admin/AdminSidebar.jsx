@@ -54,7 +54,7 @@ export default function AdminSidebar({ open, onClose, isAdministrador }) {
         <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-2" aria-label="Administración">
           {navigation.map((group) => (
             <div key={group.label}>
-              <p className="mb-1.5 px-3 text-[10px] font-medium tracking-[0.16em] text-[#f4ebe3]/40 uppercase">
+              <p className="mb-1.5 px-3 text-[10px] font-medium tracking-[0.16em] text-[#f4ebe3]/65 uppercase">
                 {group.label}
               </p>
               <div className="space-y-0.5">
@@ -68,9 +68,9 @@ export default function AdminSidebar({ open, onClose, isAdministrador }) {
                       href={item.href}
                       aria-current={active ? "page" : undefined}
                       onClick={onClose}
-                      className={`flex min-h-10 items-center gap-3 rounded-sm px-3 text-[13.5px] transition-colors ${
+                      className={`flex min-h-11 items-center gap-3 rounded-sm px-3 text-[13.5px] transition-colors ${
                         active
-                          ? "bg-[#f4ebe3]/16 font-medium text-[#f6efe6]"
+                          ? "bg-[#f4ebe3]/16 font-medium text-[#ffdf90]"
                           : "text-[#f4ebe3]/78 hover:bg-white/8 hover:text-[#f4ebe3]"
                       }`}
                     >

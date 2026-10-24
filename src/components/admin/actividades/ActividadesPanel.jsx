@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Ban, CalendarDays, CircleCheck, Clock3, Eye, Pencil, Plus, Trash2, Users } from "lucide-react";
+import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import { deleteActividad, saveActividadEstado } from "@/lib/api/community";
 
@@ -21,12 +22,8 @@ function Status({ value }) {
   const published = value === "publicada";
   const cancelled = value === "cancelada";
   const label = published ? "Publicada" : cancelled ? "Cancelada" : "Borrador";
-  const style = published
-    ? "bg-[#e5f6ea] text-[#1c7a42]"
-    : cancelled
-      ? "bg-[#fde8e2] text-[#a5452d]"
-      : "bg-[#fff3d6] text-[#9a6708]";
-  return <span className={`inline-flex rounded-md px-2.5 py-1 text-xs font-medium ${style}`}>{label}</span>;
+  const tone = published ? "success" : cancelled ? "danger" : "warning";
+  return <AdminBadge tone={tone}>{label}</AdminBadge>;
 }
 
 export default function ActividadesPanel({ activities = [], error = "", notice = "" }) {
@@ -88,7 +85,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
   ];
 
   return (
-    <section>
+    <section className="admin-page">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-[13px] text-[#8d7b6d]"><Link href="/admin" className="hover:text-[#2c1810]">Gestión</Link><span className="px-1.5" aria-hidden="true">›</span>Actividades</p>
@@ -103,14 +100,14 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
         {cards.map(({ label, value, icon: Icon, id }) => <button key={id} type="button" onClick={() => setFilter(id)} aria-pressed={filter === id} className={`flex items-center gap-3 rounded-2xl border bg-white px-4 py-4 text-left ${filter === id ? "border-[#1e4536]" : "border-[#efe6dc]"}`}><span className="flex h-11 w-11 items-center justify-center rounded-md bg-[#f3eee8] text-[#5c4636]"><Icon size={18} /></span><span><span className="block text-[13px] text-[#8a7968]">{label}</span><span className="mt-0.5 block text-2xl font-semibold text-[#2c1810]">{value}</span></span></button>)}
       </div>
 
-      <div className="mt-4 rounded-2xl border border-[#efe6dc] bg-white p-3 sm:p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex gap-2 overflow-x-auto">{[["todas", "Todas"], ["publicada", "Publicadas"], ["borrador", "Borradores"], ["cancelada", "Canceladas"]].map(([id, label]) => <button key={id} type="button" onClick={() => setFilter(id)} aria-pressed={filter === id} className={`h-9 shrink-0 rounded-sm px-4 text-[13px] ${filter === id ? "bg-[#1e4536] font-medium text-white" : "border border-[#eadfd4] text-[#3d342c] hover:bg-[#faf6f1]"}`}>{label}</button>)}</div>
-          <div className="flex flex-1 gap-2 sm:ml-auto sm:max-w-md"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar actividades..." aria-label="Buscar actividades" className="h-9 min-w-0 flex-1 rounded-sm border border-[#eadfd4] bg-[#fbf8f5] px-3 text-sm outline-none focus:border-[#c4a484]" /><Link href="/admin/actividades/nueva" className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-sm bg-[#c45c38] px-4 text-sm font-medium text-white hover:bg-[#a84c2c]"><Plus size={15} />Nueva actividad</Link></div>
+      <div className="admin-card mt-5 p-4 sm:p-5">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+          <div className="flex gap-2 overflow-x-auto">{[["todas", "Todas"], ["publicada", "Publicadas"], ["borrador", "Borradores"], ["cancelada", "Canceladas"]].map(([id, label]) => <button key={id} type="button" onClick={() => setFilter(id)} aria-pressed={filter === id} className={`min-h-11 shrink-0 rounded-sm px-4 text-[13px] ${filter === id ? "bg-[#1e4536] font-medium text-white" : "border border-[#eadfd4] text-[#3d342c] hover:bg-[#faf6f1]"}`}>{label}</button>)}</div>
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row xl:ml-auto xl:max-w-md"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar actividades..." aria-label="Buscar actividades" className="min-h-11 min-w-0 flex-1 rounded-sm border border-[#eadfd4] bg-[#fbf8f5] px-3 text-sm outline-none focus:border-[#c4a484]" /><Link href="/admin/actividades/nueva" className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-sm bg-[#c45c38] px-4 text-sm font-medium text-white hover:bg-[#a84c2c]"><Plus size={15} />Nueva actividad</Link></div>
         </div>
         {visible.length ? (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[860px] table-fixed border-collapse text-left text-sm">
+          <div className="admin-table-scroll mt-4 overflow-x-auto">
+            <table className="admin-table w-full min-w-[1040px] table-fixed border-collapse text-left text-sm">
               <thead>
                 <tr className="border-y border-[#efe6dc] text-xs uppercase tracking-wide text-[#8d7b6d]">
                   <th className="w-52 max-w-52 px-3 py-3">Actividad</th>
@@ -118,7 +115,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                   <th className="w-28 px-3 py-3">Modalidad</th>
                   <th className="w-28 px-3 py-3">Estado</th>
                   <th className="w-40 px-3 py-3 text-right">Participantes</th>
-                  <th className="px-3 py-3 text-right">Acciones</th>
+                  <th className="w-64 px-3 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,19 +139,19 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                         href={`/admin/actividades/${activity.id}/participantes`}
                         title="Ver participantes"
                         aria-label={`Ver participantes de ${activity.titulo}`}
-                        className="inline-flex h-8 items-center justify-end gap-1.5 rounded-md px-2 text-[#1e4536] hover:bg-[#e5f6ea]"
+                        className="inline-flex min-h-10 items-center justify-end gap-1.5 rounded-md px-2 text-[#1e4536] hover:bg-[#e5f6ea]"
                       >
                         <Users size={15} />
                         Participantes
                       </Link>
                     </td>
                     <td className="px-3 py-4">
-                      <div className="flex justify-end gap-1">
+                      <div className="flex items-center justify-end gap-2">
                         <Link
                           href={`/admin/actividades/${activity.id}/editar`}
                           title="Editar"
                           aria-label={`Editar ${activity.titulo}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
                         >
                           <Pencil size={15} />
                         </Link>
@@ -164,7 +161,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                             target="_blank"
                             title="Ver actividad"
                             aria-label={`Ver ${activity.titulo} en el portal`}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
+                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
                           >
                             <Eye size={15} />
                           </Link>
@@ -175,7 +172,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                           type="button"
                           disabled={busyId === activity.id}
                           onClick={() => toggleStatus(activity)}
-                          className="rounded-md px-2 text-xs text-[#5c4636] hover:bg-[#f3eee8] disabled:opacity-50"
+                          className="min-h-10 rounded-md border border-[#e6ddd4] px-3 text-xs text-[#5c4636] hover:bg-[#f3eee8] disabled:opacity-50"
                         >
                           {activity.estado === "publicada" ? "Borrador" : "Publicar"}
                         </button>
@@ -184,7 +181,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                           disabled={busyId === activity.id}
                           onClick={() => setDeleteTarget(activity)}
                           aria-label={`Eliminar ${activity.titulo}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#a5452d] hover:bg-[#fff3f0]"
+                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#a5452d] hover:bg-[#fff3f0]"
                         >
                           <Trash2 size={15} />
                         </button>
@@ -196,7 +193,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
             </table>
           </div>
         ) : (
-          <p className="px-3 py-12 text-center text-sm text-[#7c5c47]">No hay actividades con ese criterio.</p>
+          <p className="admin-empty px-3 py-12 text-center text-sm text-[#7c5c47]">No hay actividades con ese criterio.</p>
         )}
       </div>
       {deleteTarget ? <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2c1810]/55 p-4"><section role="alertdialog" aria-modal="true" aria-labelledby="delete-activity-title" className="w-full max-w-md rounded-xl border border-[#efe6dc] bg-white p-6 shadow-2xl"><h2 id="delete-activity-title" className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar actividad?</h2><p className="mt-2 text-sm leading-relaxed text-[#7c6a5c]">Se eliminará “{deleteTarget.titulo}” y su listado de participantes. Esta acción no se puede deshacer.</p><div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setDeleteTarget(null)} className="min-h-10 rounded-sm border border-[#e6ddd4] px-4 text-sm">Cancelar</button><button type="button" disabled={busyId === deleteTarget.id} onClick={removeActivity} className="min-h-10 rounded-sm bg-[#a5452d] px-4 text-sm font-medium text-white disabled:opacity-50">{busyId === deleteTarget.id ? "Eliminando…" : "Eliminar"}</button></div></section></div> : null}

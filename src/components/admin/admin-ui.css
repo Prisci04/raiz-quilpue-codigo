@@ -1,0 +1,184 @@
+/* Shared presentation is scoped to AdminShell, including its dialogs. */
+.admin-shell {
+  --admin-line: #e6ddd4;
+}
+
+.admin-shell .admin-card {
+  box-shadow: 0 2px 8px rgb(44 24 16 / 3%);
+}
+
+.admin-shell :is(button, a, input, select, textarea, [contenteditable]):focus-visible {
+  outline: 2px solid #946541;
+  outline-offset: 3px;
+}
+
+.admin-shell .admin-sidebar :is(button, a):focus-visible {
+  outline-color: #ffdf90;
+}
+
+.admin-shell button {
+  cursor: pointer;
+}
+
+.admin-shell button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.admin-shell :is(button, a) {
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.admin-shell .admin-page {
+  min-width: 0;
+}
+
+.admin-shell :is(.admin-page, .print-dashboard) h1 {
+  font-size: clamp(1.9rem, 3vw, 2.5rem);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.admin-shell .admin-page > div:first-child {
+  margin-bottom: 1.5rem;
+}
+
+.admin-shell .admin-table-scroll {
+  max-width: 100%;
+  border: 1px solid var(--admin-line);
+  border-radius: var(--admin-radius);
+  scrollbar-color: #bba18b #f6f1eb;
+}
+
+.admin-shell .admin-table {
+  border-collapse: collapse;
+}
+
+.admin-shell .admin-table thead {
+  background: #f8f4ef;
+  color: #705844;
+}
+
+.admin-shell .admin-table th {
+  padding: 0.85rem 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.admin-shell .admin-table td {
+  padding: 1rem 0.9rem;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
+.admin-shell .admin-table tbody tr:hover,
+.admin-shell .admin-table tbody tr:focus-within {
+  background: #fbf8f4;
+}
+
+.admin-shell .admin-table tbody tr:last-child {
+  border-bottom: 0;
+}
+
+.admin-shell .admin-form :is(input:not([type="file"]):not([type="checkbox"]), select, textarea) {
+  min-width: 0;
+  min-height: 2.75rem;
+  background: #fffdf9;
+}
+
+.admin-shell .admin-form textarea {
+  resize: vertical;
+}
+
+.admin-shell .admin-field {
+  line-height: 1.6;
+}
+
+.admin-shell .admin-form-actions {
+  border-top: 1px solid var(--admin-line);
+  padding-top: 1.25rem;
+}
+
+.admin-shell .admin-form-actions :is(button, a) {
+  min-height: 2.75rem;
+}
+
+.admin-shell .admin-form-actions > :first-child {
+  margin-right: auto;
+}
+
+.admin-shell .admin-form-actions button:not(:disabled):hover {
+  filter: brightness(0.96);
+}
+
+.admin-shell .admin-empty {
+  border: 1px dashed var(--admin-line);
+  border-radius: var(--admin-radius);
+  background: #fbf8f4;
+  padding: 2.5rem 1rem;
+  line-height: 1.7;
+}
+
+.admin-shell [role="alertdialog"],
+.admin-shell [role="dialog"] {
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+}
+
+.admin-shell .admin-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 1.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--admin-radius);
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.admin-shell .admin-badge-success {
+  border-color: #cddfce;
+  background: #edf4eb;
+  color: #365a38;
+}
+
+.admin-shell .admin-badge-warning {
+  border-color: #ebddb4;
+  background: #fcf5df;
+  color: #785b17;
+}
+
+.admin-shell .admin-badge-danger {
+  border-color: #e9d0c5;
+  background: #faeee8;
+  color: #8d4431;
+}
+
+.admin-shell .admin-badge-neutral {
+  border-color: #e1d8ce;
+  background: #f3eee8;
+  color: #705844;
+}
+
+@media (max-width: 639px) {
+  .admin-shell .admin-form-actions > :is(button, a) {
+    flex: 1 1 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .admin-shell .admin-table-scroll {
+    /* Keep wide records scrollable inside the panel. */
+    overscroll-behavior-x: contain;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell :is(button, a, aside) {
+    transition: none;
+  }
+}

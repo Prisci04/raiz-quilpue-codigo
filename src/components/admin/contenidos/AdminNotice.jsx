@@ -15,7 +15,7 @@ export default function AdminNotice({ tone = "success", children }) {
     <p
       ref={ref}
       role={isError ? "alert" : "status"}
-      className={`sticky top-[4.75rem] z-20 mt-4 flex items-center gap-3 border px-4 py-3 text-[15px] font-medium shadow-sm ${
+      className={`sticky top-[4.75rem] z-20 mt-4 flex items-start gap-3 rounded-sm border px-4 py-3 text-sm leading-relaxed font-medium shadow-sm ${
         isError
           ? "border-[#e7b2a6] bg-[#fde8e2] text-[#8d3b28]"
           : "border-[#9dcea8] bg-[#e5f6e8] text-[#1b6b3a]"
@@ -26,7 +26,7 @@ export default function AdminNotice({ tone = "success", children }) {
       ) : (
         <CircleCheck size={20} strokeWidth={1.8} className="shrink-0" aria-hidden="true" />
       )}
-      <span>{children}</span>
+      <span className="min-w-0 break-words">{children}</span>
     </p>
   );
 }

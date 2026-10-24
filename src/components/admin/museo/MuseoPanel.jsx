@@ -15,6 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 
+import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 
 import {
@@ -44,17 +45,6 @@ function revisionLabel(estado) {
   return "Pendiente";
 }
 
-function revisionClass(estado) {
-  if (estado === "convertido") {
-    return "bg-[#e5f6ea] text-[#1c7a42]";
-  }
-
-  if (estado === "rechazado") {
-    return "bg-[#fde8e2] text-[#9b3d2a]";
-  }
-
-  return "bg-[#fff3d6] text-[#9a6708]";
-}
 
 export default function MuseoPanel({
   pieces = [],
@@ -253,7 +243,7 @@ export default function MuseoPanel({
   }
 
   return (
-    <section>
+    <section className="admin-page">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-[13px] text-[#8d7b6d]">
@@ -356,14 +346,14 @@ export default function MuseoPanel({
         </button>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-[#efe6dc] bg-white p-3 sm:p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="flex gap-2">
+      <div className="admin-card mt-5 p-4 sm:p-5">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setTab("piezas")}
               aria-pressed={tab === "piezas"}
-              className={`h-9 rounded-sm px-4 text-[13px] ${
+              className={`min-h-11 rounded-sm px-4 text-[13px] ${
                 tab === "piezas"
                   ? "bg-[#1e4536] text-white"
                   : "border border-[#eadfd4]"
@@ -376,7 +366,7 @@ export default function MuseoPanel({
               type="button"
               onClick={openContributions}
               aria-pressed={tab === "aportes"}
-              className={`h-9 rounded-sm px-4 text-[13px] ${
+              className={`min-h-11 rounded-sm px-4 text-[13px] ${
                 tab === "aportes"
                   ? "bg-[#1e4536] text-white"
                   : "border border-[#eadfd4]"
@@ -397,14 +387,14 @@ export default function MuseoPanel({
                 : "Buscar aportes..."
             }
             aria-label="Buscar en el museo digital"
-            className="h-9 w-full rounded-sm border border-[#eadfd4] bg-[#fbf8f5] px-3 text-sm outline-none sm:ml-auto sm:max-w-md"
+            className="min-h-11 w-full rounded-sm border border-[#eadfd4] bg-[#fbf8f5] px-3 text-sm outline-none xl:ml-auto xl:max-w-md"
           />
         </div>
 
         {tab === "piezas" ? (
           visiblePieces.length ? (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[700px] border-collapse text-left text-sm">
+            <div className="admin-table-scroll mt-4 overflow-x-auto">
+              <table className="admin-table w-full min-w-[700px] border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-y border-[#efe6dc] text-xs uppercase tracking-wide text-[#8d7b6d]">
                     <th className="px-3 py-3">
@@ -479,25 +469,17 @@ export default function MuseoPanel({
                       </td>
 
                       <td className="px-3 py-4">
-                        <span
-                          className={`rounded-md px-2.5 py-1 text-xs ${
-                            piece.estado === "publicada"
-                              ? "bg-[#e5f6ea] text-[#1c7a42]"
-                              : "bg-[#fff3d6] text-[#9a6708]"
-                          }`}
-                        >
-                          {piece.estado === "publicada"
-                            ? "Publicada"
-                            : "Borrador"}
-                        </span>
+                        <AdminBadge tone={piece.estado === "publicada" ? "success" : "warning"}>
+                          {piece.estado === "publicada" ? "Publicada" : "Borrador"}
+                        </AdminBadge>
                       </td>
 
                       <td className="px-3 py-4">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex items-center justify-end gap-2">
                           <Link
                             href={`/admin/museo/${piece.id}/editar`}
                             aria-label={`Editar ${piece.titulo}`}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
+                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
                           >
                             <Pencil size={15} />
                           </Link>
@@ -511,7 +493,7 @@ export default function MuseoPanel({
                               })
                             }
                             aria-label={`Eliminar ${piece.titulo}`}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#a5452d] hover:bg-[#fff3f0]"
+                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#a5452d] hover:bg-[#fff3f0]"
                           >
                             <Trash2 size={15} />
                           </button>
@@ -523,7 +505,7 @@ export default function MuseoPanel({
               </table>
             </div>
           ) : (
-            <p className="px-3 py-12 text-center text-sm text-[#7c5c47]">
+            <p className="admin-empty px-3 py-12 text-center text-sm text-[#7c5c47]">
               Aún no hay piezas para mostrar.
             </p>
           )
@@ -553,15 +535,9 @@ export default function MuseoPanel({
                         )}
                       </p>
 
-                      <span
-                        className={`rounded-md px-2 py-1 text-[11px] font-medium ${revisionClass(
-                          entry.estado_revision,
-                        )}`}
-                      >
-                        {revisionLabel(
-                          entry.estado_revision,
-                        )}
-                      </span>
+                      <AdminBadge tone={entry.estado_revision === "convertido" ? "success" : entry.estado_revision === "rechazado" ? "danger" : "warning"}>
+                        {revisionLabel(entry.estado_revision)}
+                      </AdminBadge>
                     </div>
 
                     <h2 className="mt-1 font-serif text-xl font-semibold text-[#2c1810]">
@@ -592,7 +568,7 @@ export default function MuseoPanel({
                           onClick={() =>
                             createDraft(entry)
                           }
-                          className="inline-flex h-9 items-center gap-1.5 rounded-sm bg-[#1e4536] px-3 text-sm font-medium text-white hover:bg-[#17382c] disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex min-h-11 items-center gap-1.5 rounded-sm bg-[#1e4536] px-3 text-sm font-medium text-white hover:bg-[#17382c] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <FilePlus2 size={15} />
 
@@ -610,7 +586,7 @@ export default function MuseoPanel({
                           onClick={() =>
                             rejectContribution(entry)
                           }
-                          className="inline-flex h-9 items-center gap-1.5 rounded-sm border border-[#e5b76a] bg-[#fff8e7] px-3 text-sm font-medium text-[#8a6400] hover:bg-[#fff1c7] disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex min-h-11 items-center gap-1.5 rounded-sm border border-[#e5b76a] bg-[#fff8e7] px-3 text-sm font-medium text-[#8a6400] hover:bg-[#fff1c7] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <XCircle size={15} />
 
@@ -625,7 +601,7 @@ export default function MuseoPanel({
                     entry.pieza_id ? (
                       <Link
                         href={`/admin/museo/${entry.pieza_id}/editar`}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-sm bg-[#1e4536] px-3 text-sm font-medium text-white hover:bg-[#17382c]"
+                        className="inline-flex min-h-11 items-center gap-1.5 rounded-sm bg-[#1e4536] px-3 text-sm font-medium text-white hover:bg-[#17382c]"
                       >
                         <Pencil size={15} />
                         Revisar borrador
@@ -641,7 +617,7 @@ export default function MuseoPanel({
                         })
                       }
                       aria-label={`Eliminar aporte ${entry.titulo}`}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-sm border border-[#f0c7be] bg-[#fff6f3] px-3 text-sm text-[#8d3b28]"
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-sm border border-[#f0c7be] bg-[#fff6f3] px-3 text-sm text-[#8d3b28]"
                     >
                       <Trash2 size={15} />
                       Eliminar
@@ -746,7 +722,7 @@ export default function MuseoPanel({
             ))}
           </div>
         ) : (
-          <p className="px-3 py-12 text-center text-sm text-[#7c5c47]">
+          <p className="admin-empty px-3 py-12 text-center text-sm text-[#7c5c47]">
             No hay aportes recibidos todavía.
           </p>
         )}

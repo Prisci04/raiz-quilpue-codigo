@@ -284,7 +284,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
   const portadaVisible = portadaPreview || form.imagen_url || "";
 
   return (
-    <section>
+    <section className="admin-page">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-[13px] text-[#8d7b6d]">
@@ -321,20 +321,22 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
         </button>
       </div>
 
-      {loading ? <p className="mt-6 text-sm text-[#7c5c47]">Cargando contenido…</p> : null}
+      {loading ? <p className="admin-empty mt-6 text-sm text-[#7c5c47]">Cargando contenido…</p> : null}
       {error ? <AdminNotice tone="error">{error}</AdminNotice> : null}
       {success ? <AdminNotice>{success}</AdminNotice> : null}
 
       {!loading ? (
         <form
-          className="mt-5 space-y-4"
+          className="admin-form mt-6 space-y-5"
           onSubmit={(event) => {
             event.preventDefault();
             save(form.estado, "primary");
           }}
         >
-          <div className="grid gap-4 lg:grid-cols-2">
-            <label className="block rounded-sm border border-[#e7dfd6] bg-white p-4">
+          <p className="text-xs leading-relaxed text-[#7c5c47]">Los campos con * son obligatorios. Los demás son opcionales.</p>
+          <div className="admin-card grid gap-5 p-4 sm:p-6 lg:grid-cols-2">
+            <h2 className="font-serif text-xl font-semibold text-[#2c1810] lg:col-span-2">Datos del contenido</h2>
+            <label className="admin-field block min-w-0">
               <FieldLabel hint={`${form.titulo.length}/${TITULO_MAX_LENGTH}`}>
                 Título *
               </FieldLabel>
@@ -346,7 +348,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
                 required
               />
             </label>
-            <label className="block rounded-sm border border-[#e7dfd6] bg-white p-4">
+            <label className="admin-field block min-w-0">
               <FieldLabel>Tipo de contenido *</FieldLabel>
               <select
                 value={form.tipo}
@@ -360,7 +362,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
                 ))}
               </select>
             </label>
-            <label className="block rounded-sm border border-[#e7dfd6] bg-white p-4">
+            <label className="admin-field block min-w-0">
               <FieldLabel hint={`${form.descripcion.length}/${DESCRIPCION_MAX_LENGTH}`}>
                 Descripción de tarjeta *
               </FieldLabel>
@@ -376,7 +378,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
                 Texto breve que se muestra en el listado de contenidos.
               </p>
             </label>
-            <label className="block rounded-sm border border-[#e7dfd6] bg-white p-4">
+            <label className="admin-field block min-w-0">
               <FieldLabel>Estado</FieldLabel>
               <select
                 value={form.estado}
@@ -393,7 +395,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
             </label>
           </div>
 
-          <label className="block rounded-sm border border-[#e7dfd6] bg-white p-4">
+          <label className="admin-card block p-4 sm:p-6">
             <FieldLabel hint={`${form.resumen.length}/${RESUMEN_MAX_LENGTH}`}>
               Resumen para pop-up *
             </FieldLabel>
@@ -410,7 +412,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
             </p>
           </label>
 
-          <div className="rounded-sm border border-[#e7dfd6] bg-white p-4">
+          <div className="admin-card p-4 sm:p-6">
             <FieldLabel>Imagen de portada</FieldLabel>
             <div className="mt-3 flex min-h-40 max-w-sm items-center justify-center overflow-hidden rounded-sm border border-dashed border-[#e6ddd4] bg-[#fbfaf8]">
               {portadaVisible ? (
@@ -496,7 +498,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
             </p>
           </div>
 
-          <div className="rounded-sm border border-[#e7dfd6] bg-white p-4">
+          <div className="admin-card p-4 sm:p-6">
             <FieldLabel>Contenido *</FieldLabel>
             <div className="mt-3">
               <ContenidoEditor
@@ -507,7 +509,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="admin-form-actions flex flex-wrap items-center justify-end gap-3">
             {editing ? (
               <button
                 type="button"
@@ -518,7 +520,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
                 Eliminar
               </button>
             ) : (
-              <Link href="/admin/contenidos" className="text-sm text-[#7c5c47] hover:text-[#2c1810]">
+              <Link href="/admin/contenidos" className="inline-flex min-h-11 items-center rounded-sm px-4 text-sm text-[#7c5c47] hover:text-[#2c1810]">
                 Cancelar
               </Link>
             )}
