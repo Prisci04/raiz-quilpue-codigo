@@ -34,20 +34,31 @@ export async function PATCH(request, { params }) {
 
     const body = await readJsonBody(request);
     const soloEstado = Boolean(body) && Object.keys(body).length === 1 && "estado" in body;
-    const input = soloEstado ? parseActividadEstado(body) : parseActividadInput(body);
-    if (!input.ok) return jsonError(400, "VALIDATION", input.message);
+    if (soloEstado) {
+      const input = parseActividadEstado(body);
+      if (!input.ok) return jsonError(400, "VALIDATION", input.message);
+      const saved = await saveActividadEstadoAdmin(parsed.value, input.value.estado);
+      return saved
+        ? jsonSuccess(saved)
+        : jsonError(404, "NOT_FOUND", "Actividad no encontrada.");
+    }
 
-    if (!soloEstado && input.value.imagen_url) {
+    const current = await getActividadAdmin(parsed.value);
+    if (!current) return jsonError(404, "NOT_FOUND", "Actividad no encontrada.");
+
+    const sameImage = body.imagen_url === current.imagen_url;
+    const input = parseActividadInput(sameImage ? { ...body, imagen_url: null } : body);
+    if (!input.ok) return jsonError(400, "VALIDATION", input.message);
+    if (sameImage) {
+      input.value.imagen_url = current.imagen_url;
+    } else if (input.value.imagen_url) {
       const owned = parseOwnedPortadaUrl(input.value.imagen_url);
-      if (owned && (owned.contexto !== "actividades" || owned.registroId !== parsed.value)) {
+      if (!owned || owned.contexto !== "actividades" || owned.registroId !== parsed.value) {
         return jsonError(400, "VALIDATION", "La imagen de la actividad no es válida.");
       }
     }
 
-    const saved = soloEstado
-      ? await saveActividadEstadoAdmin(parsed.value, input.value.estado)
-      : await saveActividadAdmin(parsed.value, input.value);
-
+    const saved = await saveActividadAdmin(parsed.value, input.value);
     return saved
       ? jsonSuccess(saved)
       : jsonError(404, "NOT_FOUND", "Actividad no encontrada.");

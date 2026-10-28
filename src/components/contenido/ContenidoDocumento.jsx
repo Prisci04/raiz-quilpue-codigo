@@ -1,4 +1,4 @@
-import { TIPO_LABELS_PUBLICO } from "@/lib/contenidos/documento.mjs";
+import { TIPO_LABELS_PUBLICO, normalizeTextColor } from "@/lib/contenidos/documento.mjs";
 
 const TIPO_LABELS = TIPO_LABELS_PUBLICO;
 
@@ -29,12 +29,7 @@ function safeHref(value) {
 }
 
 function safeColor(value) {
-  if (typeof value !== "string") return null;
-
-  const color = value.trim().toLowerCase();
-  const allowed = ["#704a31", "#c45a3a", "#687a42", "#7c5c47"];
-
-  return allowed.includes(color) ? color : null;
+  return normalizeTextColor(value);
 }
 
 function applyMarks(text, marks, key) {

@@ -31,17 +31,15 @@ export const TIPO_LABELS_PUBLICO = {
   comunidad: "Comunidad",
 };
 
+export const DEFAULT_TEXT_COLOR = "#704a31";
+
 export const TEXT_COLORS = [
-  { id: "normal", label: "Texto normal", value: null },
-  { id: "cafe", label: "Café", value: "#704a31" },
+  { id: "oscuro", label: "Café oscuro", value: "#2c1810" },
+  { id: "cafe", label: "Café", value: DEFAULT_TEXT_COLOR },
   { id: "terracota", label: "Terracota", value: "#c45a3a" },
   { id: "oliva", label: "Verde oliva", value: "#687a42" },
-  { id: "gris", label: "Gris", value: "#7c5c47" },
+  { id: "tierra", label: "Tierra", value: "#7c5c47" },
 ];
-
-const ALLOWED_COLORS = new Set(
-  TEXT_COLORS.map((color) => color.value).filter(Boolean),
-);
 
 const TOP_LEVEL = new Set([
   "paragraph",
@@ -60,8 +58,48 @@ function isRecord(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+export function normalizeTextColor(value) {
+  if (typeof value !== "string") return null;
+
+  const raw = value.trim().toLowerCase();
+  if (/^#[0-9a-f]{6}$/.test(raw)) return raw;
+
+  const short = raw.match(/^#([0-9a-f]{3})$/);
+  if (short) {
+    const [red, green, blue] = short[1];
+    return `#${red}${red}${green}${green}${blue}${blue}`;
+  }
+
+  const rgb = raw.match(
+    /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*[\d.]+)?\s*\)$/,
+  );
+  if (rgb) {
+    const channels = [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
+    if (channels.every((channel) => channel <= 255)) {
+      return `#${channels.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+    }
+  }
+
+  return null;
+}
+
 export function isAllowedTextColor(value) {
-  return typeof value === "string" && ALLOWED_COLORS.has(value.trim().toLowerCase());
+  return Boolean(normalizeTextColor(value));
+}
+
+export function stripPastedTextColors(html) {
+  if (typeof html !== "string") return html;
+
+  return html
+    .replace(/\s*style=(["'])([\s\S]*?)\1/gi, (match, quote, style) => {
+      const cleaned = String(style)
+        .replace(/(?:^|;)\s*(?:color|background-color)\s*:[^;]*/gi, "")
+        .replace(/^;+|;+$/g, "")
+        .trim();
+      return cleaned ? ` style=${quote}${cleaned}${quote}` : "";
+    })
+    .replace(/\s*color=(["']).*?\1/gi, "")
+    .replace(/<\/?font\b[^>]*>/gi, "");
 }
 
 export function safeContenidoHref(value) {
@@ -121,11 +159,10 @@ function readMarks(marks) {
     }
 
     if (mark.type === "textStyle") {
-      const color =
-        typeof mark.attrs?.color === "string" ? mark.attrs.color.trim().toLowerCase() : "";
+      const color = normalizeTextColor(mark.attrs?.color);
 
-      if (!ALLOWED_COLORS.has(color)) {
-        return fail("Hay un color de texto que no está permitido.");
+      if (!color || color === DEFAULT_TEXT_COLOR) {
+        continue;
       }
 
       clean.push({ type: "textStyle", attrs: { color } });

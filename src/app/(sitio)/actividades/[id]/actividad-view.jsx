@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, MapPin, Ticket, Users, Wallet } from "lucide-react";
 import ContenidoDocumento from "@/components/contenido/ContenidoDocumento";
+import { labelPublicoObjetivo } from "@/lib/actividades";
 
 const MODALIDAD = {
   presencial: "Presencial",
@@ -212,7 +213,7 @@ export default function ActividadView({ activity }) {
             <Dato icon={Clock} label="Hora" value={hora} />
             <Dato icon={MapPin} label="Lugar" value={lugar} />
             <Dato icon={Ticket} label="Cupos" value={cuposLabel} />
-            <Dato icon={Users} label="Público" value={activity.publico_objetivo || "Por confirmar"} />
+            <Dato icon={Users} label="Público" value={labelPublicoObjetivo(activity.publico_objetivo)} />
             <Dato icon={Wallet} label="Valor" value={valor} />
           </dl>
 
@@ -278,10 +279,8 @@ export default function ActividadView({ activity }) {
                     pattern="9 \d{4} \d{4}"
                     title="Celular de 9 dígitos, por ejemplo 9 1234 5678"
                     className="min-h-12 min-w-0 flex-1 bg-transparent px-3 text-[#704a31] outline-none"
-                    aria-describedby="telefono-ayuda"
                   />
                 </span>
-                <span id="telefono-ayuda" className="text-xs text-[#946541]">Celular chileno. El código +56 se agrega solo.</span>
               </label>
             </div>
             <button

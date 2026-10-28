@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Bold,
   Heading2,
@@ -12,7 +13,7 @@ import {
   Quote,
   Underline,
 } from "lucide-react";
-import { TEXT_COLORS } from "@/lib/contenidos/documento.mjs";
+import { DEFAULT_TEXT_COLOR, TEXT_COLORS, normalizeTextColor } from "@/lib/contenidos/documento.mjs";
 
 function ToolButton({ active, label, onClick, children }) {
   return (
@@ -31,6 +32,29 @@ function ToolButton({ active, label, onClick, children }) {
 }
 
 export default function ContenidoToolbar({ editor }) {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const refresh = () => setTick((current) => current + 1);
+    editor.on("selectionUpdate", refresh);
+    editor.on("transaction", refresh);
+    return () => {
+      editor.off("selectionUpdate", refresh);
+      editor.off("transaction", refresh);
+    };
+  }, [editor]);
+
+  const currentColor = normalizeTextColor(editor.getAttributes("textStyle").color) || DEFAULT_TEXT_COLOR;
+  const usingCustomColor = !TEXT_COLORS.some((color) => (color.value || DEFAULT_TEXT_COLOR) === currentColor);
+
+  function applyColor(value) {
+    if (!value || value === DEFAULT_TEXT_COLOR) {
+      editor.chain().focus().unsetColor().run();
+      return;
+    }
+    editor.chain().focus().setColor(value).run();
+  }
+
   function setLink() {
     const previous = editor.getAttributes("link").href ?? "";
     const href = window.prompt("Enlace (https://…)", previous);
@@ -117,9 +141,8 @@ export default function ContenidoToolbar({ editor }) {
       <span className="mx-1 h-5 w-px bg-[#e6ddd4]" aria-hidden="true" />
       <div className="flex items-center gap-1" aria-label="Color de texto">
         {TEXT_COLORS.map((color) => {
-          const active = color.value
-            ? editor.isActive("textStyle", { color: color.value })
-            : !editor.isActive("textStyle");
+          const value = color.value || DEFAULT_TEXT_COLOR;
+          const active = currentColor === value && !usingCustomColor;
 
           return (
             <button
@@ -128,21 +151,39 @@ export default function ContenidoToolbar({ editor }) {
               title={color.label}
               aria-label={color.label}
               aria-pressed={active}
-              onClick={() => {
-                if (!color.value) {
-                  editor.chain().focus().unsetColor().run();
-                  return;
-                }
-
-                editor.chain().focus().setColor(color.value).run();
-              }}
+              onClick={() => applyColor(value)}
               className={`h-5 w-5 rounded-full border ${
                 active ? "border-[#2c1810]" : "border-[#e6ddd4]"
               }`}
-              style={{ background: color.value ?? "#2c1810" }}
+              style={{ background: value }}
             />
           );
         })}
+        <span className="mx-0.5 h-5 w-px bg-[#e6ddd4]" aria-hidden="true" />
+        <label
+          title="Elegir color"
+          className={`relative h-5 w-5 overflow-hidden rounded-full border ${
+            usingCustomColor ? "border-[#2c1810]" : "border-[#e6ddd4]"
+          }`}
+        >
+          <span className="sr-only">Elegir color</span>
+          <span
+            className="block h-full w-full"
+            style={{
+              background: usingCustomColor
+                ? currentColor
+                : "conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)",
+            }}
+            aria-hidden="true"
+          />
+          <input
+            type="color"
+            aria-label="Elegir color libre"
+            value={currentColor}
+            onChange={(event) => applyColor(event.target.value)}
+            className="absolute inset-0 cursor-pointer opacity-0"
+          />
+        </label>
       </div>
     </div>
   );

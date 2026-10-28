@@ -1,3 +1,14 @@
+export const PUBLICOS_OBJETIVO = ["todas_edades", "mayores_18"];
+
+export const PUBLICO_OBJETIVO_LABELS = {
+  todas_edades: "Todas las edades",
+  mayores_18: "Mayores de 18 años",
+};
+
+export function labelPublicoObjetivo(value) {
+  return PUBLICO_OBJETIVO_LABELS[value] || "Por confirmar";
+}
+
 export function todayISO() {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Santiago",

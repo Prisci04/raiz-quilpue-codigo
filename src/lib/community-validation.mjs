@@ -1,4 +1,5 @@
 import { parseOptionalDocumento } from "./contenidos/documento.mjs";
+import { PUBLICOS_OBJETIVO } from "./actividades.js";
 import { parseOwnedAporteImageUrl, parseOwnedPortadaUrl } from "./media/policy.mjs";
 
 export const MUSEO_CATEGORIES = [
@@ -39,6 +40,16 @@ function nonNegativeInteger(value) {
   return Number.isSafeInteger(number) && number >= 0 ? number : undefined;
 }
 
+function parseMontoSoloDigitos(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  if (typeof value === "number") {
+    return Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+  }
+  if (typeof value !== "string" || !/^\d+$/.test(value)) return undefined;
+  const number = Number(value);
+  return Number.isSafeInteger(number) ? number : undefined;
+}
+
 function validDate(value) {
   if (!value) return true;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -55,29 +66,10 @@ function normalizeTime(value) {
   return match ? `${match[1]}:${match[2]}` : undefined;
 }
 
-function isSafeLocalImagePath(value) {
-  if (!value.startsWith("/images/")) return false;
-  if (value.includes("\\") || value.includes("..") || value.includes("//")) return false;
-  return /^\/images\/[A-Za-z0-9._/-]+$/.test(value);
-}
-
-function allowedImageUrl(value) {
+function allowedActividadImageUrl(value) {
   if (!value) return true;
-  if (isSafeLocalImagePath(value)) return true;
-
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" || url.username || url.password) return false;
-    if (url.hostname === "images.unsplash.com") return true;
-
-    if (url.search) return false;
-
-    const owned = parseOwnedPortadaUrl(value);
-    if (owned) return true;
-    return Boolean(parseOwnedAporteImageUrl(value));
-  } catch {
-    return false;
-  }
+  const owned = parseOwnedPortadaUrl(value);
+  return Boolean(owned?.contexto === "actividades");
 }
 
 function allowedPiezaImageUrl(value) {
@@ -109,8 +101,8 @@ export function parseActividadInput(input) {
   const cupos = nonNegativeInteger(input.cupos);
   if (cupos === undefined) return fail("Los cupos deben ser un número entero mayor o igual a 0.");
 
-  const valorMonto = nonNegativeInteger(input.valor_monto);
-  if (valorMonto === undefined) return fail("El monto debe ser un número entero mayor o igual a 0.");
+  const valorMonto = parseMontoSoloDigitos(input.valor_monto);
+  if (valorMonto === undefined) return fail("El monto solo puede contener números.");
 
   const modalidad = input.modalidad || "presencial";
   if (!oneOf(modalidad, MODALIDADES)) return fail("La modalidad no es válida.");
@@ -143,8 +135,8 @@ export function parseActividadInput(input) {
 
   const imagenRaw = input.imagen_url === null || input.imagen_url === undefined ? "" : input.imagen_url;
   const imagenUrl = typeof imagenRaw === "string" ? text(imagenRaw, 2000) : null;
-  if (imagenRaw && (!imagenUrl || !allowedImageUrl(imagenUrl))) {
-    return fail("La imagen debe ser un archivo del sitio, Unsplash o del almacenamiento de la plataforma.");
+  if (imagenRaw && (!imagenUrl || !allowedActividadImageUrl(imagenUrl))) {
+    return fail("La imagen de la actividad debe subirse desde el administrador.");
   }
 
   const informacion = parseInformacionAdicional(input.informacion_adicional);
@@ -158,6 +150,10 @@ export function parseActividadInput(input) {
     return fail("Indica el lugar cuando la actividad es presencial.");
   }
 
+  if (!oneOf(input.publico_objetivo, PUBLICOS_OBJETIVO)) {
+    return fail("El público objetivo no es válido.");
+  }
+
   return {
     ok: true,
     value: {
@@ -167,7 +163,7 @@ export function parseActividadInput(input) {
       hora_inicio: horaInicio,
       hora_fin: horaFin,
       lugar,
-      publico_objetivo: text(input.publico_objetivo, 250),
+      publico_objetivo: input.publico_objetivo,
       modalidad,
       tipo_participacion: participacion,
       cupos,

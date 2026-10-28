@@ -177,6 +177,7 @@ textarea {
 .contenido-editor .ProseMirror {
   min-height: 18rem;
   outline: none;
+  color: #704a31;
 }
 
 .contenido-editor .ProseMirror p {

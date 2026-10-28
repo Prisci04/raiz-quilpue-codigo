@@ -15,6 +15,7 @@ const base = {
   descripcion: "Desc",
   modalidad: "presencial",
   lugar: "Centro Cultural Daniel de la Vega",
+  publico_objetivo: "todas_edades",
   tipo_participacion: "abierta",
   tipo_valor: "gratuito",
   estado: "borrador",
@@ -37,6 +38,19 @@ test("rechaza hora de término anterior o igual a la de inicio", () => {
   assert.match(parsed.message, /término/i);
 });
 
+test("exige un público objetivo válido", () => {
+  const missing = parseActividadInput({ ...base, publico_objetivo: "" });
+  assert.equal(missing.ok, false);
+  assert.match(missing.message, /público objetivo/i);
+
+  const invalid = parseActividadInput({ ...base, publico_objetivo: "Público general" });
+  assert.equal(invalid.ok, false);
+
+  const mayores = parseActividadInput({ ...base, publico_objetivo: "mayores_18" });
+  assert.equal(mayores.ok, true);
+  assert.equal(mayores.value.publico_objetivo, "mayores_18");
+});
+
 test("exige lugar solo si la modalidad es presencial", () => {
   const presencial = parseActividadInput({ ...base, lugar: "" });
   assert.equal(presencial.ok, false);
@@ -51,15 +65,24 @@ test("exige lugar solo si la modalidad es presencial", () => {
   assert.equal(hibrida.value.lugar, null);
 });
 
-test("acepta Unsplash con query y rechaza traversal en /images/", () => {
-  const unsplash = parseActividadInput({
+test("la imagen de la actividad solo acepta un archivo subido", () => {
+  const HOST = "https://proyecto.supabase.co";
+  const UUID = "550e8400-e29b-41d4-a716-446655440000";
+  const portada = parseActividadInput({
     ...base,
-    imagen_url: "https://images.unsplash.com/photo-123?auto=format&fit=crop&w=1200",
+    imagen_url: `${HOST}/storage/v1/object/public/public-media/actividades/4/portada/${UUID}.jpg`,
   });
-  assert.equal(unsplash.ok, true);
+  assert.equal(portada.ok, true);
 
-  const traversal = parseActividadInput({ ...base, imagen_url: "/images/../../secret.png" });
-  assert.equal(traversal.ok, false);
+  assert.equal(
+    parseActividadInput({
+      ...base,
+      imagen_url: "https://images.unsplash.com/photo-123?auto=format&fit=crop&w=1200",
+    }).ok,
+    false,
+  );
+  assert.equal(parseActividadInput({ ...base, imagen_url: "https://i.imgur.com/foto.jpg" }).ok, false);
+  assert.equal(parseActividadInput({ ...base, imagen_url: "/images/inicio/imgini5.jpg" }).ok, false);
 });
 
 test("exige monto si es pagada y conserva forma_pago e información adicional", () => {
@@ -80,6 +103,18 @@ test("exige monto si es pagada y conserva forma_pago e información adicional", 
   assert.equal(parsed.ok, true);
   assert.equal(parsed.value.forma_pago, "Transferencia");
   assert.equal(parsed.value.informacion_adicional.type, "doc");
+});
+
+test("el monto pagado solo acepta dígitos", () => {
+  const ok = parseActividadInput({ ...base, tipo_valor: "pagado", valor_monto: "5000" });
+  assert.equal(ok.ok, true);
+  assert.equal(ok.value.valor_monto, 5000);
+
+  for (const valor_monto of ["5.000", "5 000", "$5000", "5e3", "+5000", "-1", "12ab", "1.5", " "]) {
+    const parsed = parseActividadInput({ ...base, tipo_valor: "pagado", valor_monto });
+    assert.equal(parsed.ok, false, valor_monto);
+    assert.match(parsed.message, /monto/i);
+  }
 });
 
 test("el cambio de estado solo acepta un estado válido", () => {

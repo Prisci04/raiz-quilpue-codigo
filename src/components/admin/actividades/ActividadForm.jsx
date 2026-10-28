@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { ImageIcon } from "lucide-react";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import ContenidoEditor from "@/components/admin/contenidos/ContenidoEditor";
-import { todayISO } from "@/lib/actividades";
+import { PUBLICO_OBJETIVO_LABELS, PUBLICOS_OBJETIVO, todayISO } from "@/lib/actividades";
 import { deleteActividad, getActividadAdmin, saveActividad } from "@/lib/api/community";
 import { discardUploadedPortada, uploadPortada } from "@/lib/api/media";
 
@@ -68,7 +68,7 @@ function formFromActivity(activity) {
     tipo_participacion: activity.tipo_participacion ?? "abierta",
     cupos: activity.cupos ?? "",
     tipo_valor: activity.tipo_valor ?? "gratuito",
-    valor_monto: activity.valor_monto ?? "",
+    valor_monto: activity.valor_monto == null ? "" : String(activity.valor_monto),
     forma_pago: activity.forma_pago ?? null,
     informacion_adicional: activity.informacion_adicional ?? null,
     imagen_url: activity.imagen_url ?? "",
@@ -80,7 +80,7 @@ function activityPayload(form, estado) {
   return {
     ...form,
     cupos: form.cupos === "" ? null : Number(form.cupos),
-    valor_monto: form.valor_monto === "" ? null : Number(form.valor_monto),
+    valor_monto: form.valor_monto === "" ? null : form.valor_monto,
     imagen_url: form.imagen_url || null,
     estado,
   };
@@ -160,11 +160,16 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
     if (form.hora_inicio && form.hora_fin && form.hora_fin <= form.hora_inicio) {
       return "La hora de término debe ser posterior a la de inicio.";
     }
-    if (form.tipo_valor === "pagado" && form.valor_monto === "") {
-      return "Indica el monto cuando la actividad es pagada.";
+    if (form.tipo_valor === "pagado") {
+      const monto = String(form.valor_monto ?? "");
+      if (!monto) return "Indica el monto cuando la actividad es pagada.";
+      if (!/^\d+$/.test(monto)) return "El monto solo puede contener números.";
     }
     if (form.modalidad === "presencial" && !String(form.lugar ?? "").trim()) {
       return "Indica el lugar cuando la actividad es presencial.";
+    }
+    if (!PUBLICOS_OBJETIVO.includes(form.publico_objetivo)) {
+      return "Indica el público de la actividad.";
     }
     return "";
   }
@@ -354,8 +359,23 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
               <input type="number" min="0" step="1" value={form.cupos ?? ""} onChange={(event) => update("cupos", event.target.value)} className={inputClass} />
               <span className="mt-1 block text-xs text-[#8d7b6d]">Déjalo vacío si no hay límite o aún no está confirmado.</span>
             </Field>
-            <Field label="Público">
-              <input maxLength={250} placeholder="Público general, personas mayores..." value={form.publico_objetivo ?? ""} onChange={(event) => update("publico_objetivo", event.target.value)} className={inputClass} />
+            <Field label="Público *">
+              <select
+                required
+                name="publico_objetivo"
+                value={form.publico_objetivo}
+                onChange={(event) => update("publico_objetivo", event.target.value)}
+                className={inputClass}
+              >
+                <option value="" disabled>
+                  Seleccionar público
+                </option>
+                {PUBLICOS_OBJETIVO.map((value) => (
+                  <option key={value} value={value}>
+                    {PUBLICO_OBJETIVO_LABELS[value]}
+                  </option>
+                ))}
+              </select>
             </Field>
             <div className="grid gap-4">
               <Field label="Valor">
@@ -368,7 +388,17 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
               </Field>
               {form.tipo_valor === "pagado" ? (
                 <Field label="Monto ($) *">
-                  <input type="number" min="0" step="1" value={form.valor_monto ?? ""} onChange={(event) => update("valor_monto", event.target.value)} className={inputClass} required />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    pattern="[0-9]+"
+                    required
+                    value={form.valor_monto ?? ""}
+                    onChange={(event) => update("valor_monto", event.target.value.replace(/\D/g, ""))}
+                    className={inputClass}
+                  />
+                  <span className="mt-1 block text-xs text-[#8d7b6d]">Solo números, sin puntos, espacios ni símbolos.</span>
                 </Field>
               ) : null}
             </div>
@@ -422,20 +452,7 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
                 <button type="button" className="text-[#7c5c47]" onClick={() => setConfirmPortada(false)}>Cancelar</button>
               </div>
             ) : null}
-            <p className="mt-2 text-[12px] text-[#8d7b6d]">JPEG, PNG, WebP o AVIF. Máximo 5 MB.</p>
-            <label className="mt-4 block text-[13px] font-medium text-[#2c1810]">
-              O pega una URL
-              <input
-                type="text"
-                maxLength={2000}
-                placeholder="https://images.unsplash.com/... o /images/..."
-                value={portadaFile ? "" : (form.imagen_url ?? "")}
-                onChange={(event) => update("imagen_url", event.target.value)}
-                disabled={Boolean(portadaFile)}
-                className={inputClass}
-              />
-            </label>
-            <span className="mt-1 block text-xs text-[#8d7b6d]">Acepta Unsplash o una imagen local de /images/.</span>
+            <p className="mt-2 text-[12px] text-[#8d7b6d]">JPEG, PNG, WebP o AVIF. Máximo 5 MB. Sube el archivo; no se aceptan URLs externas.</p>
           </div>
 
           <div className="admin-card p-4 sm:p-6">

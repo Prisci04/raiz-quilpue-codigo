@@ -521,3 +521,47 @@ FROM pg_policies
 WHERE
     schemaname = 'public'
     AND tablename = 'actividades';
+
+
+    
+SELECT DISTINCT publico_objetivo
+FROM public.actividades;
+
+/*normalizar las activdades que ya existen en la parte publico*/
+UPDATE public.actividades
+SET publico_objetivo = CASE
+    WHEN publico_objetivo IS NULL
+        THEN 'todas_edades'
+
+    WHEN publico_objetivo IN (
+        'Público general',
+        'Todas las edades pueden participar.',
+        'Todas las edades'
+    )
+        THEN 'todas_edades'
+
+    WHEN publico_objetivo IN (
+        'Personas mayores de 18 años',
+        'Mayores de 18 años'
+    )
+        THEN 'mayores_18'
+
+    ELSE publico_objetivo
+END;
+
+
+/*nuevas reglas, publico deja de ser un varchar y pasa a ser un check*/
+ALTER TABLE public.actividades
+DROP CONSTRAINT IF EXISTS actividades_publico_objetivo_check;
+
+ALTER TABLE public.actividades
+ALTER COLUMN publico_objetivo SET NOT NULL;
+
+ALTER TABLE public.actividades
+ADD CONSTRAINT actividades_publico_objetivo_check
+CHECK (
+    publico_objetivo IN (
+        'todas_edades',
+        'mayores_18'
+    )
+);
