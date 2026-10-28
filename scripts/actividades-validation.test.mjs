@@ -14,6 +14,7 @@ const base = {
   titulo: "Prueba",
   descripcion: "Desc",
   modalidad: "presencial",
+  lugar: "Centro Cultural Daniel de la Vega",
   tipo_participacion: "abierta",
   tipo_valor: "gratuito",
   estado: "borrador",
@@ -34,6 +35,20 @@ test("rechaza hora de término anterior o igual a la de inicio", () => {
   const parsed = parseActividadInput({ ...base, hora_inicio: "12:00", hora_fin: "10:00" });
   assert.equal(parsed.ok, false);
   assert.match(parsed.message, /término/i);
+});
+
+test("exige lugar solo si la modalidad es presencial", () => {
+  const presencial = parseActividadInput({ ...base, lugar: "" });
+  assert.equal(presencial.ok, false);
+  assert.match(presencial.message, /lugar/i);
+
+  const virtual = parseActividadInput({ ...base, modalidad: "virtual", lugar: "" });
+  assert.equal(virtual.ok, true);
+  assert.equal(virtual.value.lugar, null);
+
+  const hibrida = parseActividadInput({ ...base, modalidad: "hibrida", lugar: null });
+  assert.equal(hibrida.ok, true);
+  assert.equal(hibrida.value.lugar, null);
 });
 
 test("acepta Unsplash con query y rechaza traversal en /images/", () => {

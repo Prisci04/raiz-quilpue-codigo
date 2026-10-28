@@ -163,6 +163,9 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
     if (form.tipo_valor === "pagado" && form.valor_monto === "") {
       return "Indica el monto cuando la actividad es pagada.";
     }
+    if (form.modalidad === "presencial" && !String(form.lugar ?? "").trim()) {
+      return "Indica el lugar cuando la actividad es presencial.";
+    }
     return "";
   }
 
@@ -335,8 +338,17 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
                 <input type="time" value={form.hora_fin ?? ""} onChange={(event) => update("hora_fin", event.target.value)} className={inputClass} />
               </Field>
             </div>
-            <Field label="Lugar">
-              <input maxLength={250} value={form.lugar ?? ""} onChange={(event) => update("lugar", event.target.value)} className={inputClass} />
+            <Field label={form.modalidad === "presencial" ? "Lugar *" : "Lugar"}>
+              <input
+                required={form.modalidad === "presencial"}
+                maxLength={250}
+                value={form.lugar ?? ""}
+                onChange={(event) => update("lugar", event.target.value)}
+                className={inputClass}
+              />
+              {form.modalidad === "presencial" ? (
+                <span className="mt-1 block text-xs text-[#8d7b6d]">Obligatorio para actividades presenciales.</span>
+              ) : null}
             </Field>
             <Field label="Cupos">
               <input type="number" min="0" step="1" value={form.cupos ?? ""} onChange={(event) => update("cupos", event.target.value)} className={inputClass} />

@@ -154,6 +154,9 @@ export function parseActividadInput(input) {
   if (input.lugar && typeof input.lugar === "string" && input.lugar.trim() && !lugar) {
     return fail("El lugar supera el máximo de 250 caracteres.");
   }
+  if (modalidad === "presencial" && !lugar) {
+    return fail("Indica el lugar cuando la actividad es presencial.");
+  }
 
   return {
     ok: true,
