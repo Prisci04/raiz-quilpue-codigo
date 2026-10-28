@@ -31,6 +31,7 @@ export async function PATCH(request, { params }) {
     const current = await getPiezaMuseoAdmin(parsed.value);
     if (!current) return jsonError(404, "NOT_FOUND", "Pieza no encontrada.");
     const body = await readJsonBody(request);
+    if (!body) return jsonError(400, "VALIDATION", "La solicitud no es válida.");
     const sameImage = body.imagen_url === current.imagen_url;
     const input = parsePiezaMuseoInput(sameImage ? { ...body, imagen_url: null } : body);
     if (!input.ok) return jsonError(400, "VALIDATION", input.message);

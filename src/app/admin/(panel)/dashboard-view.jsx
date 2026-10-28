@@ -59,17 +59,29 @@ const QUICK_ACTIONS = [
   },
 ];
 
+function UnavailableChart({ title }) {
+  return (
+    <article className="admin-card p-5 sm:p-6">
+      <h2 className="text-[15px] font-semibold tracking-tight text-[#2c1810]">{title}</h2>
+      <p className="mt-4 flex min-h-44 items-center text-sm text-[#7c5c47]">
+        No se pudo cargar esta información. Intenta nuevamente más tarde.
+      </p>
+    </article>
+  );
+}
+
 export default function AdminDashboardView({
   dateLabel,
-  publishedContents,
-  totalContents,
-  publishedActivities,
-  totalEnrollments,
-  publishedMuseumPieces,
-  contentSlices,
-  museumSlices,
-  enrollmentsByActivity,
-  monthlyEnrollments,
+  publishedContents = null,
+  contentError,
+  totalContents = null,
+  publishedActivities = null,
+  totalEnrollments = null,
+  publishedMuseumPieces = null,
+  contentSlices = [],
+  museumSlices = [],
+  enrollmentsByActivity = [],
+  monthlyEnrollments = [],
 }) {
   const activityMax = Math.max(1, ...enrollmentsByActivity.map((item) => item.value));
   const monthlyMax = Math.max(1, ...monthlyEnrollments.map((item) => item.value));
@@ -95,7 +107,7 @@ export default function AdminDashboardView({
           </h1>
           <p className="mt-1 text-sm text-[#7c5c47]">{dateLabel}</p>
         </div>
-        <DownloadReportButton
+        {!contentError ? <DownloadReportButton
           dateLabel={dateLabel}
           publishedContents={publishedContents}
           totalContents={totalContents}
@@ -106,58 +118,60 @@ export default function AdminDashboardView({
           museumSlices={museumSlices}
           enrollmentsByActivity={enrollmentsByActivity}
           monthlyEnrollments={monthlyEnrollments}
-        />
+        /> : null}
       </header>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard
-          value={publishedContents}
+          value={publishedContents ?? "—"}
           label="Contenidos publicados"
-          hint={`De ${totalContents} contenidos`}
+          hint={contentError ? "Error al cargar" : `De ${totalContents} contenidos`}
           tone="gold"
           icon={FileText}
         />
         <KpiCard
-          value={publishedActivities}
+          value={publishedActivities ?? "—"}
           label="Actividades publicadas"
-          hint="Visibles en el sitio"
+          hint={contentError ? "Error al cargar" : "Visibles en el sitio"}
           tone="brown"
           icon={CalendarDays}
         />
         <KpiCard
-          value={totalEnrollments}
+          value={totalEnrollments ?? "—"}
           label="Inscripciones"
-          hint="Total histórico"
+          hint={contentError ? "Error al cargar" : "Total histórico"}
           tone="terracotta"
           icon={Ticket}
         />
         <KpiCard
-          value={publishedMuseumPieces}
+          value={publishedMuseumPieces ?? "—"}
           label="Piezas del museo"
-          hint="Publicadas"
+          hint={contentError ? "Error al cargar" : "Publicadas"}
           tone="forest"
           icon={Landmark}
         />
       </section>
 
+      {contentError ? <p role="alert" className="text-sm text-[#8d3b28]">{contentError}</p> : null}
+
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <AdminBarChart
+        {contentError ? <UnavailableChart title="Inscritos por actividad" /> : <AdminBarChart
           title="Inscritos por actividad"
           series={enrollmentsByActivity}
           max={activityMax}
-        />
-        <AdminLineChart
+        />}
+        {contentError ? <UnavailableChart title="Inscripciones por mes" /> : <AdminLineChart
           title="Inscripciones por mes"
           series={monthlyEnrollments}
           color="#c4a04a"
           max={monthlyMax}
           yTicks={monthlyTicks}
-        />
+        />}
       </section>
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <AdminDonutChart title="Contenidos por categoría" slices={contentSlices} />
-        <AdminDonutChart title="Piezas del museo por categoría" slices={museumSlices} />
+        {contentError ? <UnavailableChart title="Contenidos por categoría" /> : <AdminDonutChart title="Contenidos por categoría" slices={contentSlices} />}
+        {contentError ? <UnavailableChart title="Piezas del museo por categoría" /> : <AdminDonutChart title="Piezas del museo por categoría" slices={museumSlices} />}
       </section>
 
       <section>

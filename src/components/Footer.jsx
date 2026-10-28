@@ -57,7 +57,7 @@ export default function Footer() {
 									alt="Logo de Raíz Quilpué"
 									width={36}
 									height={36}
-									className="h-9 w-9 object-contain"
+									className="h-auto w-9 object-contain"
 								/>
 							</div>
 							<div>

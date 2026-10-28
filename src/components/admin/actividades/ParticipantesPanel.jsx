@@ -1,5 +1,6 @@
 "use client";
 
+import AdminDialog from "@/components/admin/AdminDialog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -20,6 +21,7 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
+import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import { cuposDisponibles, todayISO } from "@/lib/actividades";
 import { deleteParticipante } from "@/lib/api/community";
@@ -47,16 +49,8 @@ function Status({ value }) {
   const published = value === "publicada";
   const cancelled = value === "cancelada";
   const label = published ? "Publicada" : cancelled ? "Cancelada" : "Borrador";
-  const style = published
-    ? "bg-[#e5f6ea] text-[#1c7a42]"
-    : cancelled
-      ? "bg-[#fde8e2] text-[#a5452d]"
-      : "bg-[#fff3d6] text-[#9a6708]";
-  return (
-    <span className={`inline-flex shrink-0 rounded-full px-3 py-1 text-xs font-medium ${style}`}>
-      {label}
-    </span>
-  );
+  const tone = published ? "success" : cancelled ? "danger" : "warning";
+  return <AdminBadge tone={tone}>{label}</AdminBadge>;
 }
 
 function activityDateLabel(value) {
@@ -132,7 +126,7 @@ function daysAgo(isoDay, amount) {
 
 function SortHead({ label, active, direction, onClick, className = "" }) {
   return (
-    <th className={`px-3 py-3 ${className}`}>
+    <th aria-sort={active ? (direction === "asc" ? "ascending" : "descending") : undefined} className={`px-3 py-3 ${className}`}>
       <button
         type="button"
         onClick={onClick}
@@ -157,6 +151,7 @@ export default function ParticipantesPanel({
   const [removedIds, setRemovedIds] = useState(() => new Set());
   const [actionError, setActionError] = useState("");
   const [busyId, setBusyId] = useState(null);
+  const [removeTarget, setRemoveTarget] = useState(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("todos");
   const [sort, setSort] = useState({ key: "fecha_creacion", direction: "desc" });
@@ -353,6 +348,7 @@ export default function ParticipantesPanel({
     setActionError("");
     try {
       await deleteParticipante(activity.id, person.id);
+      setRemoveTarget(null);
       setRemovedIds((current) => {
         const next = new Set(current);
         next.add(person.id);
@@ -367,7 +363,7 @@ export default function ParticipantesPanel({
   }
 
   return (
-    <section>
+    <section className="admin-page">
       <p className="text-[13px] text-[#8d7b6d]">
         <Link href="/admin" className="hover:text-[#2c1810]">Gestión</Link>
         <span className="px-1.5" aria-hidden="true">›</span>
@@ -497,8 +493,19 @@ export default function ParticipantesPanel({
             </h2>
             <p className="mt-1 text-sm text-[#8d7b6d]">Lista de personas inscritas en esta actividad.</p>
           </div>
-          <div ref={menuRef} className="flex w-full min-w-0 flex-nowrap items-center gap-1.5 lg:w-auto">
-            <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-xl border border-[#eadfd4] bg-[#fbf8f5] px-2.5 sm:px-3 lg:w-56 lg:flex-none">
+          <div ref={menuRef}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.stopPropagation();
+                setMenu(null);
+                menuRef.current?.querySelector("button")?.focus();
+              }
+            }}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setMenu(null);
+            }}
+            className="flex w-full min-w-0 flex-wrap items-center gap-1.5 lg:w-auto">
+            <label className="flex min-h-11 min-w-0 basis-full sm:basis-auto flex-1 items-center gap-2 rounded-xl border border-[#eadfd4] bg-[#fbf8f5] px-2.5 sm:px-3 lg:w-56 lg:flex-none">
               <Search size={15} className="shrink-0 text-[#a4846c]" aria-hidden="true" />
               <input
                 value={query}
@@ -516,7 +523,7 @@ export default function ParticipantesPanel({
                 type="button"
                 onClick={() => setMenu((current) => (current === "filter" ? null : "filter"))}
                 aria-expanded={menu === "filter"}
-                className={`inline-flex h-9 items-center gap-1 rounded-xl border px-2.5 text-xs whitespace-nowrap ${
+                className={`inline-flex min-h-11 items-center gap-1 rounded-xl border px-2.5 text-xs whitespace-nowrap ${
                   filter === "todos"
                     ? "border-[#eadfd4] bg-white text-[#5c4636] hover:bg-[#faf6f1]"
                     : "border-[#1e4536] bg-[#1e4536] text-white"
@@ -550,7 +557,7 @@ export default function ParticipantesPanel({
             <button
               type="button"
               onClick={() => exportPdf(filtered)}
-              className="inline-flex h-8 items-center gap-1 rounded-xl bg-[#2c1810] px-2 text-[11px] font-medium whitespace-nowrap text-[#f4ebe3] hover:bg-[#3d2418] sm:px-2.5"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#2c1810] px-3 text-sm font-medium whitespace-nowrap text-[#f4ebe3] hover:bg-[#3d2418] sm:px-2.5"
             >
               <Download size={12} aria-hidden="true" />
               Descargar participantes
@@ -560,8 +567,8 @@ export default function ParticipantesPanel({
 
         {pageRows.length ? (
           <>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[780px] border-collapse text-left text-sm">
+            <div tabIndex={0} role="region" aria-label="Listado de participantes" className="admin-table-scroll mt-4 overflow-x-auto">
+              <table className="admin-table w-full min-w-[780px] border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-y border-[#efe6dc] text-xs text-[#8d7b6d]">
                     <SortHead label="Nombre" active={sort.key === "nombre"} direction={sort.direction} onClick={() => toggleSort("nombre")} />
@@ -594,8 +601,8 @@ export default function ParticipantesPanel({
                           <button
                             type="button"
                             disabled={busyId === person.id}
-                            onClick={() => removeParticipant(person)}
-                            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-[#a5452d] hover:bg-[#fff3f0] disabled:opacity-50"
+                            onClick={() => { setActionError(""); setRemoveTarget(person); }}
+                            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-medium text-[#a5452d] hover:bg-[#fff3f0] disabled:opacity-50"
                           >
                             <Trash2 size={14} aria-hidden="true" />
                             {busyId === person.id ? "Quitando…" : "Quitar"}
@@ -617,7 +624,7 @@ export default function ParticipantesPanel({
                   disabled={currentPage <= 1}
                   onClick={() => setPage((current) => Math.max(1, current - 1))}
                   aria-label="Página anterior"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -629,7 +636,7 @@ export default function ParticipantesPanel({
                   disabled={currentPage >= totalPages}
                   onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
                   aria-label="Página siguiente"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
                 >
                   <ChevronRight size={16} />
                 </button>
@@ -637,13 +644,28 @@ export default function ParticipantesPanel({
             </div>
           </>
         ) : (
-          <p className="px-3 py-12 text-center text-sm text-[#7c5c47]">
+          <p className="admin-empty px-3 py-12 text-center text-sm text-[#7c5c47]">
             {participants.length
               ? "Ningún participante coincide con la búsqueda o el filtro."
               : "Esta actividad todavía no tiene inscripciones."}
           </p>
         )}
       </div>
+      {removeTarget ? (
+        <AdminDialog onClose={() => setRemoveTarget(null)} busy={busyId !== null} role="alertdialog"
+          aria-labelledby="remove-participant-title" aria-describedby="remove-participant-description"
+          className="max-w-md rounded-md border border-[#e6ddd4] bg-white p-6">
+          <h2 id="remove-participant-title" className="font-serif text-xl font-semibold">Eliminar inscripción</h2>
+          <p id="remove-participant-description" className="mt-3 text-sm text-[#7c5c47]">
+            Se eliminará la inscripción de {removeTarget.nombre} {removeTarget.apellido}. Esta acción no se puede deshacer.
+          </p>
+          {actionError ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{actionError}</p> : null}
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <button type="button" disabled={busyId !== null} onClick={() => setRemoveTarget(null)} className="min-h-11 rounded-sm border border-[#e6ddd4] px-4 text-sm">Cancelar</button>
+            <button type="button" disabled={busyId !== null} onClick={() => removeParticipant(removeTarget)} className="min-h-11 rounded-sm bg-[#8d3b28] px-4 text-sm text-white">{busyId !== null ? "Eliminando…" : "Eliminar"}</button>
+          </div>
+        </AdminDialog>
+      ) : null}
     </section>
   );
 }

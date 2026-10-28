@@ -539,7 +539,7 @@ export default function MuseoView({ items = [], error = "" }) {
               <div className="py-12 text-center">
                 <p className="font-mono text-xs uppercase tracking-widest text-[#db700f]">Museo Digital</p>
                 <h2 id="contribution-title" className="mt-3 font-serif text-3xl font-semibold text-[#704a31]">Gracias por compartir tu historia</h2>
-                <p className="mt-3 text-sm leading-relaxed text-[#946541]">Tu aporte y el archivo fueron recibidos por Raíz Quilpué. El equipo los revisará antes de publicarlos en el museo.</p>
+                <p className="mt-3 text-sm leading-relaxed text-[#946541]">Raíz Quilpué recibió tu aporte y el archivo adjunto. El equipo revisará el material antes de su publicación.</p>
                 <button type="button" onClick={closeContribution} className="mt-6 min-h-11 bg-[#704a31] px-5 text-sm font-semibold text-[#e7dcd2]">Cerrar</button>
               </div>
             ) : (
@@ -554,7 +554,7 @@ export default function MuseoView({ items = [], error = "" }) {
                   <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Descripción *<textarea name="descripcion" required maxLength={10000} rows={4} className="border border-[#bb9c82] bg-[#f4ece4] p-3 outline-none focus:border-[#db700f]" /></label>
                   <label className="grid gap-1.5 text-sm text-[#704a31]">Fecha aproximada<input name="fecha_aproximada" type="date" className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /><span className="text-xs text-[#946541]">Selecciona la fecha desde el calendario.</span></label>
                   <label className="grid gap-1.5 text-sm text-[#704a31]">Lugar<input name="lugar" maxLength={250} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
-                  <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Archivo / imagen *<input name="archivo" type="file" required accept="image/jpeg,image/png,image/webp,image/avif,.pdf,application/pdf" className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] p-2 text-sm" /><span className="text-xs text-[#946541]">Fotografía JPG, PNG, WebP o AVIF, o un PDF. Máximo 5 MB.</span></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Archivo / imagen *<input name="archivo" type="file" required accept="image/jpeg,image/png,image/webp,image/avif,.pdf,application/pdf" className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] p-2 text-sm" /><span className="text-xs text-[#946541]">Fotografía JPG, PNG, WebP o AVIF, o un PDF. Máximo 5 MB.</span><span className="text-xs text-[#946541]">El archivo se guarda con un enlace público. Evita incluir datos personales sensibles.</span></label>
                   <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Información adicional<textarea name="informacion_adicional" maxLength={3000} rows={3} className="border border-[#bb9c82] bg-[#f4ece4] p-3 outline-none focus:border-[#db700f]" /></label>
                   {contributionError ? <p role="alert" className="text-sm font-semibold text-[#a5452d] sm:col-span-2">{contributionError}</p> : null}
                   <div className="flex justify-end sm:col-span-2"><button type="submit" disabled={sendingContribution} className="inline-flex min-h-12 items-center gap-2 bg-[#704a31] px-6 text-sm font-semibold text-[#e7dcd2] hover:bg-[#db700f] disabled:opacity-50">{sendingContribution ? "Enviando…" : "Enviar aporte"}<ArrowRight size={16} /></button></div>
@@ -631,6 +631,14 @@ export default function MuseoView({ items = [], error = "" }) {
                   <p className="text-sm leading-relaxed text-[#946541]">
                     {selectedItem.description}
                   </p>
+                </div>
+              ) : null}
+              {selectedItem.fileUrl ? (
+                <div className="mb-6 border-t border-[#bb9c82] pt-5">
+                  {selectedItem.fileName ? <p className="mb-2 break-words text-sm text-[#946541]">{selectedItem.fileName}</p> : null}
+                  <a href={selectedItem.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm font-semibold text-[#704a31] underline underline-offset-2">
+                    {selectedItem.fileName?.toLowerCase().endsWith(".pdf") ? "Abrir PDF" : "Abrir archivo"}
+                  </a>
                 </div>
               ) : null}
               {selectedItem.content ? (

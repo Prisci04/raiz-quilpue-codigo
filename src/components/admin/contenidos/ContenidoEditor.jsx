@@ -8,7 +8,7 @@ import ContenidoToolbar from "@/components/admin/contenidos/ContenidoToolbar";
 
 const EMPTY_DOC = { type: "doc", content: [{ type: "paragraph" }] };
 
-export default function ContenidoEditor({ initialContent, onChange }) {
+export default function ContenidoEditor({ initialContent, onChange, label = "Contenido del documento" }) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -33,6 +33,9 @@ export default function ContenidoEditor({ initialContent, onChange }) {
     content: initialContent ?? EMPTY_DOC,
     editorProps: {
       attributes: {
+        role: "textbox",
+        "aria-label": label,
+        "aria-multiline": "true",
         class: "px-4 py-3 text-[15px] leading-relaxed text-[#2c1810]",
       },
     },

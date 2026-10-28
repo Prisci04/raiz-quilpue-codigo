@@ -1,3 +1,4 @@
+import { requireGestorContenidoPage } from "@/lib/auth/page-guard";
 import ActividadesPanel from "@/components/admin/actividades/ActividadesPanel";
 import { listActividadesAdmin } from "@/services/admin-community.service";
 
@@ -5,6 +6,8 @@ export const metadata = { title: "Actividades — Admin Raíz Quilpué" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminActividadesPage({ searchParams }) {
+  await requireGestorContenidoPage();
+
   const query = await searchParams;
 
   let activities = [];

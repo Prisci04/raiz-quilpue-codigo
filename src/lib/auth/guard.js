@@ -3,7 +3,7 @@ import "server-only";
 import { isMutatingMethod, isTrustedOrigin } from "@/lib/auth/origin";
 import { validateSession } from "@/lib/auth/session";
 import { jsonError } from "@/lib/http";
-import { usuarioTieneRol } from "@/services/usuarios.service";
+import { usuarioEsGestorContenido, usuarioTieneRol } from "@/services/usuarios.service";
 
 export async function requireInternalSession(request) {
   const result = await validateSession();
@@ -58,12 +58,9 @@ export async function requireGestorContenido(request) {
     return auth;
   }
 
-  const [isAdministrador, isEditor] = await Promise.all([
-    usuarioTieneRol(auth.user.id, "administrador"),
-    usuarioTieneRol(auth.user.id, "editor"),
-  ]);
+  const isGestor = await usuarioEsGestorContenido(auth.user.id);
 
-  if (!isAdministrador && !isEditor) {
+  if (!isGestor) {
     return {
       user: null,
       response: jsonError(403, "FORBIDDEN", "No autorizado"),

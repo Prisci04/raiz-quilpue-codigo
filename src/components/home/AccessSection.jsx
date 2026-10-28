@@ -46,9 +46,6 @@ const accessItems = [
     cta: "Entrar al museo",
     image: "/images/contenido/reloj y vaca Quilpué -01.jpeg",
     imageAlt: "Fotografía patrimonial del reloj de Quilpué",
-    countKey: "museo",
-    countSingular: "registro",
-    countPlural: "registros",
     icon: Library,
   },
 ];
@@ -63,7 +60,6 @@ export default function AccessSection({ contents = [], activities = [] }) {
     patrimonio: contents.filter((item) => item.tipo === "patrimonio").length,
     noticia: contents.filter((item) => item.tipo === "noticia").length,
     actividades: activities.length,
-    museo: contents.length,
   };
 
   return (

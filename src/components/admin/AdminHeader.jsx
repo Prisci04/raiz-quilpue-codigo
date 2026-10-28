@@ -176,7 +176,18 @@ export default function AdminHeader({
           ) : null}
         </div>
 
-        <div ref={profileRef} className="relative ml-auto shrink-0">
+        <div ref={profileRef} className="relative ml-auto shrink-0"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.stopPropagation();
+              setProfileOpen(false);
+              profileRef.current?.querySelector("button")?.focus();
+            }
+          }}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setProfileOpen(false);
+          }}
+        >
           <button
             type="button"
             className="inline-flex h-11 items-center gap-2.5 rounded-sm py-1 pr-2 pl-1 text-[#2c1810] transition hover:bg-[#f6f1eb]"
@@ -198,7 +209,6 @@ export default function AdminHeader({
           {profileOpen ? (
             <div
               id={menuId}
-              role="menu"
               className="absolute top-[calc(100%+8px)] right-0 z-40 w-64 overflow-hidden rounded-sm border border-[#2c1810]/6 bg-white p-1.5 shadow-[0_16px_40px_rgba(44,24,16,0.12)]"
             >
               <div className="px-3 py-3">
@@ -208,7 +218,6 @@ export default function AdminHeader({
               <div className="space-y-0.5 border-t border-[#2c1810]/6 pt-1.5">
                 <Link
                   href="/admin/perfil"
-                  role="menuitem"
                   className="flex min-h-10 items-center gap-2.5 rounded-sm px-2.5 text-[13px] text-[#2c1810] hover:bg-[#f6f1eb]"
                   onClick={() => setProfileOpen(false)}
                 >
@@ -217,7 +226,6 @@ export default function AdminHeader({
                 </Link>
                 <Link
                   href="/"
-                  role="menuitem"
                   className="flex min-h-10 items-center gap-2.5 rounded-sm px-2.5 text-[13px] text-[#2c1810] hover:bg-[#f6f1eb]"
                   onClick={() => setProfileOpen(false)}
                 >
@@ -226,7 +234,6 @@ export default function AdminHeader({
                 </Link>
                 <button
                   type="button"
-                  role="menuitem"
                   className="flex min-h-10 w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-[13px] text-[#8d3b28] hover:bg-[#f6e4dc] disabled:opacity-60"
                   disabled={loggingOut}
                   onClick={handleLogout}

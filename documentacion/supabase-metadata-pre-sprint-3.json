@@ -1,0 +1,474 @@
+{
+  "inspection": "GET metadata only",
+  "schemaStatus": 200,
+  "columns": {
+    "usuarios": [
+      "id",
+      "nombre",
+      "apellido",
+      "email",
+      "telefono",
+      "password_hash",
+      "tipo_usuario",
+      "estado",
+      "fecha_creacion",
+      "fecha_actualizacion"
+    ],
+    "roles": [
+      "id",
+      "codigo",
+      "nombre",
+      "descripcion",
+      "estado",
+      "fecha_creacion",
+      "fecha_actualizacion"
+    ],
+    "usuario_roles": [
+      "usuario_id",
+      "rol_id",
+      "fecha_asignacion"
+    ],
+    "sesiones": [
+      "id",
+      "usuario_id",
+      "token_hash",
+      "fecha_creacion",
+      "ultima_actividad",
+      "fecha_expiracion"
+    ],
+    "actividades": [
+      "id",
+      "titulo",
+      "descripcion",
+      "fecha",
+      "hora_inicio",
+      "hora_fin",
+      "lugar",
+      "publico_objetivo",
+      "modalidad",
+      "tipo_participacion",
+      "cupos",
+      "tipo_valor",
+      "valor_monto",
+      "forma_pago",
+      "informacion_adicional",
+      "imagen_url",
+      "estado",
+      "fecha_creacion",
+      "fecha_actualizacion"
+    ],
+    "actividad_inscripciones": [
+      "id",
+      "actividad_id",
+      "nombre",
+      "apellido",
+      "email",
+      "telefono",
+      "fecha_creacion"
+    ],
+    "contenidos": [
+      "id",
+      "titulo",
+      "descripcion",
+      "resumen",
+      "contenido",
+      "tipo",
+      "imagen_url",
+      "fecha_publicacion",
+      "estado",
+      "fecha_creacion",
+      "fecha_actualizacion"
+    ],
+    "museo_piezas": [
+      "id",
+      "titulo",
+      "descripcion",
+      "categoria",
+      "fecha_aproximada",
+      "lugar",
+      "imagen_url",
+      "estado",
+      "fecha_creacion",
+      "archivo_url",
+      "archivo_nombre"
+    ],
+    "museo_aportes": [
+      "id",
+      "nombre",
+      "correo",
+      "categoria",
+      "titulo",
+      "descripcion",
+      "fecha_aproximada",
+      "lugar",
+      "archivo_nombre",
+      "informacion_adicional",
+      "fecha_creacion",
+      "archivo_url",
+      "estado_revision",
+      "pieza_id"
+    ]
+  },
+  "columnTypes": {
+    "usuarios": {
+      "id": {
+        "type": "int64"
+      },
+      "nombre": {
+        "type": "character varying",
+        "maxLength": 120
+      },
+      "apellido": {
+        "type": "character varying",
+        "maxLength": 120
+      },
+      "email": {
+        "type": "character varying",
+        "maxLength": 254
+      },
+      "telefono": {
+        "type": "character varying",
+        "maxLength": 30
+      },
+      "password_hash": {
+        "type": "text"
+      },
+      "tipo_usuario": {
+        "type": "character varying",
+        "maxLength": 20
+      },
+      "estado": {
+        "type": "character varying",
+        "maxLength": 20
+      },
+      "fecha_creacion": {
+        "type": "timestamp with time zone"
+      },
+      "fecha_actualizacion": {
+        "type": "timestamp with time zone"
+      }
+    },
+    "roles": {
+      "id": {
+        "type": "int64"
+      },
+      "codigo": {
+        "type": "character varying",
+        "maxLength": 50
+      },
+      "nombre": {
+        "type": "character varying",
+        "maxLength": 80
+      },
+      "descripcion": {
+        "type": "character varying",
+        "maxLength": 250
+      },
+      "estado": {
+        "type": "character varying",
+        "maxLength": 20
+      },
+      "fecha_creacion": {
+        "type": "timestamp with time zone"
+      },
+      "fecha_actualizacion": {
+        "type": "timestamp with time zone"
+      }
+    },
+    "usuario_roles": {
+      "usuario_id": {
+        "type": "int64"
+      },
+      "rol_id": {
+        "type": "int64"
+      },
+      "fecha_asignacion": {
+        "type": "timestamp with time zone"
+      }
+    },
+    "sesiones": {
+      "id": {
+        "type": "int64"
+      },
+      "usuario_id": {
+        "type": "int64"
+      },
+      "token_hash": {
+        "type": "text"
+      },
+      "fecha_creacion": {
+        "type": "timestamp with time zone"
+      },
+      "ultima_actividad": {
+        "type": "timestamp with time zone"
+      },
+      "fecha_expiracion": {
+        "type": "timestamp with time zone"
+      }
+    },
+    "actividades": {
+      "id": {
+        "type": "int64"
+      },
+      "titulo": {
+        "type": "character varying",
+        "maxLength": 180
+      },
+      "descripcion": {
+        "type": "text"
+      },
+      "fecha": {
+        "type": "date"
+      },
+      "hora_inicio": {
+        "type": "time without time zone"
+      },
+      "hora_fin": {
+        "type": "time without time zone"
+      },
+      "lugar": {
+        "type": "character varying",
+        "maxLength": 250
+      },
+      "publico_objetivo": {
+        "type": "character varying",
+        "maxLength": 250
+      },
+      "modalidad": {
+        "type": "character varying",
+        "maxLength": 20
+      },
+      "tipo_participacion": {
+        "type": "character varying",
+        "maxLength": 20
+      },
+      "cupos": {
+        "type": "int32"
+      },
+      "tipo_valor": {
+        "type": "character varying",
+        "maxLength": 20
+      },
+      "valor_monto": {
+        "type": "int32"
+      },
+      "forma_pago": {
+        "type": "character varying",
+        "maxLength": 250
+      },
+      "informacion_adicional": {
+        "type": "jsonb"
+      },
+      "imagen_url": {
+        "type": "text"
+      },
+      "estado": {
+        "type": "character varying",
+        "maxLength": 20
+      },
+      "fecha_creacion": {
+        "type": "timestamp with time zone"
+      },
+      "fecha_actualizacion": {
+        "type": "timestamp with time zone"
+      }
+    },
+    "actividad_inscripciones": {
+      "id": {
+        "type": "int64"
+      },
+      "actividad_id": {
+        "type": "int64"
+      },
+      "nombre": {
+        "type": "character varying",
+        "maxLength": 120
+      },
+      "apellido": {
+        "type": "character varying",
+        "maxLength": 120
+      },
+      "email": {
+        "type": "character varying",
+        "maxLength": 254
+      },
+      "telefono": {
+        "type": "character varying",
+        "maxLength": 40
+      },
+      "fecha_creacion": {
+        "type": "timestamp with time zone"
+      }
+    },
+    "contenidos": {
+      "id": {
+        "type": "int64"
+      },
+      "titulo": {
+        "type": "character varying",
+        "maxLength": 200
+      },
+      "descripcion": {
+        "type": "character varying",
+        "maxLength": 300
+      },
+      "resumen": {
+        "type": "text"
+      },
+      "contenido": {
+        "type": "jsonb"
+      },
+      "tipo": {
+        "type": "character varying",
+        "maxLength": 30
+      },
+      "imagen_url": {
+        "type": "text"
+      },
+      "fecha_publicacion": {
+        "type": "timestamp with time zone"
+      },
+      "estado": {
+        "type": "character varying",
+        "maxLength": 30
+      },
+      "fecha_creacion": {
+        "type": "timestamp with time zone"
+      },
+      "fecha_actualizacion": {
+        "type": "timestamp with time zone"
+      }
+    },
+    "museo_piezas": {
+      "id": {
+        "type": "int64"
+      },
+      "titulo": {
+        "type": "character varying",
+        "maxLength": 180
+      },
+      "descripcion": {
+        "type": "text"
+      },
+      "categoria": {
+        "type": "character varying",
+        "maxLength": 100
+      },
+      "fecha_aproximada": {
+        "type": "character varying",
+        "maxLength": 100
+      },
+      "lugar": {
+        "type": "character varying",
+        "maxLength": 250
+      },
+      "imagen_url": {
+        "type": "text"
+      },
+      "estado": {
+        "type": "character varying",
+        "maxLength": 20
+      },
+      "fecha_creacion": {
+        "type": "timestamp with time zone"
+      },
+      "archivo_url": {
+        "type": "text"
+      },
+      "archivo_nombre": {
+        "type": "character varying",
+        "maxLength": 255
+      }
+    },
+    "museo_aportes": {
+      "id": {
+        "type": "int64"
+      },
+      "nombre": {
+        "type": "character varying",
+        "maxLength": 160
+      },
+      "correo": {
+        "type": "character varying",
+        "maxLength": 254
+      },
+      "categoria": {
+        "type": "character varying",
+        "maxLength": 50
+      },
+      "titulo": {
+        "type": "character varying",
+        "maxLength": 200
+      },
+      "descripcion": {
+        "type": "text"
+      },
+      "fecha_aproximada": {
+        "type": "character varying",
+        "maxLength": 120
+      },
+      "lugar": {
+        "type": "character varying",
+        "maxLength": 250
+      },
+      "archivo_nombre": {
+        "type": "character varying",
+        "maxLength": 255
+      },
+      "informacion_adicional": {
+        "type": "text"
+      },
+      "fecha_creacion": {
+        "type": "timestamp with time zone"
+      },
+      "archivo_url": {
+        "type": "text"
+      },
+      "estado_revision": {
+        "type": "character varying",
+        "maxLength": 20
+      },
+      "pieza_id": {
+        "type": "int64"
+      }
+    }
+  },
+  "rpcNames": [
+    "/rpc/rls_auto_enable",
+    "/rpc/inscribir_actividad"
+  ],
+  "storageStatus": 200,
+  "buckets": [
+    {
+      "name": "public-media",
+      "public": true,
+      "fileSizeLimit": 5242880,
+      "allowedMimeTypes": [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/avif",
+        "application/pdf"
+      ]
+    }
+  ],
+  "publicSchemaStatus": 401,
+  "publicPaths": [],
+  "publicAccessLimitZero": {
+    "usuarios": 401,
+    "roles": 401,
+    "usuario_roles": 401,
+    "sesiones": 401,
+    "actividades": 200,
+    "actividad_inscripciones": 401,
+    "contenidos": 200,
+    "museo_piezas": 200,
+    "museo_aportes": 401
+  },
+  "notVerified": [
+    "indexes",
+    "effective RLS policies",
+    "all constraints",
+    "transaction concurrency"
+  ]
+}

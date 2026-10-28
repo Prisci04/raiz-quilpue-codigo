@@ -3,29 +3,14 @@ import { noStore } from "@/lib/contenidos/respond";
 import { parseAporteMuseoInput } from "@/lib/community-validation.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createAporteMuseo } from "@/services/admin-community.service";
+import { MEDIA_BUCKET, MEDIA_MAX_BYTES } from "@/lib/media/policy.mjs";
+import { inspectMuseoFile, MUSEO_FILE_TYPES } from "@/lib/media/museo-policy.mjs";
 
 export const dynamic = "force-dynamic";
 
-const BUCKET = "public-media";
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-const ALLOWED_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/avif",
-  "application/pdf",
-]);
-
-function safeExtension(file) {
-  const extension = file.name.split(".").pop()?.toLowerCase();
-
-  if (!extension || !/^[a-z0-9]+$/.test(extension)) {
-    return "";
-  }
-
-  return `.${extension}`;
-}
+const BUCKET = MEDIA_BUCKET;
+const MAX_FILE_SIZE = MEDIA_MAX_BYTES;
+const ALLOWED_TYPES = new Set(Object.keys(MUSEO_FILE_TYPES));
 
 export async function POST(request) {
   let uploadedPath = null;
@@ -82,18 +67,19 @@ export async function POST(request) {
       );
     }
 
-    const supabase = getSupabaseAdminClient();
-
-    const fileId = crypto.randomUUID();
-    const extension = safeExtension(file);
-
-    uploadedPath = `museo/aportes/${fileId}${extension}`;
-
     const buffer = Buffer.from(await file.arrayBuffer());
+    const inspected = inspectMuseoFile({ bytes: buffer, type: file.type, name: file.name, size: file.size });
+    if (!inspected.ok) {
+      return noStore(jsonError(400, inspected.code, inspected.message));
+    }
+
+    const supabase = getSupabaseAdminClient();
+    const fileId = crypto.randomUUID();
+    const candidatePath = `museo/aportes/${fileId}.${inspected.extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
-      .upload(uploadedPath, buffer, {
+      .upload(candidatePath, buffer, {
         contentType: file.type,
         upsert: false,
       });
@@ -101,6 +87,8 @@ export async function POST(request) {
     if (uploadError) {
       throw new Error(`No fue posible subir el archivo: ${uploadError.message}`);
     }
+
+    uploadedPath = candidatePath;
 
     const {
       data: { publicUrl },
@@ -122,16 +110,15 @@ export async function POST(request) {
       ),
     );
   } catch (error) {
-    console.error("[POST /api/museo/aportes]", error);
-
     if (uploadedPath) {
       try {
-        await getSupabaseAdminClient()
+        const cleanup = await getSupabaseAdminClient()
           .storage
           .from(BUCKET)
           .remove([uploadedPath]);
+        if (cleanup.error) logInternalError("museo aporte upload cleanup pending");
       } catch {
-        // Evita ocultar el error original.
+        logInternalError("museo aporte upload cleanup pending");
       }
     }
 

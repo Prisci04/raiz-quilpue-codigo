@@ -23,6 +23,7 @@ import {
   Search,
   Users,
 } from "lucide-react";
+import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import DeleteContenidoDialog from "@/components/admin/contenidos/DeleteContenidoDialog";
 import { deleteContenido, setEstadoContenido } from "@/lib/api/contenidos";
@@ -75,19 +76,7 @@ function TipoCell({ tipo }) {
 function EstadoBadge({ estado }) {
   const published = estado === "publicada";
 
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium ${
-        published ? "bg-[#e5f6ea] text-[#1c7a42]" : "bg-[#fff3d6] text-[#9a6708]"
-      }`}
-    >
-      <span
-        className={`h-1.5 w-1.5 rounded-full ${published ? "bg-[#2f9e5a]" : "bg-[#e0a100]"}`}
-        aria-hidden="true"
-      />
-      {published ? "Publicado" : "Borrador"}
-    </span>
-  );
+  return <AdminBadge tone={published ? "success" : "warning"}>{published ? "Publicado" : "Borrador"}</AdminBadge>;
 }
 
 function SummaryCard({ icon: Icon, iconClass, label, value, valueClass = "text-[#2c1810]", active = false, onClick }) {
@@ -161,7 +150,7 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
       <Link
         href={`/admin/contenidos/${contenido.id}/editar`}
         aria-label={`Editar ${contenido.titulo}`}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] transition-colors hover:bg-[#efe6dc]"
+        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] transition-colors hover:bg-[#efe6dc]"
       >
         <Pencil size={15} strokeWidth={1.8} aria-hidden="true" />
       </Link>
@@ -169,23 +158,34 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
         <Link
           href={`/contenido/${contenido.id}`}
           aria-label={`Ver ${contenido.titulo} en el portal`}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] transition-colors hover:bg-[#efe6dc]"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] transition-colors hover:bg-[#efe6dc]"
         >
           <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
         </Link>
       ) : (
         <span
-          className="inline-flex h-8 w-8 items-center justify-center text-[#d3c4b4]"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center text-[#d3c4b4]"
           title="El borrador no está publicado"
         >
           <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
         </span>
       )}
-      <div className="relative" ref={menuRef}>
+      <div className="relative" ref={menuRef}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            event.stopPropagation();
+            setOpen(false);
+            menuRef.current?.querySelector("button")?.focus();
+          }
+        }}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+        }}
+      >
         <button
           type="button"
           disabled={busy}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] transition-colors hover:bg-[#efe6dc] disabled:opacity-40"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] transition-colors hover:bg-[#efe6dc] disabled:opacity-40"
           aria-label={`Más acciones de ${contenido.titulo}`}
           aria-expanded={open}
           onClick={() => setOpen((current) => !current)}
@@ -196,7 +196,7 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
           <div className="absolute right-0 bottom-full z-20 mb-1 min-w-44 border border-[#e4ddd4] bg-white py-1 shadow-lg">
             <button
               type="button"
-              className="block w-full px-3 py-2 text-left text-[13px] text-[#2c1810] hover:bg-[#faf7f4]"
+              className="block min-h-10 w-full px-3 py-2 text-left text-[13px] text-[#2c1810] hover:bg-[#faf7f4]"
               onClick={() => {
                 setOpen(false);
                 onEstado(contenido);
@@ -206,8 +206,9 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
             </button>
             <button
               type="button"
-              className="block w-full px-3 py-2 text-left text-[13px] text-[#8d3b28] hover:bg-[#faf7f4]"
+              className="block min-h-10 w-full px-3 py-2 text-left text-[13px] text-[#8d3b28] hover:bg-[#faf7f4]"
               onClick={() => {
+                menuRef.current?.querySelector("button")?.focus();
                 setOpen(false);
                 onDelete(contenido);
               }}
@@ -327,7 +328,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
   }
 
   return (
-    <section>
+    <section className="admin-page">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-[13px] text-[#8d7b6d]">
@@ -388,8 +389,8 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
         />
       </div>
 
-      <div className="mt-4 rounded-2xl border border-[#efe6dc] bg-white p-3 sm:p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+      <div className="admin-card mt-5 p-4 sm:p-5">
+        <div className="flex flex-col gap-3">
           <div className="flex gap-2 overflow-x-auto">
             {FILTERS.map((filter) => {
               const active = filter.id === filterId;
@@ -400,7 +401,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
                   type="button"
                   aria-pressed={active}
                   onClick={() => changeFilter(filter.id)}
-                  className={`inline-flex h-9 shrink-0 items-center rounded-sm px-4 text-[13px] transition-colors ${
+                  className={`inline-flex min-h-11 shrink-0 items-center rounded-sm px-4 text-[13px] transition-colors ${
                     active
                       ? "bg-[#1e4536] font-medium text-white"
                       : "border border-[#eadfd4] bg-white text-[#3d342c] hover:bg-[#faf6f1]"
@@ -411,11 +412,11 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
               );
             })}
           </div>
-          <div className="flex min-w-0 flex-1 items-center gap-3 lg:ml-auto lg:max-w-md">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row">
             <label htmlFor={searchId} className="sr-only">
               Buscar contenidos
             </label>
-            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-sm border border-[#eadfd4] bg-[#fbf8f5] px-3">
+            <div className="flex w-full min-w-0 flex-1 items-center gap-2 rounded-sm border border-[#eadfd4] bg-[#fbf8f5] px-3">
               <Search size={15} strokeWidth={1.8} className="shrink-0 text-[#a89888]" aria-hidden="true" />
               <input
                 id={searchId}
@@ -425,12 +426,12 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
                   setPage(1);
                 }}
                 placeholder="Buscar contenidos..."
-                className="h-9 w-full bg-transparent text-sm text-[#2c1810] outline-none placeholder:text-[#b3a496]"
+                className="min-h-11 w-full bg-transparent text-sm text-[#2c1810] outline-none placeholder:text-[#b3a496]"
               />
             </div>
             <Link
               href="/admin/contenidos/nuevo"
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-sm bg-[#c45c38] px-4 text-sm font-medium text-white transition-colors hover:bg-[#a84c2c]"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-sm bg-[#c45c38] px-4 text-sm font-medium text-white transition-colors hover:bg-[#a84c2c]"
             >
               <Plus size={15} strokeWidth={2.2} aria-hidden="true" />
               Nuevo contenido
@@ -439,7 +440,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
         </div>
 
         {pageItems.length === 0 ? (
-          <p className="mt-3 px-3 py-12 text-center text-sm text-[#7c5c47]">
+          <p className="mt-3 admin-empty px-3 py-12 text-center text-sm text-[#7c5c47]">
             No hay contenidos con ese criterio.
           </p>
         ) : (
@@ -476,8 +477,8 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
               ))}
             </ul>
 
-            <div className="mt-2 hidden overflow-x-auto md:block">
-              <table className="w-full min-w-[720px] text-left text-sm">
+            <div tabIndex={0} role="region" aria-label="Listado de contenidos" className="admin-table-scroll mt-2 hidden overflow-x-auto md:block">
+              <table className="admin-table w-full min-w-[720px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-[#e6dcd0] text-[13px] text-[#8a7968]">
                     <th className="px-2 py-3 font-medium">Título</th>
@@ -501,7 +502,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
                         />
                       </button>
                     </th>
-                    <th className="w-28 px-2 py-3 text-right font-medium">Acciones</th>
+                    <th className="w-40 px-2 py-3 text-right font-medium">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -555,7 +556,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
           <div className="flex items-center gap-1">
             <button
               type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
               aria-label="Página anterior"
               disabled={currentPage <= 1}
               onClick={() => setPage(currentPage - 1)}
@@ -568,7 +569,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
                 type="button"
                 aria-current={pageNumber === currentPage ? "page" : undefined}
                 onClick={() => setPage(pageNumber)}
-                className={`inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-[13px] ${
+                className={`inline-flex h-10 min-w-10 items-center justify-center rounded-md px-2 text-[13px] ${
                   pageNumber === currentPage
                     ? "bg-[#1e4536] font-medium text-white"
                     : "text-[#4a3f36] hover:bg-[#efe6dc]"
@@ -579,7 +580,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
             ))}
             <button
               type="button"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
               aria-label="Página siguiente"
               disabled={currentPage >= totalPages}
               onClick={() => setPage(currentPage + 1)}
@@ -592,6 +593,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
       {pendingDelete ? (
         <DeleteContenidoDialog
           titulo={pendingDelete.titulo}
+          error={actionError}
           busy={busyId === pendingDelete.id}
           onCancel={() => {
             if (busyId !== pendingDelete.id) setPendingDelete(null);

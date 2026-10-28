@@ -1,3 +1,4 @@
+import { requireGestorContenidoPage } from "@/lib/auth/page-guard";
 import MuseoPanel from "@/components/admin/museo/MuseoPanel";
 import {
   countAportesMuseoAdmin,
@@ -8,6 +9,8 @@ export const metadata = { title: "Museo Digital — Admin Raíz Quilpué" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminMuseoPage({ searchParams }) {
+  await requireGestorContenidoPage();
+
   const query = await searchParams;
   let pieces = [];
   let contributionCount = null;

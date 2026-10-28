@@ -1,5 +1,6 @@
 "use client";
 
+import AdminDialog from "@/components/admin/AdminDialog";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -27,8 +28,8 @@ const EMPTY = {
   cupos: "",
   tipo_valor: "gratuito",
   valor_monto: "",
-  forma_pago: "",
-  informacion_adicional: EMPTY_DOC,
+  forma_pago: null,
+  informacion_adicional: null,
   imagen_url: "",
   estado: "borrador",
 };
@@ -37,7 +38,7 @@ const inputClass = "mt-1.5 w-full rounded-sm border border-[#e6ddd4] bg-[#fbfaf8
 
 function Field({ label, children, className = "" }) {
   return (
-    <label className={`block rounded-sm border border-[#e7dfd6] bg-white p-4 ${className}`}>
+    <label className={`admin-field block min-w-0 ${className}`}>
       <span className="text-[13px] font-medium text-[#2c1810]">{label}</span>
       {children}
     </label>
@@ -68,8 +69,8 @@ function formFromActivity(activity) {
     cupos: activity.cupos ?? "",
     tipo_valor: activity.tipo_valor ?? "gratuito",
     valor_monto: activity.valor_monto ?? "",
-    forma_pago: activity.forma_pago ?? "",
-    informacion_adicional: activity.informacion_adicional ?? EMPTY_DOC,
+    forma_pago: activity.forma_pago ?? null,
+    informacion_adicional: activity.informacion_adicional ?? null,
     imagen_url: activity.imagen_url ?? "",
     estado: activity.estado ?? "borrador",
   };
@@ -266,7 +267,7 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
   const pastDate = Boolean(form.fecha && form.fecha < todayISO());
 
   return (
-    <section>
+    <section className="admin-page">
       <div>
         <p className="text-[13px] text-[#8d7b6d]">
           <Link href="/admin" className="hover:text-[#2c1810]">Gestión</Link>
@@ -282,15 +283,17 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
       </div>
       {error ? <AdminNotice tone="error">{error}</AdminNotice> : null}
       {success ? <AdminNotice>{success}</AdminNotice> : null}
-      {loading ? <p className="mt-6 text-sm text-[#7c5c47]">Cargando actividad…</p> : !loadError ? (
+      {loading ? <p className="admin-empty mt-6 text-sm text-[#7c5c47]">Cargando actividad…</p> : !loadError ? (
         <form
-          className="mt-5 space-y-4"
+          className="admin-form mt-6 space-y-5"
           onSubmit={(event) => {
             event.preventDefault();
             save(editing ? form.estado : "publicada");
           }}
         >
-          <div className="grid gap-4 lg:grid-cols-2">
+          <p className="text-xs leading-relaxed text-[#7c5c47]">Los campos con * son obligatorios. Los demás son opcionales.</p>
+          <div className="admin-card grid gap-5 p-4 sm:p-6 lg:grid-cols-2">
+            <h2 className="font-serif text-xl font-semibold text-[#2c1810] lg:col-span-2">Datos de la actividad</h2>
             <Field label="Nombre de la actividad *" className="lg:col-span-2">
               <input required maxLength={180} value={form.titulo} onChange={(event) => update("titulo", event.target.value)} className={inputClass} />
             </Field>
@@ -364,7 +367,7 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
             ) : null}
           </div>
 
-          <div className="rounded-sm border border-[#e7dfd6] bg-white p-4">
+          <div className="admin-card p-4 sm:p-6">
             <span className="text-[13px] font-medium text-[#2c1810]">Imagen de la actividad</span>
             <div className="mt-3 flex min-h-40 max-w-sm items-center justify-center overflow-hidden rounded-sm border border-dashed border-[#e6ddd4] bg-[#fbfaf8]">
               {portadaVisible ? (
@@ -378,7 +381,7 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
                 </div>
               )}
             </div>
-            <input ref={fileRef} type="file" accept={PORTADA_TYPES.join(",")} className="sr-only" onChange={choosePortada} />
+            <input ref={fileRef} tabIndex={-1} aria-label="Imagen de portada" type="file" accept={PORTADA_TYPES.join(",")} className="sr-only" onChange={choosePortada} />
             {portadaFile ? (
               <p className="mt-3 text-sm text-[#4d4036]">
                 {portadaFile.name}
@@ -423,26 +426,30 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
             <span className="mt-1 block text-xs text-[#8d7b6d]">Acepta Unsplash o una imagen local de /images/.</span>
           </div>
 
-          <div className="rounded-sm border border-[#e7dfd6] bg-white p-4">
+          <div className="admin-card p-4 sm:p-6">
             <span className="text-[13px] font-medium text-[#2c1810]">Información adicional</span>
             <p className="mt-1 text-[12px] text-[#8d7b6d]">Recomendaciones, programa u otros detalles que se muestran en la ficha pública.</p>
             <div className="mt-3">
               <ContenidoEditor
+                label="Información adicional de la actividad"
                 key={editing ? `edit-${activityId}` : "nueva"}
-                initialContent={form.informacion_adicional}
+                initialContent={form.informacion_adicional ?? EMPTY_DOC}
                 onChange={(documento) => update("informacion_adicional", documento)}
               />
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="admin-form-actions flex flex-wrap items-center justify-end gap-3">
             {editing ? (
               <button type="button" onClick={() => setDeleteConfirm(true)} disabled={busy} className="min-h-10 rounded-sm border border-[#f0c7be] bg-[#fff6f3] px-4 text-sm font-medium text-[#8d3b28]">
                 Eliminar actividad
               </button>
             ) : (
-              <Link href="/admin/actividades" className="text-sm text-[#7c5c47]">Cancelar</Link>
+              <Link href="/admin/actividades" className="inline-flex min-h-11 items-center rounded-sm px-4 text-sm text-[#7c5c47]">Cancelar</Link>
             )}
+            <button type="button" disabled={busy} onClick={() => save("borrador")} className="min-h-10 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50">
+              Guardar borrador
+            </button>
             <button type="submit" disabled={busy} className="min-h-10 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50">
               {busy ? "Guardando…" : editing ? "Guardar cambios" : "Publicar actividad"}
             </button>
@@ -450,16 +457,15 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
         </form>
       ) : null}
       {deleteConfirm ? (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2c1810]/55 p-4">
-          <section role="alertdialog" aria-modal="true" className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-            <h2 className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar actividad?</h2>
-            <p className="mt-2 text-sm text-[#7c6a5c]">La lista de participantes también se eliminará.</p>
+          <AdminDialog onClose={() => setDeleteConfirm(false)} busy={busy} role="alertdialog" aria-labelledby="delete-actividad-title" aria-describedby="delete-actividad-description" className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+            <h2 id="delete-actividad-title" className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar actividad?</h2>
+            <p id="delete-actividad-description" className="mt-2 text-sm text-[#7c6a5c]">La lista de participantes también se eliminará.</p>
+            {error ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{error}</p> : null}
             <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={() => setDeleteConfirm(false)} className="min-h-10 border border-[#e6ddd4] px-4 text-sm">Cancelar</button>
+              <button type="button" disabled={busy} onClick={() => setDeleteConfirm(false)} className="min-h-10 border border-[#e6ddd4] px-4 text-sm">Cancelar</button>
               <button type="button" disabled={busy} onClick={remove} className="min-h-10 bg-[#a5452d] px-4 text-sm text-white">Eliminar</button>
             </div>
-          </section>
-        </div>
+          </AdminDialog>
       ) : null}
     </section>
   );

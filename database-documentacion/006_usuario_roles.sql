@@ -82,6 +82,7 @@ TO service_role;
    4. ASIGNAR ADMINISTRADOR AL USUARIO INICIAL
    ============================================================ */
 
+-- Parametro de sesion suministrado fuera del repositorio; sin el, no asigna roles.
 INSERT INTO public.usuario_roles (
     usuario_id,
     rol_id
@@ -97,7 +98,7 @@ JOIN public.roles r
 
 WHERE
     LOWER(u.email) =
-    LOWER('usuario@raizquilpue.cl');
+    LOWER(current_setting('raiz.bootstrap_email', true));
 
 
 /* ============================================================

@@ -1,5 +1,6 @@
 "use client";
 
+import AdminDialog from "@/components/admin/AdminDialog";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -27,7 +28,7 @@ const inputClass =
 
 function Field({ label, children, className = "" }) {
   return (
-    <label className={`block rounded-sm border border-[#e7dfd6] bg-white p-4 ${className}`}>
+    <label className={`admin-field block min-w-0 ${className}`}>
       <span className="text-[13px] font-medium text-[#2c1810]">{label}</span>
       {children}
     </label>
@@ -223,11 +224,14 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
     }
   }
 
+  const archivoLabel = /\.(jpe?g|png|webp|avif)$/i.test(form.archivo_nombre ?? "")
+    ? "Abrir imagen"
+    : /\.pdf$/i.test(form.archivo_nombre ?? "") ? "Abrir PDF" : "Abrir documento";
   const busy = saving || uploading;
   const portadaVisible = portadaPreview || form.imagen_url || "";
 
   return (
-    <section>
+    <section className="admin-page">
       <div>
         <p className="text-[13px] text-[#8d7b6d]">
           <Link href="/admin" className="hover:text-[#2c1810]">Gestión</Link>
@@ -244,16 +248,18 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
       {error ? <AdminNotice tone="error">{error}</AdminNotice> : null}
       {success ? <AdminNotice>{success}</AdminNotice> : null}
       {loading ? (
-        <p className="mt-6 text-sm text-[#7c5c47]">Cargando pieza…</p>
+        <p className="admin-empty mt-6 text-sm text-[#7c5c47]">Cargando pieza…</p>
       ) : !loadError ? (
         <form
-          className="mt-5 space-y-4"
+          className="admin-form mt-6 space-y-5"
           onSubmit={(event) => {
             event.preventDefault();
             save(form.estado);
           }}
         >
-          <div className="grid gap-4 lg:grid-cols-2">
+          <p className="text-xs leading-relaxed text-[#7c5c47]">Los campos con * son obligatorios. Los demás son opcionales.</p>
+          <div className="admin-card grid gap-5 p-4 sm:p-6 lg:grid-cols-2">
+            <h2 className="font-serif text-xl font-semibold text-[#2c1810] lg:col-span-2">Datos de la pieza</h2>
             <Field label="Título *">
               <input required maxLength={200} value={form.titulo} onChange={(event) => update("titulo", event.target.value)} className={inputClass} />
             </Field>
@@ -275,7 +281,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
             </Field>
           </div>
 
-          <div className="rounded-sm border border-[#e7dfd6] bg-white p-4">
+          <div className="admin-card p-4 sm:p-6">
             <span className="text-[13px] font-medium text-[#2c1810]">Imagen de la pieza</span>
             <button
               type="button"
@@ -294,7 +300,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
                 </div>
               )}
             </button>
-            <input ref={fileRef} type="file" accept={PORTADA_TYPES.join(",")} className="sr-only" onChange={choosePortada} />
+            <input ref={fileRef} tabIndex={-1} aria-label="Imagen de portada" type="file" accept={PORTADA_TYPES.join(",")} className="sr-only" onChange={choosePortada} />
             {portadaFile ? (
               <p className="mt-3 text-sm text-[#4d4036]">
                 {portadaFile.name}
@@ -325,29 +331,30 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
             ) : null}
             <p className="mt-2 text-[12px] text-[#8d7b6d]">JPEG, PNG, WebP o AVIF. Máximo 5 MB. No es obligatoria.</p>
             {form.archivo_url ? (
-              <p className="mt-3 text-sm text-[#4d4036]">
-                Archivo original del aporte:{" "}
-                <a href={form.archivo_url} target="_blank" rel="noreferrer" className="font-medium text-[#a5452d] underline underline-offset-2">
-                  {form.archivo_nombre || "Abrir archivo"}
+              <div className="mt-3 text-sm text-[#4d4036]">
+                <p className="font-medium">Archivo de la pieza</p>
+                {form.archivo_nombre ? <p className="mt-1 break-words">{form.archivo_nombre}</p> : null}
+                <a href={form.archivo_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-10 items-center font-medium text-[#a5452d] underline underline-offset-2">
+                  {archivoLabel}
                 </a>
-              </p>
+              </div>
             ) : null}
           </div>
 
-          <Field label="Estado">
+          <Field label="Estado" className="admin-card p-4 sm:p-6">
             <select value={form.estado} onChange={(event) => update("estado", event.target.value)} className={inputClass}>
               <option value="borrador">Borrador</option>
               <option value="publicada">Publicada</option>
             </select>
           </Field>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="admin-form-actions flex flex-wrap items-center justify-end gap-3">
             {editing ? (
               <button type="button" onClick={() => setDeleteConfirm(true)} disabled={busy} className="min-h-10 rounded-sm border border-[#f0c7be] bg-[#fff6f3] px-4 text-sm font-medium text-[#8d3b28]">
                 Eliminar pieza
               </button>
             ) : (
-              <Link href="/admin/museo" className="text-sm text-[#7c5c47]">Cancelar</Link>
+              <Link href="/admin/museo" className="inline-flex min-h-11 items-center rounded-sm px-4 text-sm text-[#7c5c47]">Cancelar</Link>
             )}
             <button type="submit" disabled={busy} className="min-h-10 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white">
               {busy ? "Guardando…" : "Guardar"}
@@ -356,16 +363,15 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
         </form>
       ) : null}
       {deleteConfirm ? (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2c1810]/55 p-4">
-          <section role="alertdialog" aria-modal="true" className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-            <h2 className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar pieza?</h2>
-            <p className="mt-2 text-sm text-[#7c6a5c]">Esta acción no se puede deshacer.</p>
+          <AdminDialog onClose={() => setDeleteConfirm(false)} busy={busy} role="alertdialog" aria-labelledby="delete-pieza-title" aria-describedby="delete-pieza-description" className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+            <h2 id="delete-pieza-title" className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar pieza?</h2>
+            <p id="delete-pieza-description" className="mt-2 text-sm text-[#7c6a5c]">Esta acción no se puede deshacer.</p>
+            {error ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{error}</p> : null}
             <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={() => setDeleteConfirm(false)} className="min-h-10 border border-[#e6ddd4] px-4 text-sm">Cancelar</button>
+              <button type="button" disabled={busy} onClick={() => setDeleteConfirm(false)} className="min-h-10 border border-[#e6ddd4] px-4 text-sm">Cancelar</button>
               <button type="button" disabled={busy} onClick={remove} className="min-h-10 bg-[#a5452d] px-4 text-sm text-white">Eliminar</button>
             </div>
-          </section>
-        </div>
+          </AdminDialog>
       ) : null}
     </section>
   );

@@ -4,6 +4,10 @@ const supabaseHost = supabaseProjectHostname();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: process.cwd(),
+  },
+
   images: {
     remotePatterns: [
       {
@@ -25,6 +29,7 @@ const nextConfig = {
         : []),
     ],
   },
+
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },

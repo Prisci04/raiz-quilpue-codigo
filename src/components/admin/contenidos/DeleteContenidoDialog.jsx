@@ -1,12 +1,13 @@
 "use client";
 
-export default function DeleteContenidoDialog({ titulo, busy, onCancel, onConfirm }) {
+import AdminDialog from "@/components/admin/AdminDialog";
+export default function DeleteContenidoDialog({ titulo, busy, onCancel, onConfirm, error = "" }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#2c1810]/40 p-4">
-      <div
+      <AdminDialog onClose={onCancel} busy={busy}
         role="dialog"
         aria-modal="true"
         aria-labelledby="eliminar-contenido-titulo"
+        aria-describedby="eliminar-contenido-ayuda"
         className="w-full max-w-md rounded-md border border-[#e6ddd4] bg-white p-5"
       >
         <h2 id="eliminar-contenido-titulo" className="text-lg font-semibold text-[#2c1810]">
@@ -15,7 +16,8 @@ export default function DeleteContenidoDialog({ titulo, busy, onCancel, onConfir
         <p className="mt-3 text-sm leading-relaxed text-[#4d4036]">
           ¿Eliminar &quot;{titulo}&quot;?
         </p>
-        <p className="mt-1 text-sm text-[#7c5c47]">Esta acción no se puede deshacer.</p>
+        <p id="eliminar-contenido-ayuda" className="mt-1 text-sm text-[#7c5c47]">Esta acción no se puede deshacer.</p>
+        {error ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{error}</p> : null}
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
@@ -34,7 +36,6 @@ export default function DeleteContenidoDialog({ titulo, busy, onCancel, onConfir
             {busy ? "Eliminando…" : "Eliminar"}
           </button>
         </div>
-      </div>
-    </div>
+      </AdminDialog>
   );
 }

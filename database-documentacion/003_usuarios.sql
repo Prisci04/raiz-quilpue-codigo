@@ -116,17 +116,9 @@ TO service_role;
 
 
 
-/* USER ADMIN DE PRUIEBA */
-
-/*
-  Email:
-  usuario@raizquilpue.cl
-
-  Contraseña:
-  Prueba123!
-
-  SOLO PARA DESARROLLO / PRUEBAS.
-*/
+/* Ejemplo de usuario inicial, NO ejecutable.
+   Aprovisionar por un canal autorizado con una clave unica y segura.
+   Nunca ejecutar ni versionar credenciales reales en este archivo.
 
 INSERT INTO public.usuarios (
     nombre,
@@ -141,12 +133,12 @@ VALUES (
     'Administrador',
     'Raíz Quilpué',
 
-    'usuario@raizquilpue.cl',
+    'admin@example.com',
 
     NULL,
 
     crypt(
-        'Prueba123!',
+        'TU_PASSWORD',
         gen_salt('bf', 12)
     ),
 
@@ -154,6 +146,7 @@ VALUES (
 
     'activo'
 );
+*/
 
 
 

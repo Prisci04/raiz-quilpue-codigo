@@ -43,6 +43,26 @@ export function formatDashboardDate(date = new Date()) {
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
+export function buildContentSlices(items = []) {
+  if (!items.length) return [];
+
+  const counts = new Map();
+
+  for (const item of items) {
+    const key = item.tipo || "comunidad";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  return Object.keys(CONTENT_TYPE_LABELS)
+    .map((id) => ({
+      id,
+      label: CONTENT_TYPE_LABELS[id],
+      value: counts.get(id) ?? 0,
+      color: CONTENT_TYPE_COLORS[id],
+    }))
+    .filter((slice) => slice.value > 0);
+}
+
 export function buildCategorySlices(counts, labels, colors) {
   return Object.keys(labels).map((id) => ({
     id,

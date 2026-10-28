@@ -47,6 +47,8 @@ const OWNED_PORTADA =
 
 const APORTE_IMAGE =
   /^museo\/aportes\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png|webp|avif)$/i;
+const APORTE_FILE =
+  /^museo\/aportes\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|jpeg|png|webp|avif|pdf)$/i;
 
 export function supabaseProjectHostname(envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL) {
   if (typeof envUrl !== "string" || !envUrl.trim()) return null;
@@ -243,4 +245,10 @@ export function parseOwnedAporteImageUrl(value, envUrl = process.env.NEXT_PUBLIC
     path: parsed.objectPath,
     publicUrl: parsed.publicUrl,
   };
+}
+
+export function parseOwnedAporteFileUrl(value, envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL) {
+  const parsed = parseProjectPublicMedia(value, envUrl);
+  if (!parsed || !APORTE_FILE.test(parsed.objectPath)) return null;
+  return { bucket: MEDIA_BUCKET, path: parsed.objectPath, publicUrl: parsed.publicUrl };
 }

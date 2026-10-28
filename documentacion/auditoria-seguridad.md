@@ -1,3 +1,5 @@
+> Documento histórico: sus pruebas remotas no se repitieron en Pre-Sprint 3. Ver `pre-sprint-3-seguridad.md` para el estado de esta revisión.
+
 # Auditoría de seguridad — Raíz Quilpué
 
 Revisión completa de autenticación, autorización, inyección, exposición de datos, configuración y dependencias. Incluye pruebas en vivo contra el servidor de desarrollo y contra PostgREST con la clave pública. 4 de octubre de 2026.
@@ -54,8 +56,8 @@ Lo primero que hay que hacer: actualizar Next.js de 16.3.1 a 16.3.8. La versión
 ### M3 · Media — Un script del repositorio fija una contraseña de administrador débil
 
 - **Dónde:** `scripts/reset-admin-password.mjs`.
-- **Impacto:** el script pone la contraseña de `admin@gmail.com` en `raiz2026` con bcrypt de coste 10, saltándose la política de la aplicación (12 caracteres, mayúscula, número y símbolo). Además lee `.env.local` y lleva la contraseña en claro dentro del código. El archivo está sin rastrear, así que un `git add .` lo subiría al repositorio.
-- **Evidencia:** esa credencial no funciona hoy: `admin@gmail.com` con `raiz2026` devuelve 401 `INVALID_CREDENTIALS`, igual que las otras combinaciones débiles que se probaron. El riesgo es que el script se vuelva a ejecutar o se publique.
+- **Impacto:** el script pone la contraseña de `admin@example.com` en `[credencial retirada]` con bcrypt de coste 10, saltándose la política de la aplicación (12 caracteres, mayúscula, número y símbolo). Además lee `.env.local` y lleva la contraseña en claro dentro del código. El archivo está sin rastrear, así que un `git add .` lo subiría al repositorio.
+- **Evidencia:** esa credencial no funciona hoy: `admin@example.com` con `[credencial retirada]` devuelve 401 `INVALID_CREDENTIALS`, igual que las otras combinaciones débiles que se probaron. El riesgo es que el script se vuelva a ejecutar o se publique.
 - **Arreglo:** borrar el script. Si hace falta una utilidad de recuperación, que pida la contraseña por entrada estándar, use el mismo coste de bcrypt y valide la política antes de escribir.
 
 ### B1 · Baja — El hash señuelo usa menos rondas que los reales
@@ -108,7 +110,7 @@ Peticiones reales a `localhost:3000` y a PostgREST.
 | POST de login con `Origin` ajeno más `x-forwarded-host` falso | Pasa el control de origen y llega a validar credenciales | Vulnerable (M1) |
 | 15 intentos de login fallidos consecutivos | 15 respuestas 401 en 6,3 s, sin bloqueo ni retardo | Vulnerable (A1) |
 | Cabeceras de seguridad en `/admin/login` | Las seis esperadas ausentes | Vulnerable (M2) |
-| Credenciales débiles conocidas (`raiz2026`, `admin`) | 401 en todas las combinaciones probadas | Correcto |
+| Credenciales débiles conocidas (`[credencial retirada]`, `admin`) | 401 en todas las combinaciones probadas | Correcto |
 
 ## Lo que está bien construido
 

@@ -4,43 +4,25 @@ import { MediaError } from "@/lib/media/errors.mjs";
 import {
   MEDIA_BUCKET,
   MEDIA_MAX_BYTES,
-  MEDIA_TYPES,
   parseOwnedPortadaUrl,
 } from "@/lib/media/policy.mjs";
 import { logInternalError } from "@/lib/http";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
-let bucketReady = false;
-
 function storageFailed() {
   return new MediaError(500, "STORAGE", "No se pudo procesar la imagen.");
 }
 
-async function ensureBucket() {
-  if (bucketReady) return;
-
+async function ensureBucket(contentType, size) {
   const storage = getSupabaseAdminClient().storage;
-  const listed = await storage.listBuckets();
-
-  if (listed.error) throw storageFailed();
-
-  const current = (listed.data ?? []).find((bucket) => bucket.name === MEDIA_BUCKET);
-
-  if (!current) {
-    const created = await storage.createBucket(MEDIA_BUCKET, {
-      public: true,
-      fileSizeLimit: MEDIA_MAX_BYTES,
-      allowedMimeTypes: Object.keys(MEDIA_TYPES),
-    });
-
-    if (created.error) throw storageFailed();
-  } else if (!current.public) {
-    const updated = await storage.updateBucket(MEDIA_BUCKET, { public: true });
-
-    if (updated.error) throw storageFailed();
+  const { data: current, error } = await storage.getBucket(MEDIA_BUCKET);
+  // Provisioning is an operator task; an upload must never change privacy.
+  if (error || !current?.public
+    || size > MEDIA_MAX_BYTES
+    || (current.file_size_limit != null && size > Number(current.file_size_limit))
+    || (current.allowed_mime_types?.length && !current.allowed_mime_types.includes(contentType))) {
+    throw storageFailed();
   }
-
-  bucketReady = true;
 }
 
 export function getPublicUrl(path) {
@@ -50,7 +32,7 @@ export function getPublicUrl(path) {
 }
 
 export async function uploadImage({ path, bytes, contentType }) {
-  await ensureBucket();
+  await ensureBucket(contentType, bytes.byteLength);
 
   const { error } = await getSupabaseAdminClient()
     .storage.from(MEDIA_BUCKET)
