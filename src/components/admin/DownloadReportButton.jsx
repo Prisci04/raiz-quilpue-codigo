@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Download } from "lucide-react";
+import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 
 const COLORS = {
   brown: [44, 24, 16],
@@ -229,9 +230,9 @@ export default function DownloadReportButton({
         {downloading ? "Generando PDF…" : "Descargar PDF"}
       </button>
       {error ? (
-        <p role="alert" className="text-xs text-[#a5452d]">
+        <AdminNotice tone="error" sticky={false} onDismiss={() => setError("")}>
           {error}
-        </p>
+        </AdminNotice>
       ) : null}
     </div>
   );

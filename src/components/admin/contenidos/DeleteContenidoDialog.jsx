@@ -10,7 +10,7 @@ export default function DeleteContenidoDialog({ titulo, busy, onCancel, onConfir
         aria-describedby="eliminar-contenido-ayuda"
         className="w-full max-w-md rounded-md border border-[#e6ddd4] bg-white p-5"
       >
-        <h2 id="eliminar-contenido-titulo" className="text-lg font-semibold text-[#2c1810]">
+        <h2 id="eliminar-contenido-titulo" className="text-lg font-medium text-[#2c1810]">
           ¿Eliminar contenido?
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-[#4d4036]">

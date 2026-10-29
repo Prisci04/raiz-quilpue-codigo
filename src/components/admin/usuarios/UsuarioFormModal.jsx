@@ -2,6 +2,7 @@
 
 import AdminDialog from "@/components/admin/AdminDialog";
 import { useId, useState } from "react";
+import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import PasswordField from "@/components/admin/usuarios/PasswordField";
 import {
   parseCreateUsuario,
@@ -80,7 +81,7 @@ export default function UsuarioFormModal({
         aria-describedby={`${titleId}-description`}
         className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-md border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-5 sm:p-6"
       >
-        <h2 id={titleId} className="text-lg font-semibold text-[#2c1810]">
+        <h2 id={titleId} className="text-lg font-medium text-[#2c1810]">
           {title}
         </h2>
         <p id={`${titleId}-description`} className="mt-1 text-sm text-[#7c5c47]">
@@ -182,9 +183,9 @@ export default function UsuarioFormModal({
           ) : null}
 
           {error || serverError ? (
-            <p className="text-sm text-[#8d3b28]" role="alert">
+            <AdminNotice tone="error" sticky={false} onDismiss={() => setError("")}>
               {error || serverError}
-            </p>
+            </AdminNotice>
           ) : null}
 
           <div className="flex flex-wrap justify-end gap-2 pt-1">

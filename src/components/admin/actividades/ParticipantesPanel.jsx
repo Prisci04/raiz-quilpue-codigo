@@ -45,12 +45,12 @@ const PARTICIPACION = {
 };
 const MONTHS_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"];
 
-function Status({ value }) {
+function Status({ value, pasada }) {
+  if (value === "cancelada" || (pasada && value === "publicada")) {
+    return <AdminBadge tone="neutral">Finalizada</AdminBadge>;
+  }
   const published = value === "publicada";
-  const cancelled = value === "cancelada";
-  const label = published ? "Publicada" : cancelled ? "Cancelada" : "Borrador";
-  const tone = published ? "success" : cancelled ? "danger" : "warning";
-  return <AdminBadge tone={tone}>{label}</AdminBadge>;
+  return <AdminBadge tone={published ? "success" : "warning"}>{published ? "Publicada" : "Borrador"}</AdminBadge>;
 }
 
 function activityDateLabel(value) {
@@ -369,18 +369,24 @@ export default function ParticipantesPanel({
         <span className="px-1.5" aria-hidden="true">›</span>
         <Link href="/admin/actividades" className="hover:text-[#2c1810]">Actividades</Link>
         <span className="px-1.5" aria-hidden="true">›</span>
+        <Link href={`/admin/actividades/${activity.id}`} className="hover:text-[#2c1810]">{activity.titulo}</Link>
+        <span className="px-1.5" aria-hidden="true">›</span>
         Participantes
       </p>
 
       <Link
-        href="/admin/actividades"
+        href={`/admin/actividades/${activity.id}`}
         className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl border border-[#eadfd4] bg-white px-3.5 text-sm text-[#5c4636] hover:bg-[#faf6f1]"
       >
         <ArrowLeft size={16} strokeWidth={1.8} aria-hidden="true" />
-        Volver a actividades
+        Volver a la actividad
       </Link>
 
-      {error || actionError ? <AdminNotice tone="error">{error || actionError}</AdminNotice> : null}
+      {error || actionError ? (
+        <AdminNotice tone="error" onDismiss={() => setActionError("")}>
+          {error || actionError}
+        </AdminNotice>
+      ) : null}
 
       <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-start">
         <div className="relative h-28 w-44 shrink-0 overflow-hidden rounded-2xl bg-[#eee4da]">
@@ -400,10 +406,10 @@ export default function ParticipantesPanel({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-3">
-            <p className="text-[11px] font-semibold tracking-[0.16em] text-[#c45c38] uppercase">Actividad</p>
-            <Status value={activity.estado} />
+            <p className="text-[11px] font-medium tracking-[0.16em] text-[#c45c38] uppercase">Actividad</p>
+            <Status value={activity.estado} pasada={activity.pasada} />
           </div>
-          <h1 className="mt-1 max-w-3xl font-serif text-[clamp(1.7rem,3vw,2.35rem)] leading-tight font-semibold tracking-tight text-[#2c1810]">
+          <h1 className="mt-1 max-w-3xl font-serif text-[clamp(1.5rem,2.4vw,1.95rem)] leading-tight font-medium tracking-tight text-[#2c1810]">
             {activity.titulo}
           </h1>
           <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-[#8d7b6d]">
@@ -423,61 +429,61 @@ export default function ParticipantesPanel({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-2xl border border-[#efe6dc] bg-white px-4 py-4">
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f8ebe6] text-[#c45c38]">
-              <Users size={18} aria-hidden="true" />
+      <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <article className="rounded-xl border border-[#efe6dc] bg-white px-3 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f8ebe6] text-[#c45c38]">
+              <Users size={15} aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <p className="text-[13px] text-[#8a7968]">Participantes registrados</p>
-              <p className="mt-0.5 text-2xl font-semibold text-[#2c1810]">
+              <p className="text-[11px] leading-4 text-[#8a7968]">Participantes registrados</p>
+              <p className="text-sm leading-5 font-medium text-[#2c1810]">
                 {participants.length}
                 {cupos !== null ? (
-                  <span className="ml-1.5 text-sm font-normal text-[#8d7b6d]">de {cupos} cupos</span>
+                  <span className="ml-1.5 text-[13px] font-normal text-[#8d7b6d]">de {cupos} cupos</span>
                 ) : null}
               </p>
             </div>
           </div>
           {cupos !== null ? (
-            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#efe6dc]" aria-hidden="true">
+            <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#efe6dc]" aria-hidden="true">
               <div className="h-full rounded-full bg-[#c45c38]" style={{ width: `${filledPct}%` }} />
             </div>
           ) : null}
         </article>
-        <article className="rounded-2xl border border-[#efe6dc] bg-white px-4 py-4">
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f8ebe6] text-[#c45c38]">
-              <Users size={18} aria-hidden="true" />
+        <article className="rounded-xl border border-[#efe6dc] bg-white px-3 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f8ebe6] text-[#c45c38]">
+              <Users size={15} aria-hidden="true" />
             </span>
             <div>
-              <p className="text-[13px] text-[#8a7968]">Cupos disponibles</p>
-              <p className="mt-0.5 text-2xl font-semibold text-[#2c1810]">
+              <p className="text-[11px] leading-4 text-[#8a7968]">Cupos disponibles</p>
+              <p className="text-sm leading-5 font-medium text-[#2c1810]">
                 {remaining === null ? "Sin límite" : remaining}
               </p>
             </div>
           </div>
         </article>
-        <article className="rounded-2xl border border-[#efe6dc] bg-white px-4 py-4">
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f8ebe6] text-[#c45c38]">
-              <CalendarDays size={18} aria-hidden="true" />
+        <article className="rounded-xl border border-[#efe6dc] bg-white px-3 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f8ebe6] text-[#c45c38]">
+              <CalendarDays size={15} aria-hidden="true" />
             </span>
             <div>
-              <p className="text-[13px] text-[#8a7968]">Fecha de la actividad</p>
-              <p className="mt-0.5 text-lg leading-6 font-semibold text-[#2c1810]">{fechaActividad}</p>
-              <p className="text-sm text-[#8d7b6d]">{horario}</p>
+              <p className="text-[11px] leading-4 text-[#8a7968]">Fecha de la actividad</p>
+              <p className="text-sm leading-5 font-medium text-[#2c1810]">{fechaActividad}</p>
+              <p className="text-[12px] text-[#8d7b6d]">{horario}</p>
             </div>
           </div>
         </article>
-        <article className="rounded-2xl border border-[#efe6dc] bg-white px-4 py-4">
-          <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f8ebe6] text-[#c45c38]">
-              <FileText size={18} aria-hidden="true" />
+        <article className="rounded-xl border border-[#efe6dc] bg-white px-3 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f8ebe6] text-[#c45c38]">
+              <FileText size={15} aria-hidden="true" />
             </span>
             <div>
-              <p className="text-[13px] text-[#8a7968]">Tipo de participación</p>
-              <p className="mt-0.5 text-lg leading-6 font-semibold text-[#2c1810]">
+              <p className="text-[11px] leading-4 text-[#8a7968]">Tipo de participación</p>
+              <p className="text-sm leading-5 font-medium text-[#2c1810]">
                 {PARTICIPACION[activity.tipo_participacion] ?? "Por confirmar"}
               </p>
             </div>
@@ -488,7 +494,7 @@ export default function ParticipantesPanel({
       <div className="mt-6 rounded-2xl border border-[#efe6dc] bg-white p-4 sm:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h2 className="font-serif text-2xl font-semibold text-[#2c1810]">
+            <h2 className="font-serif text-lg font-medium text-[#2c1810]">
               {`Participantes (${filtered.length})`}
             </h2>
             <p className="mt-1 text-sm text-[#8d7b6d]">Lista de personas inscritas en esta actividad.</p>
@@ -655,7 +661,7 @@ export default function ParticipantesPanel({
         <AdminDialog onClose={() => setRemoveTarget(null)} busy={busyId !== null} role="alertdialog"
           aria-labelledby="remove-participant-title" aria-describedby="remove-participant-description"
           className="max-w-md rounded-md border border-[#e6ddd4] bg-white p-6">
-          <h2 id="remove-participant-title" className="font-serif text-xl font-semibold">Eliminar inscripción</h2>
+          <h2 id="remove-participant-title" className="font-serif text-lg font-medium">Eliminar inscripción</h2>
           <p id="remove-participant-description" className="mt-3 text-sm text-[#7c5c47]">
             Se eliminará la inscripción de {removeTarget.nombre} {removeTarget.apellido}. Esta acción no se puede deshacer.
           </p>

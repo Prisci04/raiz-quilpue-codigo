@@ -25,12 +25,12 @@ export default function ContenidoPreviewDialog({ titulo, resumen, contenido, onC
         </div>
         <h2
           id="vista-previa-titulo"
-          className="mt-3 font-serif text-3xl leading-tight font-medium text-[#5c331c]"
+          className="mt-3 font-serif text-2xl leading-tight font-medium text-[#5c331c]"
         >
           {titulo || "Sin título"}
         </h2>
         {resumen ? (
-          <p className="mt-4 font-serif text-lg leading-relaxed text-[#704a31] italic">{resumen}</p>
+          <p className="mt-3 font-serif text-base leading-relaxed text-[#704a31] italic">{resumen}</p>
         ) : null}
         <ContenidoDocumento documento={contenido} />
       </AdminDialog>

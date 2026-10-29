@@ -80,6 +80,7 @@ export function mapActividadVista(row) {
     informacion_adicional: row.informacion_adicional ?? null,
     imagen_url: row.imagen_url ?? null,
     fecha_creacion: row.fecha_creacion ?? null,
+    estado: row.estado ?? null,
     pasada: isActividadPasada(row.fecha),
   };
 }

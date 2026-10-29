@@ -3,6 +3,7 @@
 import AdminDialog from "@/components/admin/AdminDialog";
 import { useCallback, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import UsuarioFormModal from "@/components/admin/usuarios/UsuarioFormModal";
 import UsuariosTable from "@/components/admin/usuarios/UsuariosTable";
 import {
@@ -196,7 +197,7 @@ export default function UsuariosPanel() {
   if (forbidden) {
     return (
       <section className="max-w-2xl rounded-md border border-[#bb9c82]/70 bg-[#fffdf9] px-6 py-8">
-        <h1 className="text-lg font-semibold text-[#2c1810]">Usuarios del panel</h1>
+        <h1 className="text-lg font-medium text-[#2c1810]">Usuarios del panel</h1>
         <p className="mt-2 text-sm text-[#7c5c47]">
           Solo un administrador puede gestionar las personas con acceso al portal.
         </p>
@@ -213,7 +214,7 @@ export default function UsuariosPanel() {
           <p className="font-mono text-[11px] font-medium tracking-[0.2em] text-[#db700f] uppercase">
             Configuración
           </p>
-          <h1 className="mt-2 text-[clamp(1.7rem,3vw,2.15rem)] font-semibold tracking-tight text-[#2c1810]">
+          <h1 className="mt-2 text-[clamp(1.45rem,2.2vw,1.8rem)] font-medium tracking-tight text-[#2c1810]">
             Usuarios del panel
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#7c5c47]">
@@ -231,9 +232,9 @@ export default function UsuariosPanel() {
       </div>
 
       {error ? (
-        <p className="mt-4 text-sm text-[#8d3b28]" role="alert">
+        <AdminNotice tone="error" onDismiss={() => setError("")}>
           {error}
-        </p>
+        </AdminNotice>
       ) : null}
 
       <div className="mt-6">
@@ -269,7 +270,7 @@ export default function UsuariosPanel() {
             aria-describedby="usuario-confirm-description"
             className="w-full max-w-md rounded-md border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-5 sm:p-6"
           >
-            <h2 id="usuario-confirm-title" className="text-lg font-semibold text-[#2c1810]">
+            <h2 id="usuario-confirm-title" className="text-lg font-medium text-[#2c1810]">
               {confirmCopy.title}
             </h2>
             <p id="usuario-confirm-description" className="mt-2 text-sm leading-relaxed text-[#7c5c47]">{confirmCopy.body}</p>

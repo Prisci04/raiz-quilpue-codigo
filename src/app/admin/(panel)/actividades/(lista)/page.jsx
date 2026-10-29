@@ -28,9 +28,11 @@ export default async function AdminActividadesPage({ searchParams }) {
   const notice =
     query.creado === "1"
       ? "Actividad creada correctamente."
-      : query.eliminado === "1"
-        ? "Actividad eliminada correctamente."
-        : "";
+      : query.guardado === "1"
+        ? "Actividad guardada correctamente."
+        : query.eliminado === "1"
+          ? "Actividad eliminada correctamente."
+          : "";
 
   return (
     <ActividadesPanel

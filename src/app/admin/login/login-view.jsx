@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BarChart3, CalendarDays, FileText, Landmark } from "lucide-react";
+import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 
 const features = [
   { icon: FileText, label: "Gestión de contenidos y patrimonio" },
@@ -159,7 +160,9 @@ export default function LoginView() {
             </label>
 
             {error ? (
-              <p className="text-sm font-semibold text-[#b4531a]">{error}</p>
+              <AdminNotice tone="error" sticky={false} onDismiss={() => setError("")}>
+                {error}
+              </AdminNotice>
             ) : null}
 
             <button

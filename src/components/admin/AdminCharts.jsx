@@ -29,7 +29,7 @@ function ChartFrame({ title, highlight, children }) {
   return (
     <article className="admin-card p-5 sm:p-6">
       <div className="mb-4 flex items-start justify-between gap-3">
-        <h2 className="text-[15px] font-semibold tracking-tight text-[#2c1810]">{title}</h2>
+        <h2 className="text-[15px] font-medium tracking-tight text-[#2c1810]">{title}</h2>
         {highlight ? (
           <span className="rounded-md bg-[#2c1810]/5 px-2.5 py-1 text-[11px] font-medium text-[#7c5c47]">
             {highlight}
@@ -226,7 +226,7 @@ export function AdminDonutChart({ title, slices }) {
             ))}
           </svg>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xl font-semibold tracking-tight text-[#2c1810]">{total}</span>
+            <span className="text-lg font-medium tracking-tight text-[#2c1810]">{total}</span>
             <span className="text-[11px] text-[#7c5c47]">total</span>
           </div>
         </div>

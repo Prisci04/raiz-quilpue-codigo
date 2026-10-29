@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import { updatePassword } from "@/lib/api/perfil";
 import { parsePasswordChange } from "@/lib/usuarios/validation.mjs";
 
@@ -86,7 +87,7 @@ export default function PasswordForm() {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-sm border border-[#2c1810]/6 bg-white p-5 shadow-[0_10px_30px_rgba(44,24,16,0.04)] sm:p-6">
-      <h2 className="text-lg font-semibold text-[#2c1810]">Seguridad</h2>
+      <h2 className="text-lg font-medium text-[#2c1810]">Seguridad</h2>
       <p className="mt-1 text-sm text-[#7c5c47]">
         Al cambiarla, se cierran las sesiones de tus otros dispositivos.
       </p>
@@ -117,14 +118,14 @@ export default function PasswordForm() {
         Mínimo 12 caracteres, con mayúscula, minúscula, número y símbolo.
       </p>
       {error ? (
-        <p className="mt-3 text-sm text-[#8d3b28]" role="alert">
+        <AdminNotice tone="error" sticky={false} onDismiss={() => setError("")}>
           {error}
-        </p>
+        </AdminNotice>
       ) : null}
       {success ? (
-        <p className="mt-3 text-sm text-[#3f4c28]" role="status">
+        <AdminNotice sticky={false} onDismiss={() => setSuccess("")}>
           {success}
-        </p>
+        </AdminNotice>
       ) : null}
       <button
         type="submit"

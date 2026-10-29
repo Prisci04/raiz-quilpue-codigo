@@ -240,13 +240,13 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
           <span className="px-1.5" aria-hidden="true">›</span>
           {editing ? "Editar pieza" : "Nueva pieza"}
         </p>
-        <h1 className="mt-2 font-serif text-[clamp(2rem,3vw,2.4rem)] font-semibold tracking-tight text-[#2c1810]">
+        <h1 className="mt-2 font-serif text-[clamp(1.45rem,2.2vw,1.8rem)] font-medium tracking-tight text-[#2c1810]">
           {editing ? "Editar pieza" : "Nueva pieza"}
         </h1>
         <p className="mt-1 text-sm text-[#7c6a5c]">Crea una ficha para la colección digital de Raíz Quilpué.</p>
       </div>
-      {error ? <AdminNotice tone="error">{error}</AdminNotice> : null}
-      {success ? <AdminNotice>{success}</AdminNotice> : null}
+      {error ? <AdminNotice tone="error" onDismiss={() => setError("")}>{error}</AdminNotice> : null}
+      {success ? <AdminNotice onDismiss={() => setSuccess("")}>{success}</AdminNotice> : null}
       {loading ? (
         <p className="admin-empty mt-6 text-sm text-[#7c5c47]">Cargando pieza…</p>
       ) : !loadError ? (
@@ -259,7 +259,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
         >
           <p className="text-xs leading-relaxed text-[#7c5c47]">Los campos con * son obligatorios. Los demás son opcionales.</p>
           <div className="admin-card grid gap-5 p-4 sm:p-6 lg:grid-cols-2">
-            <h2 className="font-serif text-xl font-semibold text-[#2c1810] lg:col-span-2">Datos de la pieza</h2>
+            <h2 className="font-serif text-lg font-medium text-[#2c1810] lg:col-span-2">Datos de la pieza</h2>
             <Field label="Título *">
               <input required maxLength={200} value={form.titulo} onChange={(event) => update("titulo", event.target.value)} className={inputClass} />
             </Field>
@@ -364,7 +364,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
       ) : null}
       {deleteConfirm ? (
           <AdminDialog onClose={() => setDeleteConfirm(false)} busy={busy} role="alertdialog" aria-labelledby="delete-pieza-title" aria-describedby="delete-pieza-description" className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-            <h2 id="delete-pieza-title" className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar pieza?</h2>
+            <h2 id="delete-pieza-title" className="font-serif text-lg font-medium text-[#2c1810]">¿Eliminar pieza?</h2>
             <p id="delete-pieza-description" className="mt-2 text-sm text-[#7c6a5c]">Esta acción no se puede deshacer.</p>
             {error ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{error}</p> : null}
             <div className="mt-6 flex justify-end gap-2">

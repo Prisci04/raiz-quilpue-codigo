@@ -262,7 +262,7 @@ export default function MuseoPanel({
             Museo Digital
           </p>
 
-          <h1 className="mt-2 font-serif text-[clamp(2rem,3vw,2.6rem)] font-semibold tracking-tight text-[#2c1810]">
+          <h1 className="mt-2 font-serif text-[clamp(1.45rem,2.2vw,1.8rem)] font-medium tracking-tight text-[#2c1810]">
             Museo Digital
           </h1>
 
@@ -284,36 +284,36 @@ export default function MuseoPanel({
       </div>
 
       {noticeText ? (
-        <AdminNotice>{noticeText}</AdminNotice>
+        <AdminNotice onDismiss={() => setNoticeText("")}>{noticeText}</AdminNotice>
       ) : null}
 
       {error || actionError ? (
-        <AdminNotice tone="error">
+        <AdminNotice tone="error" onDismiss={() => setActionError("")}>
           {error || actionError}
         </AdminNotice>
       ) : null}
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      <div className="mt-5 grid gap-2 sm:grid-cols-2">
         <button
           type="button"
           onClick={() => setTab("piezas")}
           aria-pressed={tab === "piezas"}
-          className={`flex items-center gap-3 rounded-2xl border bg-white px-4 py-4 text-left ${
+          className={`flex items-center gap-2.5 rounded-xl border bg-white px-3 py-2.5 text-left ${
             tab === "piezas"
               ? "border-[#1e4536]"
               : "border-[#efe6dc]"
           }`}
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-md bg-[#f3eee8] text-[#5c4636]">
-            <FileImage size={18} />
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f3eee8] text-[#5c4636]">
+            <FileImage size={15} />
           </span>
 
           <span>
-            <span className="block text-[13px] text-[#8a7968]">
+            <span className="block text-[11px] leading-4 text-[#8a7968]">
               Piezas del museo
             </span>
 
-            <span className="mt-0.5 block text-2xl font-semibold text-[#2c1810]">
+            <span className="block text-sm leading-5 font-medium text-[#2c1810]">
               {pieces.length}
             </span>
           </span>
@@ -323,22 +323,22 @@ export default function MuseoPanel({
           type="button"
           onClick={openContributions}
           aria-pressed={tab === "aportes"}
-          className={`flex items-center gap-3 rounded-2xl border bg-white px-4 py-4 text-left ${
+          className={`flex items-center gap-2.5 rounded-xl border bg-white px-3 py-2.5 text-left ${
             tab === "aportes"
               ? "border-[#1e4536]"
               : "border-[#efe6dc]"
           }`}
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-md bg-[#fde8e2] text-[#a5452d]">
-            <MessageSquareText size={18} />
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#fde8e2] text-[#a5452d]">
+            <MessageSquareText size={15} />
           </span>
 
           <span>
-            <span className="block text-[13px] text-[#8a7968]">
+            <span className="block text-[11px] leading-4 text-[#8a7968]">
               Aportes recibidos
             </span>
 
-            <span className="mt-0.5 block text-2xl font-semibold text-[#2c1810]">
+            <span className="block text-sm leading-5 font-medium text-[#2c1810]">
               {contributionsLoaded
                 ? contributions.length
                 : initialContributionCount ?? "No disponible"}
@@ -541,7 +541,7 @@ export default function MuseoPanel({
                       </AdminBadge>
                     </div>
 
-                    <h2 className="mt-1 font-serif text-xl font-semibold text-[#2c1810]">
+                    <h2 className="mt-1 font-serif text-lg font-medium text-[#2c1810]">
                       {entry.titulo}
                     </h2>
 
@@ -739,7 +739,7 @@ export default function MuseoPanel({
           >
             <h2
               id="delete-museum-title"
-              className="font-serif text-xl font-semibold text-[#2c1810]"
+              className="font-serif text-lg font-medium text-[#2c1810]"
             >
               ¿Eliminar{" "}
               {deleteTarget.kind === "pieza"

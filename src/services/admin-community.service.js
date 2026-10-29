@@ -12,6 +12,9 @@ import { deleteOwnedPortada } from "@/services/storage.service";
 const ACTIVIDAD_COLUMNS =
   "id,titulo,descripcion,fecha,hora_inicio,hora_fin,lugar,publico_objetivo,modalidad,tipo_participacion,cupos,tipo_valor,valor_monto,forma_pago,informacion_adicional,imagen_url,estado,fecha_creacion,fecha_actualizacion";
 
+const ACTIVIDAD_LIST_COLUMNS =
+  "id,titulo,descripcion,fecha,lugar,modalidad,estado,imagen_url";
+
 const PIEZA_COLUMNS =
   "id,titulo,descripcion,categoria,fecha_aproximada,lugar,imagen_url,archivo_nombre,archivo_url,estado,fecha_creacion";
 
@@ -31,42 +34,17 @@ function admin() {
    ACTIVIDADES
 ========================= */
 
-async function countInscritosAdmin(ids) {
-  const counts = new Map(ids.map((id) => [id, 0]));
-  if (!ids.length) return counts;
-
-  const data = assertQuery(
-    await admin()
-      .from("actividad_inscripciones")
-      .select("actividad_id")
-      .in("actividad_id", ids),
-    "Failed to count inscripciones",
-  );
-
-  for (const row of data ?? []) {
-    counts.set(row.actividad_id, (counts.get(row.actividad_id) ?? 0) + 1);
-  }
-
-  return counts;
-}
-
 export async function listActividadesAdmin() {
   const data = assertQuery(
     await admin()
       .from("actividades")
-      .select(ACTIVIDAD_COLUMNS)
+      .select(ACTIVIDAD_LIST_COLUMNS)
       .order("fecha", { ascending: true, nullsFirst: false })
       .order("id", { ascending: false }),
     "Failed to list actividades",
   );
 
-  const rows = data ?? [];
-  const counts = await countInscritosAdmin(rows.map((row) => row.id));
-
-  return rows.map((row) => ({
-    ...row,
-    inscritos: counts.get(row.id) ?? 0,
-  }));
+  return data ?? [];
 }
 
 export async function getActividadAdmin(id) {
@@ -78,6 +56,19 @@ export async function getActividadAdmin(id) {
       .maybeSingle(),
     "Failed to get actividad",
   );
+}
+
+export async function countParticipantesAdmin(actividadId) {
+  const result = await admin()
+    .from("actividad_inscripciones")
+    .select("id", { count: "exact", head: true })
+    .eq("actividad_id", actividadId);
+
+  if (result.error) {
+    throw new Error(`Failed to count participantes: ${result.error.message}`);
+  }
+
+  return result.count ?? 0;
 }
 
 export async function saveActividadAdmin(id, input) {

@@ -4,10 +4,12 @@ import AdminDialog from "@/components/admin/AdminDialog";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Ban, CalendarDays, CircleCheck, Clock3, Eye, Pencil, Plus, Trash2, Users } from "lucide-react";
+import Image from "next/image";
+import { CalendarCheck, CalendarDays, CircleCheck, Clock3, Eye, ImageIcon, Pencil, Plus, Trash2, Users } from "lucide-react";
 import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import { deleteActividad, saveActividadEstado } from "@/lib/api/community";
+import { isActividadPasada } from "@/lib/actividades";
 
 const dateLabel = (value) => {
   if (!value) return "Fecha pendiente";
@@ -19,12 +21,25 @@ const dateLabel = (value) => {
   });
 };
 
-function Status({ value }) {
+function isFinalizada(activity) {
+  return activity.estado === "cancelada" || isActividadPasada(activity.fecha);
+}
+
+function matchesFilter(activity, filter) {
+  if (filter === "todas") return true;
+  if (filter === "finalizada") return isFinalizada(activity);
+  if (filter === "publicada") {
+    return activity.estado === "publicada" && !isActividadPasada(activity.fecha);
+  }
+  return activity.estado === filter;
+}
+
+function Status({ value, pasada }) {
+  if (value === "cancelada" || (pasada && value === "publicada")) {
+    return <AdminBadge tone="neutral">Finalizada</AdminBadge>;
+  }
   const published = value === "publicada";
-  const cancelled = value === "cancelada";
-  const label = published ? "Publicada" : cancelled ? "Cancelada" : "Borrador";
-  const tone = published ? "success" : cancelled ? "danger" : "warning";
-  return <AdminBadge tone={tone}>{label}</AdminBadge>;
+  return <AdminBadge tone={published ? "success" : "warning"}>{published ? "Publicada" : "Borrador"}</AdminBadge>;
 }
 
 export default function ActividadesPanel({ activities = [], error = "", notice = "" }) {
@@ -44,7 +59,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
   const visible = useMemo(() => activities.filter((activity) => {
     const term = query.trim().toLocaleLowerCase("es-CL");
     const matchesQuery = !term || `${activity.titulo} ${activity.descripcion} ${activity.lugar ?? ""}`.toLocaleLowerCase("es-CL").includes(term);
-    return matchesQuery && (filter === "todas" || activity.estado === filter);
+    return matchesQuery && matchesFilter(activity, filter);
   }), [activities, filter, query]);
 
   async function toggleStatus(activity) {
@@ -80,9 +95,9 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
 
   const cards = [
     { label: "Total actividades", value: activities.length, icon: CalendarDays, id: "todas" },
-    { label: "Publicadas", value: activities.filter((item) => item.estado === "publicada").length, icon: CircleCheck, id: "publicada" },
+    { label: "Publicadas", value: activities.filter((item) => item.estado === "publicada" && !isActividadPasada(item.fecha)).length, icon: CircleCheck, id: "publicada" },
     { label: "Borradores", value: activities.filter((item) => item.estado === "borrador").length, icon: Clock3, id: "borrador" },
-    { label: "Canceladas", value: activities.filter((item) => item.estado === "cancelada").length, icon: Ban, id: "cancelada" },
+    { label: "Finalizadas", value: activities.filter(isFinalizada).length, icon: CalendarCheck, id: "finalizada" },
   ];
 
   return (
@@ -90,20 +105,24 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-[13px] text-[#8d7b6d]"><Link href="/admin" className="hover:text-[#2c1810]">Gestión</Link><span className="px-1.5" aria-hidden="true">›</span>Actividades</p>
-          <h1 className="mt-2 font-serif text-[clamp(2rem,3vw,2.6rem)] font-semibold tracking-tight text-[#2c1810]">Actividades</h1>
+          <h1 className="mt-2 font-serif text-[clamp(1.45rem,2.2vw,1.8rem)] font-medium tracking-tight text-[#2c1810]">Actividades</h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#7c6a5c]">Administra la programación y consulta desde cada actividad a las personas inscritas.</p>
         </div>
       </div>
-      {noticeText ? <AdminNotice>{noticeText}</AdminNotice> : null}
-      {error || actionError ? <AdminNotice tone="error">{error || actionError}</AdminNotice> : null}
+      {noticeText ? <AdminNotice onDismiss={() => setNoticeText("")}>{noticeText}</AdminNotice> : null}
+      {error || actionError ? (
+        <AdminNotice tone="error" onDismiss={() => setActionError("")}>
+          {error || actionError}
+        </AdminNotice>
+      ) : null}
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(({ label, value, icon: Icon, id }) => <button key={id} type="button" onClick={() => setFilter(id)} aria-pressed={filter === id} className={`flex items-center gap-3 rounded-2xl border bg-white px-4 py-4 text-left ${filter === id ? "border-[#1e4536]" : "border-[#efe6dc]"}`}><span className="flex h-11 w-11 items-center justify-center rounded-md bg-[#f3eee8] text-[#5c4636]"><Icon size={18} /></span><span><span className="block text-[13px] text-[#8a7968]">{label}</span><span className="mt-0.5 block text-2xl font-semibold text-[#2c1810]">{value}</span></span></button>)}
+      <div className="mt-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map(({ label, value, icon: Icon, id }) => <button key={id} type="button" onClick={() => setFilter(id)} aria-pressed={filter === id} className={`flex items-center gap-2.5 rounded-xl border bg-white px-3 py-2.5 text-left ${filter === id ? "border-[#1e4536]" : "border-[#efe6dc]"}`}><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f3eee8] text-[#5c4636]"><Icon size={15} /></span><span><span className="block text-[11px] leading-4 text-[#8a7968]">{label}</span><span className="block text-sm leading-5 font-medium text-[#2c1810]">{value}</span></span></button>)}
       </div>
 
       <div className="admin-card mt-5 p-4 sm:p-5">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-          <div className="flex gap-2 overflow-x-auto">{[["todas", "Todas"], ["publicada", "Publicadas"], ["borrador", "Borradores"], ["cancelada", "Canceladas"]].map(([id, label]) => <button key={id} type="button" onClick={() => setFilter(id)} aria-pressed={filter === id} className={`min-h-11 shrink-0 rounded-sm px-4 text-[13px] ${filter === id ? "bg-[#1e4536] font-medium text-white" : "border border-[#eadfd4] text-[#3d342c] hover:bg-[#faf6f1]"}`}>{label}</button>)}</div>
+          <div className="flex gap-2 overflow-x-auto">{[["todas", "Todas"], ["publicada", "Publicadas"], ["borrador", "Borradores"], ["finalizada", "Finalizadas"]].map(([id, label]) => <button key={id} type="button" onClick={() => setFilter(id)} aria-pressed={filter === id} className={`min-h-11 shrink-0 rounded-sm px-4 text-[13px] ${filter === id ? "bg-[#1e4536] font-medium text-white" : "border border-[#eadfd4] text-[#3d342c] hover:bg-[#faf6f1]"}`}>{label}</button>)}</div>
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row xl:ml-auto xl:max-w-md"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar actividades..." aria-label="Buscar actividades" className="min-h-11 min-w-0 flex-1 rounded-sm border border-[#eadfd4] bg-[#fbf8f5] px-3 text-sm outline-none focus:border-[#c4a484]" /><Link href="/admin/actividades/nueva" className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-sm bg-[#c45c38] px-4 text-sm font-medium text-white hover:bg-[#a84c2c]"><Plus size={15} />Nueva actividad</Link></div>
         </div>
         {visible.length ? (
@@ -111,7 +130,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
             <table className="admin-table w-full min-w-[1040px] table-fixed border-collapse text-left text-sm">
               <thead>
                 <tr className="border-y border-[#efe6dc] text-xs uppercase tracking-wide text-[#8d7b6d]">
-                  <th className="w-52 max-w-52 px-3 py-3">Actividad</th>
+                  <th className="w-72 max-w-72 px-3 py-3">Actividad</th>
                   <th className="w-36 px-3 py-3">Fecha y lugar</th>
                   <th className="w-28 px-3 py-3">Modalidad</th>
                   <th className="w-28 px-3 py-3">Estado</th>
@@ -122,8 +141,27 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
               <tbody>
                 {visible.map((activity) => (
                   <tr key={activity.id} className="border-b border-[#f3eee8]">
-                    <td className="w-52 max-w-52 px-3 py-4">
-                      <p className="truncate font-medium text-[#2c1810]">{activity.titulo}</p>
+                    <td className="w-72 max-w-72 px-3 py-4">
+                      <Link
+                        href={`/admin/actividades/${activity.id}`}
+                        title={activity.titulo}
+                        className="flex min-w-0 items-center gap-3 text-[#2c1810] hover:text-[#704a31]"
+                      >
+                        {activity.imagen_url ? (
+                          <Image
+                            src={activity.imagen_url}
+                            alt=""
+                            width={64}
+                            height={48}
+                            className="h-12 w-16 shrink-0 rounded-md object-cover"
+                          />
+                        ) : (
+                          <span className="inline-flex h-12 w-16 shrink-0 items-center justify-center rounded-md bg-[#f3eee8] text-[#b7a394]">
+                            <ImageIcon size={16} strokeWidth={1.8} aria-hidden="true" />
+                          </span>
+                        )}
+                        <span className="truncate font-medium">{activity.titulo}</span>
+                      </Link>
                     </td>
                     <td className="px-3 py-4 text-[#5c4d42]">
                       {dateLabel(activity.fecha)}
@@ -133,7 +171,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                       {activity.modalidad === "virtual" ? "Online" : activity.modalidad === "hibrida" ? "Híbrida" : "Presencial"}
                     </td>
                     <td className="px-3 py-4">
-                      <Status value={activity.estado} />
+                      <Status value={activity.estado} pasada={isActividadPasada(activity.fecha)} />
                     </td>
                     <td className="px-3 py-4 text-right">
                       <Link
@@ -197,7 +235,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
           <p className="admin-empty px-3 py-12 text-center text-sm text-[#7c5c47]">No hay actividades con ese criterio.</p>
         )}
       </div>
-      {deleteTarget ? <AdminDialog onClose={() => setDeleteTarget(null)} busy={busyId === deleteTarget.id} role="alertdialog" aria-modal="true" aria-labelledby="delete-activity-title" aria-describedby="delete-activity-description" className="w-full max-w-md rounded-xl border border-[#efe6dc] bg-white p-6 shadow-2xl"><h2 id="delete-activity-title" className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar actividad?</h2><p id="delete-activity-description" className="mt-2 text-sm leading-relaxed text-[#7c6a5c]">Se eliminará “{deleteTarget.titulo}” y su listado de participantes. Esta acción no se puede deshacer.</p>{actionError ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{actionError}</p> : null}<div className="mt-6 flex justify-end gap-2"><button type="button" disabled={busyId === deleteTarget.id} onClick={() => setDeleteTarget(null)} className="min-h-10 rounded-sm border border-[#e6ddd4] px-4 text-sm">Cancelar</button><button type="button" disabled={busyId === deleteTarget.id} onClick={removeActivity} className="min-h-10 rounded-sm bg-[#a5452d] px-4 text-sm font-medium text-white disabled:opacity-50">{busyId === deleteTarget.id ? "Eliminando…" : "Eliminar"}</button></div></AdminDialog> : null}
+      {deleteTarget ? <AdminDialog onClose={() => setDeleteTarget(null)} busy={busyId === deleteTarget.id} role="alertdialog" aria-modal="true" aria-labelledby="delete-activity-title" aria-describedby="delete-activity-description" className="w-full max-w-md rounded-xl border border-[#efe6dc] bg-white p-6 shadow-2xl"><h2 id="delete-activity-title" className="font-serif text-lg font-medium text-[#2c1810]">¿Eliminar actividad?</h2><p id="delete-activity-description" className="mt-2 text-sm leading-relaxed text-[#7c6a5c]">Se eliminará “{deleteTarget.titulo}” y su listado de participantes. Esta acción no se puede deshacer.</p>{actionError ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{actionError}</p> : null}<div className="mt-6 flex justify-end gap-2"><button type="button" disabled={busyId === deleteTarget.id} onClick={() => setDeleteTarget(null)} className="min-h-10 rounded-sm border border-[#e6ddd4] px-4 text-sm">Cancelar</button><button type="button" disabled={busyId === deleteTarget.id} onClick={removeActivity} className="min-h-10 rounded-sm bg-[#a5452d] px-4 text-sm font-medium text-white disabled:opacity-50">{busyId === deleteTarget.id ? "Eliminando…" : "Eliminar"}</button></div></AdminDialog> : null}
     </section>
   );
 }

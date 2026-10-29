@@ -5,6 +5,7 @@ import {
   Landmark,
   Ticket,
 } from "lucide-react";
+import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import DownloadReportButton from "@/components/admin/DownloadReportButton";
 import {
   AdminBarChart,
@@ -23,9 +24,9 @@ function KpiCard({ value, label, hint, tone, icon: Icon }) {
   const colors = KPI_TONES[tone];
 
   return (
-    <article className="admin-card p-5">
+    <article className="admin-card p-4">
       <div className="flex items-start justify-between gap-3">
-        <p className={`text-[1.85rem] leading-none font-semibold tracking-tight ${colors.value}`}>
+        <p className={`text-xl leading-none font-medium tracking-tight ${colors.value}`}>
           {value}
         </p>
         <span className={`inline-flex h-9 w-9 items-center justify-center rounded-sm ${colors.icon}`}>
@@ -62,7 +63,7 @@ const QUICK_ACTIONS = [
 function UnavailableChart({ title }) {
   return (
     <article className="admin-card p-5 sm:p-6">
-      <h2 className="text-[15px] font-semibold tracking-tight text-[#2c1810]">{title}</h2>
+      <h2 className="text-[15px] font-medium tracking-tight text-[#2c1810]">{title}</h2>
       <p className="mt-4 flex min-h-44 items-center text-sm text-[#7c5c47]">
         No se pudo cargar esta información. Intenta nuevamente más tarde.
       </p>
@@ -102,7 +103,7 @@ export default function AdminDashboardView({
           <p className="text-[11px] font-medium tracking-[0.18em] text-[#7c5c47] uppercase">
             Panel principal
           </p>
-          <h1 className="mt-1 text-[clamp(1.7rem,3vw,2.05rem)] font-semibold tracking-tight text-[#2c1810]">
+          <h1 className="mt-1 text-[clamp(1.45rem,2.2vw,1.8rem)] font-medium tracking-tight text-[#2c1810]">
             Dashboard
           </h1>
           <p className="mt-1 text-sm text-[#7c5c47]">{dateLabel}</p>
@@ -152,7 +153,7 @@ export default function AdminDashboardView({
         />
       </section>
 
-      {contentError ? <p role="alert" className="text-sm text-[#8d3b28]">{contentError}</p> : null}
+      {contentError ? <AdminNotice tone="error">{contentError}</AdminNotice> : null}
 
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {contentError ? <UnavailableChart title="Inscritos por actividad" /> : <AdminBarChart
@@ -175,7 +176,7 @@ export default function AdminDashboardView({
       </section>
 
       <section>
-        <h2 className="mb-3 text-[15px] font-semibold tracking-tight text-[#2c1810]">
+        <h2 className="mb-3 text-[15px] font-medium tracking-tight text-[#2c1810]">
           Acciones rápidas
         </h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">

@@ -80,17 +80,17 @@ function EstadoBadge({ estado }) {
 }
 
 function SummaryCard({ icon: Icon, iconClass, label, value, valueClass = "text-[#2c1810]", active = false, onClick }) {
-  const className = `flex w-full items-center gap-3 rounded-2xl border bg-white px-4 py-4 text-left ${
+  const className = `flex w-full items-center gap-2.5 rounded-xl border bg-white px-3 py-2.5 text-left ${
     active ? "border-[#1e4536]" : "border-[#efe6dc]"
   } ${onClick ? "transition-colors hover:border-[#e0d4c6]" : ""}`;
   const body = (
     <>
-      <span className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md ${iconClass}`}>
-        <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+      <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconClass}`}>
+        <Icon size={15} strokeWidth={1.8} aria-hidden="true" />
       </span>
       <span className="min-w-0">
-        <span className="block text-[13px] text-[#8a7968]">{label}</span>
-        <span className={`mt-0.5 block truncate text-[1.35rem] font-semibold leading-tight tracking-tight sm:text-[1.55rem] ${valueClass}`}>
+        <span className="block text-[11px] leading-4 text-[#8a7968]">{label}</span>
+        <span className={`block truncate text-sm leading-5 font-medium ${valueClass}`}>
           {value}
         </span>
       </span>
@@ -340,7 +340,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
             </span>
             Contenidos
           </p>
-          <h1 className="mt-2 font-serif text-[clamp(2rem,3vw,2.6rem)] font-semibold tracking-tight text-[#2c1810]">
+          <h1 className="mt-2 font-serif text-[clamp(1.45rem,2.2vw,1.8rem)] font-medium tracking-tight text-[#2c1810]">
             Contenidos
           </h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#7c6a5c]">
@@ -349,12 +349,14 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
         </div>
       </div>
 
-      {banner ? <AdminNotice>{banner}</AdminNotice> : null}
+      {banner ? <AdminNotice onDismiss={() => setBanner("")}>{banner}</AdminNotice> : null}
       {error || actionError ? (
-        <AdminNotice tone="error">{error || actionError}</AdminNotice>
+        <AdminNotice tone="error" onDismiss={() => setActionError("")}>
+          {error || actionError}
+        </AdminNotice>
       ) : null}
 
-      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
           icon={FileText}
           iconClass="bg-[#f3eee8] text-[#5c4636]"
@@ -448,15 +450,19 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
             <ul className="mt-3 space-y-3 md:hidden">
               {pageItems.map((contenido) => (
                 <li key={contenido.id} className="border-b border-[#e8dfd4] py-3">
-                  <div className="flex items-start gap-3">
+                  <Link
+                    href={`/admin/contenidos/${contenido.id}`}
+                    title={contenido.titulo}
+                    className="flex items-start gap-3 text-[#2c1810] hover:text-[#704a31]"
+                  >
                     <Thumb contenido={contenido} />
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-[#2c1810]">{contenido.titulo}</p>
+                      <p className="font-medium">{contenido.titulo}</p>
                       <p className="mt-0.5 text-[13px] leading-relaxed text-[#8d7b6d]">
                         {contenido.descripcion}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                   <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
                     <TipoCell tipo={contenido.tipo} />
                     <EstadoBadge estado={contenido.estado} />
@@ -509,17 +515,21 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
                   {pageItems.map((contenido) => (
                     <tr key={contenido.id} className="border-b border-[#efe6db] last:border-b-0">
                       <td className="px-2 py-3.5">
-                        <div className="flex items-center gap-3">
+                        <Link
+                          href={`/admin/contenidos/${contenido.id}`}
+                          title={contenido.titulo}
+                          className="flex items-center gap-3 text-[#2c1810] hover:text-[#704a31]"
+                        >
                           <Thumb contenido={contenido} />
                           <div className="min-w-0">
-                            <p className="line-clamp-2 font-medium text-[#2c1810]">
+                            <p className="line-clamp-2 font-medium">
                               {contenido.titulo}
                             </p>
                             <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-[#8d7b6d]">
                               {contenido.descripcion}
                             </p>
                           </div>
-                        </div>
+                        </Link>
                       </td>
                       <td className="hidden px-2 py-3.5 lg:table-cell">
                         <TipoCell tipo={contenido.tipo} />

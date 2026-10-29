@@ -102,6 +102,10 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
   const [confirmPortada, setConfirmPortada] = useState(false);
 
   useEffect(() => {
+    router.prefetch("/admin/actividades");
+  }, [router]);
+
+  useEffect(() => {
     if (!editing || initialActivity) return undefined;
     let active = true;
     getActividadAdmin(activityId)
@@ -185,13 +189,13 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
         try {
           uploaded = await uploadPortada(portadaFile, created.id, "actividades");
           await saveActividad({ ...nextPayload, imagen_url: uploaded.url }, created.id);
-          router.push("/admin/actividades?creado=1");
+          router.replace("/admin/actividades?creado=1");
         } catch (imageError) {
           if (uploaded?.url) await discardUploadedPortada(uploaded.url).catch(() => {});
-          router.push(`/admin/actividades/${created.id}/editar`);
+          router.replace(`/admin/actividades/${created.id}/editar`);
           throw new Error(imageError.message || "La actividad se creó, pero no se pudo subir la imagen.");
         }
-        return null;
+        return true;
       }
 
       setUploading(true);
@@ -200,16 +204,9 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
     }
 
     try {
-      const saved = await saveActividad(nextPayload, activityId);
-      if (!editing) {
-        router.push("/admin/actividades?creado=1");
-        return null;
-      }
-      setPortadaFile(null);
-      setForm(formFromActivity(saved));
-      setSuccess("Actividad guardada correctamente.");
-      router.refresh();
-      return saved;
+      await saveActividad(nextPayload, activityId);
+      router.replace(editing ? "/admin/actividades?guardado=1" : "/admin/actividades?creado=1");
+      return true;
     } catch (saveError) {
       if (uploaded?.url) await discardUploadedPortada(uploaded.url).catch(() => {});
       throw saveError;
@@ -226,13 +223,16 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
     setSaving(true);
     setError("");
     setSuccess("");
+    let left = false;
     try {
-      await persist(state, activityPayload(form, state));
+      left = await persist(state, activityPayload(form, state));
     } catch (saveError) {
       setError(saveError.message);
     } finally {
-      setSaving(false);
-      setUploading(false);
+      if (!left) {
+        setSaving(false);
+        setUploading(false);
+      }
     }
   }
 
@@ -262,7 +262,7 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
     setError("");
     try {
       await deleteActividad(activityId);
-      router.push("/admin/actividades?eliminado=1");
+      router.replace("/admin/actividades?eliminado=1");
     } catch (deleteError) {
       setError(deleteError.message);
       setSaving(false);
@@ -284,13 +284,13 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
           <span className="px-1.5" aria-hidden="true">›</span>
           {editing ? "Editar actividad" : "Nueva actividad"}
         </p>
-        <h1 className="mt-2 font-serif text-[clamp(2rem,3vw,2.4rem)] font-semibold tracking-tight text-[#2c1810]">
+        <h1 className="mt-2 font-serif text-[clamp(1.45rem,2.2vw,1.8rem)] font-medium tracking-tight text-[#2c1810]">
           {editing ? "Editar actividad" : "Nueva actividad"}
         </h1>
         <p className="mt-1 text-sm text-[#7c6a5c]">Completa los datos que se mostrarán en la programación de Raíz Quilpué.</p>
       </div>
-      {error ? <AdminNotice tone="error">{error}</AdminNotice> : null}
-      {success ? <AdminNotice>{success}</AdminNotice> : null}
+      {error ? <AdminNotice tone="error" onDismiss={() => setError("")}>{error}</AdminNotice> : null}
+      {success ? <AdminNotice onDismiss={() => setSuccess("")}>{success}</AdminNotice> : null}
       {loading ? <p className="admin-empty mt-6 text-sm text-[#7c5c47]">Cargando actividad…</p> : !loadError ? (
         <form
           className="admin-form mt-6 space-y-5"
@@ -301,7 +301,7 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
         >
           <p className="text-xs leading-relaxed text-[#7c5c47]">Los campos con * son obligatorios. Los demás son opcionales.</p>
           <div className="admin-card grid gap-5 p-4 sm:p-6 lg:grid-cols-2">
-            <h2 className="font-serif text-xl font-semibold text-[#2c1810] lg:col-span-2">Datos de la actividad</h2>
+            <h2 className="font-serif text-lg font-medium text-[#2c1810] lg:col-span-2">Datos de la actividad</h2>
             <Field label="Nombre de la actividad *" className="lg:col-span-2">
               <input required maxLength={180} value={form.titulo} onChange={(event) => update("titulo", event.target.value)} className={inputClass} />
             </Field>
@@ -487,7 +487,7 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
       ) : null}
       {deleteConfirm ? (
           <AdminDialog onClose={() => setDeleteConfirm(false)} busy={busy} role="alertdialog" aria-labelledby="delete-actividad-title" aria-describedby="delete-actividad-description" className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-            <h2 id="delete-actividad-title" className="font-serif text-xl font-semibold text-[#2c1810]">¿Eliminar actividad?</h2>
+            <h2 id="delete-actividad-title" className="font-serif text-lg font-medium text-[#2c1810]">¿Eliminar actividad?</h2>
             <p id="delete-actividad-description" className="mt-2 text-sm text-[#7c6a5c]">La lista de participantes también se eliminará.</p>
             {error ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{error}</p> : null}
             <div className="mt-6 flex justify-end gap-2">

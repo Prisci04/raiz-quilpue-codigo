@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock } from "lucide-react";
+import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import { updatePerfil } from "@/lib/api/perfil";
 import { parsePerfilUpdate } from "@/lib/usuarios/validation.mjs";
 
@@ -53,7 +54,7 @@ export default function PerfilForm({ perfil, onUpdated }) {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-sm border border-[#2c1810]/6 bg-white p-5 shadow-[0_10px_30px_rgba(44,24,16,0.04)] sm:p-6">
-      <h2 className="text-lg font-semibold text-[#2c1810]">Información personal</h2>
+      <h2 className="text-lg font-medium text-[#2c1810]">Información personal</h2>
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="perfil-nombre" className="text-[13px] font-medium text-[#2c1810]">
@@ -126,14 +127,14 @@ export default function PerfilForm({ perfil, onUpdated }) {
       </dl>
 
       {error ? (
-        <p className="mt-4 text-sm text-[#8d3b28]" role="alert">
+        <AdminNotice tone="error" sticky={false} onDismiss={() => setError("")}>
           {error}
-        </p>
+        </AdminNotice>
       ) : null}
       {success ? (
-        <p className="mt-4 text-sm text-[#3f4c28]" role="status">
+        <AdminNotice sticky={false} onDismiss={() => setSuccess("")}>
           {success}
-        </p>
+        </AdminNotice>
       ) : null}
 
       <button

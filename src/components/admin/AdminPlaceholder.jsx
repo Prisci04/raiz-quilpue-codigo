@@ -13,7 +13,7 @@ export default function AdminPlaceholder({
       <p className="text-[11px] font-medium tracking-[0.18em] text-[#7c5c47] uppercase">
         {eyebrow}
       </p>
-      <h1 className="mt-2 text-[clamp(1.55rem,3vw,1.95rem)] font-semibold tracking-tight text-[#2c1810]">
+      <h1 className="mt-2 text-[clamp(1.45rem,2.2vw,1.8rem)] font-medium tracking-tight text-[#2c1810]">
         {title}
       </h1>
       <p className="mt-3 max-w-lg text-sm leading-relaxed text-[#7c5c47] sm:text-[15px]">

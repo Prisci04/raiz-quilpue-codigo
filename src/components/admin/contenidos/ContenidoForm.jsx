@@ -82,6 +82,10 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
   });
 
   useEffect(() => {
+    router.prefetch("/admin/contenidos");
+  }, [router]);
+
+  useEffect(() => {
     if (!editing) return undefined;
 
     let active = true;
@@ -180,9 +184,9 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
     }
 
     try {
-      const saved = await updateContenido(contenidoId, nextPayload);
-      applySaved(saved);
-      router.push("/admin/contenidos?guardado=1");
+      await updateContenido(contenidoId, nextPayload);
+      router.replace("/admin/contenidos?guardado=1");
+      return true;
     } catch (saveError) {
       if (uploaded?.url) {
         await discardUploadedPortada(uploaded.url).catch(() => {});
@@ -196,8 +200,8 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
     const created = await createContenido(payload);
 
     if (!portadaFile) {
-      router.push("/admin/contenidos?creado=1");
-      return;
+      router.replace("/admin/contenidos?creado=1");
+      return true;
     }
 
     let uploaded = null;
@@ -206,15 +210,17 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
     try {
       uploaded = await uploadPortada(portadaFile, created.id);
       await updateContenido(created.id, { ...payload, imagen_url: uploaded.url });
-      router.push("/admin/contenidos?creado=1");
+      router.replace("/admin/contenidos?creado=1");
+      return true;
     } catch {
       if (uploaded?.url) {
         await discardUploadedPortada(uploaded.url).catch(() => {});
-        router.push(`/admin/contenidos/${created.id}/editar?imagen=guardar`);
-        return;
+        router.replace(`/admin/contenidos/${created.id}/editar?imagen=guardar`);
+        return true;
       }
 
-      router.push(`/admin/contenidos/${created.id}/editar?imagen=subir`);
+      router.replace(`/admin/contenidos/${created.id}/editar?imagen=subir`);
+      return true;
     }
   }
 
@@ -222,20 +228,23 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
     setSaving(action);
     setError("");
     setSuccess("");
+    let left = false;
 
     try {
       const payload = contentPayload(estado);
 
       if (editing) {
-        await saveExisting(payload);
+        left = await saveExisting(payload);
       } else {
-        await saveNew(payload);
+        left = await saveNew(payload);
       }
     } catch (saveError) {
       setError(saveError.message || "No se pudo subir la imagen.");
     } finally {
-      setSaving("");
-      setUploading(false);
+      if (!left) {
+        setSaving("");
+        setUploading(false);
+      }
     }
   }
 
@@ -272,7 +281,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
 
     try {
       await deleteContenido(contenidoId);
-      router.push("/admin/contenidos?eliminado=1");
+      router.replace("/admin/contenidos?eliminado=1");
     } catch (deleteError) {
       setSaving("");
       setConfirmDelete(false);
@@ -302,7 +311,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
             </span>
             {editing ? "Editar contenido" : "Nuevo contenido"}
           </p>
-          <h1 className="mt-2 text-[clamp(1.8rem,3vw,2.2rem)] font-semibold tracking-tight text-[#2c1810]">
+          <h1 className="mt-2 text-[clamp(1.45rem,2.2vw,1.8rem)] font-medium tracking-tight text-[#2c1810]">
             {editing ? "Editar contenido" : "Nuevo contenido"}
           </h1>
           <p className="mt-1 text-sm text-[#7c6a5c]">
@@ -322,8 +331,8 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
       </div>
 
       {loading ? <p className="admin-empty mt-6 text-sm text-[#7c5c47]">Cargando contenido…</p> : null}
-      {error ? <AdminNotice tone="error">{error}</AdminNotice> : null}
-      {success ? <AdminNotice>{success}</AdminNotice> : null}
+      {error ? <AdminNotice tone="error" onDismiss={() => setError("")}>{error}</AdminNotice> : null}
+      {success ? <AdminNotice onDismiss={() => setSuccess("")}>{success}</AdminNotice> : null}
 
       {!loading ? (
         <form
@@ -335,7 +344,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
         >
           <p className="text-xs leading-relaxed text-[#7c5c47]">Los campos con * son obligatorios. Los demás son opcionales.</p>
           <div className="admin-card grid gap-5 p-4 sm:p-6 lg:grid-cols-2">
-            <h2 className="font-serif text-xl font-semibold text-[#2c1810] lg:col-span-2">Datos del contenido</h2>
+            <h2 className="font-serif text-lg font-medium text-[#2c1810] lg:col-span-2">Datos del contenido</h2>
             <label className="admin-field block min-w-0">
               <FieldLabel hint={`${form.titulo.length}/${TITULO_MAX_LENGTH}`}>
                 Título *

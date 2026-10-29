@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut, Menu, Search, SquareArrowOutUpRight, UserRound } from "lucide-react";
+import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import { searchAdminNav } from "@/lib/admin-nav";
 
 function initials(name) {
@@ -242,9 +243,9 @@ export default function AdminHeader({
                   {loggingOut ? "Cerrando sesión…" : "Cerrar sesión"}
                 </button>
                 {logoutError ? (
-                  <p className="px-2.5 py-1 text-[12px] text-[#8d3b28]" role="alert">
+                  <AdminNotice tone="error" sticky={false} onDismiss={() => setLogoutError("")}>
                     {logoutError}
-                  </p>
+                  </AdminNotice>
                 ) : null}
               </div>
             </div>
