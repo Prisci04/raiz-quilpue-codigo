@@ -1,5 +1,7 @@
 import "server-only";
 
+import { ACTIVIDAD_UBICACION_COLUMNS, readActividadUbicacion, writeActividadUbicacion } from "@/services/actividad-ubicacion.service";
+
 import { MuseoIntegrityError } from "@/lib/museo/errors.mjs";
 import { parseOwnedAporteFileUrl, parseOwnedPortadaUrl } from "@/lib/media/policy.mjs";
 import { logInternalError } from "@/lib/http";
@@ -48,14 +50,13 @@ export async function listActividadesAdmin() {
 }
 
 export async function getActividadAdmin(id) {
-  return assertQuery(
-    await admin()
-      .from("actividades")
-      .select(ACTIVIDAD_COLUMNS)
-      .eq("id", id)
-      .maybeSingle(),
+  const row = assertQuery(
+    await readActividadUbicacion((withLocation) => admin().from("actividades")
+      .select(ACTIVIDAD_COLUMNS + (withLocation ? ACTIVIDAD_UBICACION_COLUMNS : ""))
+      .eq("id", id).maybeSingle()),
     "Failed to get actividad",
   );
+  return row ? { ...row, direccion: row.direccion ?? null, google_place_id: row.google_place_id ?? null } : null;
 }
 
 export async function countParticipantesAdmin(actividadId) {
@@ -72,52 +73,32 @@ export async function countParticipantesAdmin(actividadId) {
 }
 
 export async function saveActividadAdmin(id, input) {
-  if (id) {
-    const current = await getActividadAdmin(id);
-    if (!current) return null;
-
-    const data = assertQuery(
-      await admin()
-        .from("actividades")
-        .update(input)
-        .eq("id", id)
-        .select(ACTIVIDAD_COLUMNS)
-        .maybeSingle(),
-      "Failed to save actividad",
-    );
-
-    if (!data) return null;
-
-    if (input.imagen_url !== undefined && current.imagen_url !== input.imagen_url) {
-      await deleteOwnedPortada(current.imagen_url);
-    }
-
-    return data;
+  const current = id ? await getActividadAdmin(id) : null;
+  if (id && !current) return null;
+  const result = await writeActividadUbicacion((withLocation, payload) => {
+    const query = admin().from("actividades");
+    const mutation = id ? query.update(payload).eq("id", id) : query.insert(payload);
+    const selected = mutation.select(ACTIVIDAD_COLUMNS + (withLocation ? ACTIVIDAD_UBICACION_COLUMNS : ""));
+    return id ? selected.maybeSingle() : selected.single();
+  }, input);
+  const data = assertQuery(result, "Failed to save actividad");
+  if (!data) return null;
+  if (current && input.imagen_url !== undefined && current.imagen_url !== input.imagen_url) {
+    await deleteOwnedPortada(current.imagen_url);
   }
-
-  return assertQuery(
-    await admin()
-      .from("actividades")
-      .insert(input)
-      .select(ACTIVIDAD_COLUMNS)
-      .single(),
-    "Failed to save actividad",
-  );
+  return { ...data, direccion: data.direccion ?? null, google_place_id: data.google_place_id ?? null };
 }
 
 export async function saveActividadEstadoAdmin(id, estado) {
   const current = await getActividadAdmin(id);
   if (!current) return null;
-
-  return assertQuery(
-    await admin()
-      .from("actividades")
-      .update({ estado })
-      .eq("id", id)
-      .select(ACTIVIDAD_COLUMNS)
-      .maybeSingle(),
+  const data = assertQuery(
+    await readActividadUbicacion((withLocation) => admin().from("actividades")
+      .update({ estado }).eq("id", id)
+      .select(ACTIVIDAD_COLUMNS + (withLocation ? ACTIVIDAD_UBICACION_COLUMNS : "")).maybeSingle()),
     "Failed to save actividad estado",
   );
+  return data ? { ...data, direccion: data.direccion ?? null, google_place_id: data.google_place_id ?? null } : null;
 }
 
 export async function deleteActividadAdmin(id) {

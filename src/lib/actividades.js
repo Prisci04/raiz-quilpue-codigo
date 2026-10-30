@@ -68,6 +68,8 @@ export function mapActividadVista(row) {
     hora_inicio: row.hora_inicio ?? null,
     hora_fin: row.hora_fin ?? null,
     lugar: row.lugar ?? null,
+    direccion: row.direccion ?? null,
+    google_place_id: row.google_place_id ?? null,
     publico_objetivo: row.publico_objetivo ?? null,
     modalidad: row.modalidad ?? null,
     tipo_participacion: row.tipo_participacion ?? null,

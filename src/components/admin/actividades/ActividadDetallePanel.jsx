@@ -1,3 +1,5 @@
+import GoogleMapsEmbed from "@/components/maps/GoogleMapsEmbed";
+import { puedeMostrarMapa } from "@/lib/actividad-ubicacion.mjs";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -92,14 +94,14 @@ function cuposLabel(activity) {
 
 function Dato({ icon: Icon, label, value }) {
   return (
-    <article className="rounded-xl border border-[#efe6dc] bg-white px-3 py-2.5">
+    <article className="min-w-0 rounded-xl border border-[#efe6dc] bg-white px-3 py-2.5">
       <div className="flex items-center gap-2.5">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f8ebe6] text-[#c45c38]">
           <Icon size={15} aria-hidden="true" />
         </span>
         <div className="min-w-0">
           <p className="text-[11px] leading-4 text-[#8a7968]">{label}</p>
-          <p className="text-sm leading-5 font-medium text-[#2c1810]">{value}</p>
+          <p className="text-sm leading-5 font-medium wrap-anywhere text-[#2c1810]">{value}</p>
         </div>
       </div>
     </article>
@@ -199,6 +201,9 @@ export default function ActividadDetallePanel({ activity }) {
         <Dato icon={CalendarDays} label="Fecha" value={fecha} />
         <Dato icon={Clock3} label="Hora" value={horario} />
         <Dato icon={MapPin} label="Lugar" value={lugar} />
+        {activity.direccion ? <Dato icon={MapPin} label="Dirección" value={activity.direccion} /> : null}
+        <Dato icon={MapPin} label="Google Maps" value={activity.modalidad === "virtual"
+          ? "Sin uso en modalidad virtual" : activity.google_place_id ? "Referencia guardada" : "Sin referencia Google"} />
         <Dato icon={Users} label="Público" value={labelPublicoObjetivo(activity.publico_objetivo)} />
         <Dato icon={Wallet} label="Valor" value={valorLabel(activity.tipo_valor, activity.valor_monto)} />
         <Dato icon={Ticket} label="Cupos" value={cuposLabel(activity)} />
@@ -212,6 +217,10 @@ export default function ActividadDetallePanel({ activity }) {
           <Dato icon={Wallet} label="Forma de pago" value={activity.forma_pago} />
         ) : null}
       </div>
+
+      {puedeMostrarMapa(activity, process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_API_KEY) ? (
+        <div className="admin-card mt-5 p-4"><GoogleMapsEmbed placeId={activity.google_place_id} direccion={activity.direccion || activity.lugar} /></div>
+      ) : null}
 
       {activity.informacion_adicional ? (
         <div className="mt-6 rounded-2xl border border-[#efe6dc] bg-white p-5 sm:p-6">

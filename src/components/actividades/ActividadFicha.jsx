@@ -1,3 +1,5 @@
+import GoogleMapsLocation from "@/components/maps/GoogleMapsLocation";
+import { actividadTieneUbicacionFisica, buildActividadMapsLinks } from "@/lib/actividad-ubicacion.mjs";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, MapPin, Ticket, Users, Wallet } from "lucide-react";
@@ -85,6 +87,8 @@ export default function ActividadFicha({ activity, backHref, backLabel, children
   const fecha = formatLongDate(activity.fecha);
   const hora = formatHorario(activity.hora_inicio, activity.hora_fin);
   const lugar = activity.lugar || "Lugar pendiente";
+  const physical = actividadTieneUbicacionFisica(activity);
+  const links = buildActividadMapsLinks(activity);
   const valor = formatValor(activity.tipo_valor, activity.valor_monto);
   const cuposLabel = activity.tipo_participacion === "inscripcion"
     ? cupos === null
@@ -153,6 +157,20 @@ export default function ActividadFicha({ activity, backHref, backLabel, children
           <Dato icon={Users} label="Público" value={labelPublicoObjetivo(activity.publico_objetivo)} />
           <Dato icon={Wallet} label="Valor" value={valor} />
         </dl>
+
+        {physical && (activity.direccion || links.map) ? (
+          <section aria-label="Ubicación del evento" className="mt-6 space-y-4 border-t border-[#bb9c82]/70 pt-5">
+            <h2 className="font-serif text-xl font-medium text-[#5c331c]">Ubicación</h2>
+            {activity.direccion ? <p className="text-sm leading-7 wrap-anywhere text-[#704a31]">{activity.direccion}</p> : null}
+            <GoogleMapsLocation activity={activity} />
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              {links.directions ? <a href={links.directions} target="_blank" rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center justify-center bg-[#704a31] px-4 text-sm text-[#f4ece4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#704a31]">Cómo llegar</a> : null}
+              {links.map ? <a href={links.map} target="_blank" rel="noopener noreferrer"
+                className="inline-flex min-h-11 items-center justify-center border border-[#bb9c82] px-4 text-sm text-[#704a31] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#704a31]">Abrir en Google Maps</a> : null}
+            </div>
+          </section>
+        ) : null}
 
         {activity.forma_pago ? (
           <p className="mt-4 text-sm leading-7 text-[#704a31]">

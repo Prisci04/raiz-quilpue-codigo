@@ -33,6 +33,7 @@ export async function PATCH(request, { params }) {
     if (!parsed.ok) return jsonError(400, "VALIDATION", "El identificador no es válido.");
 
     const body = await readJsonBody(request);
+    if (!body || !Object.keys(body).length) return jsonError(400, "VALIDATION", "La solicitud no es válida.");
     const soloEstado = Boolean(body) && Object.keys(body).length === 1 && "estado" in body;
     if (soloEstado) {
       const input = parseActividadEstado(body);
@@ -46,8 +47,9 @@ export async function PATCH(request, { params }) {
     const current = await getActividadAdmin(parsed.value);
     if (!current) return jsonError(404, "NOT_FOUND", "Actividad no encontrada.");
 
-    const sameImage = body.imagen_url === current.imagen_url;
-    const input = parseActividadInput(sameImage ? { ...body, imagen_url: null } : body);
+    const merged = { ...current, ...body };
+    const sameImage = merged.imagen_url === current.imagen_url;
+    const input = parseActividadInput(sameImage ? { ...merged, imagen_url: null } : merged);
     if (!input.ok) return jsonError(400, "VALIDATION", input.message);
     if (sameImage) {
       input.value.imagen_url = current.imagen_url;

@@ -1,5 +1,6 @@
 import { parseOptionalDocumento } from "./contenidos/documento.mjs";
 import { PUBLICOS_OBJETIVO } from "./actividades.js";
+import { parseActividadUbicacion } from "./actividad-ubicacion.mjs";
 import { parseOwnedAporteImageUrl, parseOwnedPortadaUrl } from "./media/policy.mjs";
 
 export const MUSEO_CATEGORIES = [
@@ -153,6 +154,8 @@ export function parseActividadInput(input) {
   if (!oneOf(input.publico_objetivo, PUBLICOS_OBJETIVO)) {
     return fail("El público objetivo no es válido.");
   }
+  const ubicacion = parseActividadUbicacion(input);
+  if (!ubicacion.ok) return ubicacion;
 
   return {
     ok: true,
@@ -163,6 +166,7 @@ export function parseActividadInput(input) {
       hora_inicio: horaInicio,
       hora_fin: horaFin,
       lugar,
+      ...ubicacion.value,
       publico_objetivo: input.publico_objetivo,
       modalidad,
       tipo_participacion: participacion,

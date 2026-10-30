@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImageIcon } from "lucide-react";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
+import ActividadUbicacionField from "@/components/admin/actividades/ActividadUbicacionField";
 import ContenidoEditor from "@/components/admin/contenidos/ContenidoEditor";
 import { PUBLICO_OBJETIVO_LABELS, PUBLICOS_OBJETIVO, todayISO } from "@/lib/actividades";
 import { deleteActividad, getActividadAdmin, saveActividad } from "@/lib/api/community";
@@ -22,6 +23,8 @@ const EMPTY = {
   hora_inicio: "",
   hora_fin: "",
   lugar: "",
+  direccion: "",
+  google_place_id: null,
   publico_objetivo: "",
   modalidad: "presencial",
   tipo_participacion: "abierta",
@@ -63,6 +66,8 @@ function formFromActivity(activity) {
     hora_inicio: clock(activity.hora_inicio),
     hora_fin: clock(activity.hora_fin),
     lugar: activity.lugar ?? "",
+    direccion: activity.direccion ?? "",
+    google_place_id: activity.google_place_id ?? null,
     publico_objetivo: activity.publico_objetivo ?? "",
     modalidad: activity.modalidad ?? "presencial",
     tipo_participacion: activity.tipo_participacion ?? "abierta",
@@ -343,18 +348,6 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
                 <input type="time" value={form.hora_fin ?? ""} onChange={(event) => update("hora_fin", event.target.value)} className={inputClass} />
               </Field>
             </div>
-            <Field label={form.modalidad === "presencial" ? "Lugar *" : "Lugar"}>
-              <input
-                required={form.modalidad === "presencial"}
-                maxLength={250}
-                value={form.lugar ?? ""}
-                onChange={(event) => update("lugar", event.target.value)}
-                className={inputClass}
-              />
-              {form.modalidad === "presencial" ? (
-                <span className="mt-1 block text-xs text-[#8d7b6d]">Obligatorio para actividades presenciales.</span>
-              ) : null}
-            </Field>
             <Field label="Cupos">
               <input type="number" min="0" step="1" value={form.cupos ?? ""} onChange={(event) => update("cupos", event.target.value)} className={inputClass} />
               <span className="mt-1 block text-xs text-[#8d7b6d]">Déjalo vacío si no hay límite o aún no está confirmado.</span>
@@ -408,6 +401,9 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
               </Field>
             ) : null}
           </div>
+
+          <ActividadUbicacionField value={form} disabled={busy}
+            onChange={(patch) => setForm((current) => ({ ...current, ...patch }))} />
 
           <div className="admin-card p-4 sm:p-6">
             <span className="text-[13px] font-medium text-[#2c1810]">Imagen de la actividad</span>

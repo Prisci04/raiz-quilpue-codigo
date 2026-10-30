@@ -4,6 +4,7 @@ import { jsonError } from "@/lib/http";
 import { noStore } from "@/lib/contenidos/respond";
 import { requireGestorContenido } from "@/lib/auth/guard";
 import { MuseoIntegrityError } from "@/lib/museo/errors.mjs";
+import { ActividadUbicacionSchemaError } from "@/lib/actividad-ubicacion.mjs";
 
 export async function runAdminCommunity(request, context, operation) {
   try {
@@ -15,7 +16,7 @@ export async function runAdminCommunity(request, context, operation) {
 
     return noStore(await operation());
   } catch (error) {
-    if (error instanceof MuseoIntegrityError) {
+    if (error instanceof MuseoIntegrityError || error instanceof ActividadUbicacionSchemaError) {
       return noStore(jsonError(error.status, error.code, error.message));
     }
     console.error(`[${context}]`, error);
