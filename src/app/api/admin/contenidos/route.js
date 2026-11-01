@@ -7,6 +7,7 @@ import {
   respondContenidoFailure,
 } from "@/lib/contenidos/respond";
 import { parseCreateContenido } from "@/lib/contenidos/validation.mjs";
+import { listCatalogosContenido } from "@/services/catalogos.service";
 import { crearContenido } from "@/services/contenidos-admin.service";
 
 export const runtime = "nodejs";
@@ -20,14 +21,15 @@ export async function POST(request) {
       return noStore(auth.response);
     }
 
+    const catalogos = await listCatalogosContenido();
     const body = await readContenidoBody(request);
-    const parsed = parseCreateContenido(body);
+    const parsed = parseCreateContenido(body, catalogos);
 
     if (!parsed.ok) {
       throw new ContenidoError("VALIDATION", parsed.message);
     }
 
-    const contenido = await crearContenido(parsed.value);
+    const contenido = await crearContenido(parsed.value, auth.user.id, catalogos);
     return noStore(jsonSuccess(contenido, {}, 201));
   } catch (error) {
     return respondContenidoFailure(error, "POST /api/admin/contenidos");

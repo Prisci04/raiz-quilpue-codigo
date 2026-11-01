@@ -31,7 +31,11 @@ export async function DELETE(request, { params }) {
         );
       }
 
-      await deleteAporteMuseoAdmin(parsed.value);
+      const deleted = await deleteAporteMuseoAdmin(parsed.value);
+
+      if (!deleted) {
+        return jsonError(404, "NOT_FOUND", "El aporte no existe.");
+      }
 
       return jsonSuccess({
         eliminado: true,

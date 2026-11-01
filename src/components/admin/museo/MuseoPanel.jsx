@@ -20,32 +20,30 @@ import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 
 import {
-  convertirAporteEnBorrador,
+  aprobarAporteMuseo,
   deleteAporteMuseo,
   deletePiezaMuseo,
   getAportesMuseo,
   rechazarAporteMuseo,
 } from "@/lib/api/community";
 
-import { MUSEO_CATEGORIES } from "@/lib/community-validation.mjs";
+import {
+  esRevisionAprobado,
+  esRevisionPendiente,
+  esRevisionRechazado,
+} from "@/lib/museo";
 
-const categoryLabel = (id) =>
-  MUSEO_CATEGORIES.find((item) => item.id === id)?.label ?? id;
-
-function isPdf(entry) {
-  return (
-    entry.archivo_nombre?.toLowerCase().endsWith(".pdf") ||
-    entry.archivo_url?.toLowerCase().includes(".pdf")
-  );
+function revisionTone(estado) {
+  if (esRevisionAprobado(estado)) return "success";
+  if (esRevisionRechazado(estado)) return "danger";
+  return "warning";
 }
 
 function revisionLabel(estado) {
-  if (estado === "convertido") return "Convertido";
-  if (estado === "rechazado") return "Rechazado";
-
+  if (esRevisionAprobado(estado)) return "Aprobado";
+  if (esRevisionRechazado(estado)) return "Rechazado";
   return "Pendiente";
 }
-
 
 export default function MuseoPanel({
   pieces = [],
@@ -68,7 +66,7 @@ export default function MuseoPanel({
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  const [convertingId, setConvertingId] = useState(null);
+  const [approvingId, setApprovingId] = useState(null);
   const [rejectingId, setRejectingId] = useState(null);
 
   async function openContributions() {
@@ -96,9 +94,7 @@ export default function MuseoPanel({
 
       return (
         !term ||
-        `${piece.titulo} ${piece.descripcion} ${categoryLabel(
-          piece.categoria,
-        )}`
+        `${piece.titulo} ${piece.descripcion} ${piece.categoria}`
           .toLocaleLowerCase("es-CL")
           .includes(term)
       );
@@ -111,70 +107,39 @@ export default function MuseoPanel({
 
       return (
         !term ||
-        `${entry.titulo} ${entry.nombre} ${entry.correo} ${categoryLabel(
-          entry.categoria,
-        )}`
+        `${entry.titulo} ${entry.nombre} ${entry.correo} ${entry.categoria}`
           .toLocaleLowerCase("es-CL")
           .includes(term)
       );
     });
   }, [contributions, query]);
 
-  async function createDraft(entry) {
-    if (
-      entry.estado_revision !== "pendiente" ||
-      entry.pieza_id
-    ) {
-      return;
-    }
+  async function approveContribution(entry) {
+    if (!esRevisionPendiente(entry.estado_revision)) return;
 
-    setConvertingId(entry.id);
+    setApprovingId(entry.id);
     setActionError("");
     setNoticeText("");
 
     try {
-      const result =
-        await convertirAporteEnBorrador(entry.id);
-
-      const pieza = result?.pieza;
-
-      if (!pieza?.id) {
-        throw new Error(
-          "El borrador fue creado, pero no se recibió su identificador.",
-        );
-      }
+      const result = await aprobarAporteMuseo(entry.id);
+      const aporte = result?.aporte ?? { ...entry, estado_revision: "Aprobado" };
 
       setContributions((current) =>
-        current.map((item) =>
-          item.id === entry.id
-            ? {
-                ...item,
-                estado_revision: "convertido",
-                pieza_id: pieza.id,
-              }
-            : item,
-        ),
+        current.map((item) => (item.id === entry.id ? { ...item, ...aporte } : item)),
       );
 
-      setNoticeText(
-        "El aporte fue convertido en borrador correctamente. Revísalo antes de publicarlo.",
-      );
-
+      setNoticeText("El aporte fue aceptado y ya forma parte de la colección pública.");
       router.refresh();
-    } catch (convertError) {
-      setActionError(convertError.message);
+    } catch (approveError) {
+      setActionError(approveError.message);
     } finally {
-      setConvertingId(null);
+      setApprovingId(null);
     }
   }
 
   async function rejectContribution(entry) {
-    if (
-      entry.estado_revision !== "pendiente" ||
-      entry.pieza_id
-    ) {
-      return;
-    }
+    if (!esRevisionPendiente(entry.estado_revision)) return;
 
     setRejectingId(entry.id);
     setActionError("");
@@ -188,16 +153,13 @@ export default function MuseoPanel({
           item.id === entry.id
             ? {
                 ...item,
-                estado_revision: "rechazado",
-                pieza_id: null,
+                estado_revision: "Rechazado",
               }
             : item,
         ),
       );
 
-      setNoticeText(
-        "El aporte fue rechazado correctamente.",
-      );
+      setNoticeText("El aporte fue rechazado correctamente.");
     } catch (rejectError) {
       setActionError(rejectError.message);
     } finally {
@@ -222,11 +184,9 @@ export default function MuseoPanel({
         await deleteAporteMuseo(deleteTarget.entry.id);
 
         setContributions((current) =>
-          current.filter(
-            (item) =>
-              item.id !== deleteTarget.entry.id,
-          ),
+          current.filter((item) => item.id !== deleteTarget.entry.id),
         );
+        router.refresh();
       }
 
       setNoticeText(
@@ -454,9 +414,7 @@ export default function MuseoPanel({
                       </td>
 
                       <td className="px-3 py-4 text-[#5c4d42]">
-                        {categoryLabel(
-                          piece.categoria,
-                        )}
+                        {piece.categoria}
                       </td>
 
                       <td className="px-3 py-4 text-[#5c4d42]">
@@ -470,8 +428,8 @@ export default function MuseoPanel({
                       </td>
 
                       <td className="px-3 py-4">
-                        <AdminBadge tone={piece.estado === "publicada" ? "success" : "warning"}>
-                          {piece.estado === "publicada" ? "Publicada" : "Borrador"}
+                        <AdminBadge tone="success">
+                          Publicada
                         </AdminBadge>
                       </td>
 
@@ -525,9 +483,7 @@ export default function MuseoPanel({
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-xs uppercase tracking-wide text-[#a45b35]">
-                        {categoryLabel(
-                          entry.categoria,
-                        )}{" "}
+                        {entry.categoria}{" "}
                         ·{" "}
                         {new Date(
                           entry.fecha_creacion,
@@ -536,7 +492,7 @@ export default function MuseoPanel({
                         )}
                       </p>
 
-                      <AdminBadge tone={entry.estado_revision === "convertido" ? "success" : entry.estado_revision === "rechazado" ? "danger" : "warning"}>
+                      <AdminBadge tone={revisionTone(entry.estado_revision)}>
                         {revisionLabel(entry.estado_revision)}
                       </AdminBadge>
                     </div>
@@ -557,24 +513,23 @@ export default function MuseoPanel({
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-                    {entry.estado_revision === "pendiente" &&
-                    !entry.pieza_id ? (
+                    {esRevisionPendiente(entry.estado_revision) ? (
                       <>
                         <button
                           type="button"
                           disabled={
-                            convertingId === entry.id ||
+                            approvingId === entry.id ||
                             rejectingId === entry.id
                           }
                           onClick={() =>
-                            createDraft(entry)
+                            approveContribution(entry)
                           }
                           className="inline-flex min-h-11 items-center gap-1.5 rounded-sm bg-[#1e4536] px-3 text-sm font-medium text-white hover:bg-[#17382c] disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           <FilePlus2 size={15} />
 
-                          {convertingId === entry.id
-                            ? "Creando…"
+                          {approvingId === entry.id
+                            ? "Aceptando…"
                             : "Aceptar aporte"}
                         </button>
 
@@ -582,7 +537,7 @@ export default function MuseoPanel({
                           type="button"
                           disabled={
                             rejectingId === entry.id ||
-                            convertingId === entry.id
+                            approvingId === entry.id
                           }
                           onClick={() =>
                             rejectContribution(entry)
@@ -598,14 +553,13 @@ export default function MuseoPanel({
                       </>
                     ) : null}
 
-                    {entry.estado_revision === "convertido" &&
-                    entry.pieza_id ? (
+                    {esRevisionAprobado(entry.estado_revision) ? (
                       <Link
-                        href={`/admin/museo/${entry.pieza_id}/editar`}
+                        href={`/admin/museo/${entry.id}/editar`}
                         className="inline-flex min-h-11 items-center gap-1.5 rounded-sm bg-[#1e4536] px-3 text-sm font-medium text-white hover:bg-[#17382c]"
                       >
                         <Pencil size={15} />
-                        Revisar borrador
+                        Editar pieza
                       </Link>
                     ) : null}
 
@@ -655,70 +609,46 @@ export default function MuseoPanel({
 
                   <div>
                     <dt className="text-xs text-[#8d7b6d]">
-                      Archivo aportado
+                      Imagen aportada
                     </dt>
 
                     <dd className="mt-2">
-                      {entry.archivo_url ? (
+                      {entry.imagen_url ? (
                         <div className="space-y-2">
-                          {!isPdf(entry) ? (
-                            <a
-                              href={entry.archivo_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="block w-fit"
-                            >
-                              {/* Miniatura de un archivo de la comunidad; puede ser almacenamiento externo. */}
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={entry.archivo_url}
-                                alt={`Archivo aportado: ${entry.titulo}`}
-                                className="h-24 w-32 rounded-md border border-[#e6ddd4] object-cover"
-                              />
-                            </a>
-                          ) : null}
+                          <a
+                            href={entry.imagen_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block w-fit"
+                          >
+                            {/* Miniatura de un archivo de la comunidad; puede ser almacenamiento externo. */}
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={entry.imagen_url}
+                              alt={`Imagen aportada: ${entry.titulo}`}
+                              className="h-24 w-32 rounded-md border border-[#e6ddd4] object-cover"
+                            />
+                          </a>
 
                           <a
-                            href={entry.archivo_url}
+                            href={entry.imagen_url}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-1.5 text-sm font-medium text-[#a5452d] underline underline-offset-2"
                           >
                             <Inbox size={14} />
-
-                            {isPdf(entry)
-                              ? "Abrir PDF"
-                              : "Ver imagen"}
+                            Ver imagen
                           </a>
-
-                          <p className="max-w-[220px] truncate text-xs text-[#8d7b6d]">
-                            {entry.archivo_nombre}
-                          </p>
                         </div>
                       ) : (
-                        <div>
-                          <p className="flex items-center gap-1 text-[#4d4036]">
-                            <Inbox size={14} />
-                            {entry.archivo_nombre}
-                          </p>
-
-                          <p className="mt-1 text-xs text-[#8d7b6d]">
-                            Archivo anterior sin almacenamiento disponible.
-                          </p>
-                        </div>
+                        <p className="flex items-center gap-1 text-[#4d4036]">
+                          <Inbox size={14} />
+                          Sin imagen
+                        </p>
                       )}
                     </dd>
                   </div>
                 </dl>
-
-                {entry.informacion_adicional ? (
-                  <p className="mt-4 border-t border-[#f3eee8] pt-3 text-sm text-[#5c4d42]">
-                    <strong>
-                      Información adicional:
-                    </strong>{" "}
-                    {entry.informacion_adicional}
-                  </p>
-                ) : null}
               </article>
             ))}
           </div>
@@ -751,14 +681,6 @@ export default function MuseoPanel({
             <p id="delete-museum-description" className="mt-2 text-sm text-[#7c6a5c]">
               “{deleteTarget.entry.titulo}” se eliminará de forma permanente.
             </p>
-
-            {deleteTarget.kind === "aporte" && deleteTarget.entry.pieza_id ? (
-              <p className="mt-2 text-sm text-[#7c6a5c]">
-                Este aporte ya tiene una pieza asociada en el Museo. Se eliminará
-                únicamente el aporte original; la pieza, su estado y su archivo
-                se conservarán.
-              </p>
-            ) : null}
 
             {actionError ? <p role="alert" className="mt-3 text-sm text-[#8d3b28]">{actionError}</p> : null}
             <div className="mt-6 flex justify-end gap-2">

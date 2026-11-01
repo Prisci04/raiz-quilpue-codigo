@@ -1,34 +1,33 @@
+import {
+  NOMBRE_TIPO_CAPSULA,
+  NOMBRE_TIPO_COMUNIDAD,
+  NOMBRE_TIPO_CULTURA,
+  NOMBRE_TIPO_NOTICIA,
+  NOMBRE_TIPO_PATRIMONIO,
+} from "../catalogos.mjs";
+
 export const TITULO_MAX_LENGTH = 200;
 export const DESCRIPCION_MAX_LENGTH = 300;
 export const RESUMEN_MAX_LENGTH = 4000;
 export const IMAGEN_URL_MAX_LENGTH = 2000;
 export const CONTENIDO_TEXT_MAX_LENGTH = 50000;
 
-export const TIPOS_CONTENIDO = [
-  "noticia",
-  "patrimonio",
-  "capsula_historica",
-  "cultura",
-  "comunidad",
-];
-export const ESTADOS_CONTENIDO = ["borrador", "publicada"];
-
 /* Etiquetas en singular para el panel administrativo. */
 export const TIPO_LABELS_ADMIN = {
-  noticia: "Noticia",
-  patrimonio: "Patrimonio",
-  capsula_historica: "Cápsula histórica",
-  cultura: "Cultura",
-  comunidad: "Comunidad",
+  [NOMBRE_TIPO_NOTICIA]: NOMBRE_TIPO_NOTICIA,
+  [NOMBRE_TIPO_PATRIMONIO]: NOMBRE_TIPO_PATRIMONIO,
+  [NOMBRE_TIPO_CAPSULA]: NOMBRE_TIPO_CAPSULA,
+  [NOMBRE_TIPO_CULTURA]: NOMBRE_TIPO_CULTURA,
+  [NOMBRE_TIPO_COMUNIDAD]: NOMBRE_TIPO_COMUNIDAD,
 };
 
 /* Etiquetas en plural para el portal público. */
 export const TIPO_LABELS_PUBLICO = {
-  noticia: "Noticias",
-  patrimonio: "Patrimonio",
-  capsula_historica: "Cápsulas históricas",
-  cultura: "Cultura",
-  comunidad: "Comunidad",
+  [NOMBRE_TIPO_NOTICIA]: "Noticias",
+  [NOMBRE_TIPO_PATRIMONIO]: NOMBRE_TIPO_PATRIMONIO,
+  [NOMBRE_TIPO_CAPSULA]: "Cápsulas históricas",
+  [NOMBRE_TIPO_CULTURA]: NOMBRE_TIPO_CULTURA,
+  [NOMBRE_TIPO_COMUNIDAD]: NOMBRE_TIPO_COMUNIDAD,
 };
 
 export const DEFAULT_TEXT_COLOR = "#704a31";

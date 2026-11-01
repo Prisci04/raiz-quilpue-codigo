@@ -3,12 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Calendar, Clock, MapPin } from "lucide-react";
-
-const MODALIDAD = {
-  presencial: "Presencial",
-  virtual: "Virtual",
-  hibrida: "Híbrida",
-};
+import { esParticipacionInscripcion, labelModalidad } from "@/lib/actividades";
 
 function formatLongDate(dateString) {
   if (!dateString) return "Fecha pendiente";
@@ -45,19 +40,16 @@ function formatHorario(inicio, fin) {
 
 function cuposText(activity) {
   if (activity.pasada) return "Actividad finalizada";
-  if (activity.tipo_participacion === "inscripcion") {
-    if (!Number.isInteger(activity.cupos)) return "Inscripción abierta";
-    const remaining = Number.isInteger(activity.cupos_disponibles)
-      ? activity.cupos_disponibles
-      : activity.cupos;
-    return remaining > 0 ? `${remaining} cupos disponibles` : "Sin cupos";
+  if (!Number.isInteger(activity.cupos)) {
+    return esParticipacionInscripcion(activity.tipo_participacion)
+      ? "Inscripción abierta"
+      : "Cupos por confirmar";
   }
-  const cupos = Number.isInteger(activity.cupos) ? activity.cupos : null;
-  return cupos === null ? "Cupos por confirmar" : `Cupos: ${cupos}`;
+  return `${activity.cupos} ${activity.cupos === 1 ? "cupo" : "cupos"}`;
 }
 
 export default function ActivityCard({ activity }) {
-  const modalidad = MODALIDAD[activity.modalidad] ?? null;
+  const modalidad = activity.modalidad ? labelModalidad(activity.modalidad) : null;
 
   return (
     <Link

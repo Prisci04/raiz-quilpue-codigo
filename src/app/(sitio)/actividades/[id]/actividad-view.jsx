@@ -2,6 +2,11 @@
 
 import { useState } from "react";
 import ActividadFicha from "@/components/actividades/ActividadFicha";
+import {
+  esParticipacionInscripcion,
+  inscripcionAceptaNuevos,
+  inscripcionEnEspera,
+} from "@/lib/actividades";
 
 export default function ActividadView({ activity }) {
   const [confirmation, setConfirmation] = useState("");
@@ -14,13 +19,10 @@ export default function ActividadView({ activity }) {
     telefono: "",
   });
 
-  const cupos = Number.isInteger(activity.cupos) ? activity.cupos : null;
-  const disponibles = Number.isInteger(activity.cupos_disponibles)
-    ? activity.cupos_disponibles
-    : cupos;
-  const hasCupos = cupos === null || disponibles > 0;
   const finalizada = Boolean(activity.pasada);
-  const requiereInscripcion = activity.tipo_participacion === "inscripcion" && !finalizada;
+  const requiereInscripcion = esParticipacionInscripcion(activity.tipo_participacion) && !finalizada;
+  const hasCupos = inscripcionAceptaNuevos(activity);
+  const enEspera = inscripcionEnEspera(activity);
   const inputClass =
     "min-h-12 border border-[#bb9c82] bg-[#e7dcd2] px-4 text-[#704a31] outline-none";
 
@@ -47,7 +49,7 @@ export default function ActividadView({ activity }) {
     setFormError("");
 
     if (!hasCupos) {
-      setFormError("No quedan cupos disponibles para esta actividad.");
+      setFormError("No quedan cupos ni lugares en lista de espera para esta actividad.");
       return;
     }
 
@@ -62,7 +64,11 @@ export default function ActividadView({ activity }) {
       if (!response.ok || !body?.success) {
         throw new Error(body?.error?.message || "No fue posible registrar la inscripción.");
       }
-      setConfirmation("¡Inscripción realizada correctamente!");
+      setConfirmation(
+        body?.data?.lista_espera
+          ? "Quedaste en lista de espera. Te contactaremos si se libera un cupo."
+          : "¡Inscripción realizada correctamente!",
+      );
       setFormData({ nombre: "", apellido: "", email: "", telefono: "" });
     } catch (error) {
       setFormError(error.message);
@@ -78,7 +84,7 @@ export default function ActividadView({ activity }) {
         backHref="/actividades"
         backLabel="Volver a actividades"
       >
-        {activity.tipo_participacion === "inscripcion" && finalizada ? (
+        {esParticipacionInscripcion(activity.tipo_participacion) && finalizada ? (
           <p className="mt-10 border border-[#bb9c82] bg-[#f4ece4] px-5 py-4 text-sm text-[#704a31]">
             Las inscripciones de esta actividad ya cerraron.
           </p>
@@ -88,6 +94,14 @@ export default function ActividadView({ activity }) {
             className="mt-10 border border-[#bb9c82] bg-[#f4ece4] p-5 sm:p-6"
           >
             <h2 className="font-sans text-xl font-medium text-[#5c331c]">Inscripción</h2>
+            {enEspera ? (
+              <p className="mt-2 text-sm leading-relaxed text-[#704a31]">
+                Los cupos están completos. Tu inscripción quedará en lista de espera
+                {Number.isInteger(activity.cupos_espera) && activity.cupos_espera > 0
+                  ? ` (hasta ${activity.cupos_espera} ${activity.cupos_espera === 1 ? "persona" : "personas"})`
+                  : ""}.
+              </p>
+            ) : null}
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm">
                 Nombre

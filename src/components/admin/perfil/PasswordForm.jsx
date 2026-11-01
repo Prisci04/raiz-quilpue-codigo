@@ -89,7 +89,7 @@ export default function PasswordForm() {
     <form onSubmit={handleSubmit} className="rounded-sm border border-[#2c1810]/6 bg-white p-5 shadow-[0_10px_30px_rgba(44,24,16,0.04)] sm:p-6">
       <h2 className="text-lg font-medium text-[#2c1810]">Seguridad</h2>
       <p className="mt-1 text-sm text-[#7c5c47]">
-        Al cambiarla, se cierran las sesiones de tus otros dispositivos.
+        Al cambiarla, las sesiones de tus otros dispositivos dejarán de ser válidas.
       </p>
       <div className="mt-5 space-y-4">
         <SecretField

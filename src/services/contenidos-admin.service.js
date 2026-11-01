@@ -1,15 +1,42 @@
 import "server-only";
 
+import { findCatalogoById, mismoNombreCatalogo, NOMBRE_ESTADO_PUBLICADA } from "@/lib/catalogos.mjs";
 import { ContenidoError } from "@/lib/contenidos/errors.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { deleteOwnedPortada } from "@/services/storage.service";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-const COLUMNS = "id,titulo,descripcion,tipo,estado,imagen_url,fecha_publicacion";
-const DETAIL_COLUMNS =
-  "id,titulo,descripcion,resumen,contenido,tipo,imagen_url,fecha_publicacion,estado";
+const COLUMNS = `
+  id_contenido,
+  titulo,
+  descripcion,
+  imagen_url,
+  fec_publicacion,
+  id_tipo_contenido,
+  id_estado,
+  tipo_contenido ( nombre_tipo_contenido ),
+  estado_publicacion ( nombre_estado )
+`;
+const DETAIL_COLUMNS = `
+  id_contenido,
+  titulo,
+  descripcion,
+  resumen,
+  contenido,
+  imagen_url,
+  fec_publicacion,
+  id_tipo_contenido,
+  id_estado,
+  id_usuario_creador,
+  tipo_contenido ( nombre_tipo_contenido ),
+  estado_publicacion ( nombre_estado )
+`;
 const PERMISSION_DENIED = "42501";
 const MONTHS = ["ene.", "feb.", "mar.", "abr.", "may.", "jun.", "jul.", "ago.", "sept.", "oct.", "nov.", "dic."];
+
+function nested(value) {
+  return Array.isArray(value) ? value[0] : value;
+}
 
 function formatWhen(value) {
   if (!value) {
@@ -41,25 +68,27 @@ function formatWhen(value) {
 }
 
 function mapContenidoPanel(row) {
-  const when = formatWhen(row.fecha_publicacion);
+  const when = formatWhen(row.fec_publicacion);
 
   return {
-    id: row.id,
+    id: row.id_contenido,
     titulo: row.titulo,
     descripcion: row.descripcion ?? "",
-    tipo: row.tipo,
-    estado: row.estado,
+    tipo: nested(row.tipo_contenido)?.nombre_tipo_contenido ?? "",
+    estado: nested(row.estado_publicacion)?.nombre_estado ?? "",
     imagen_url: row.imagen_url ?? null,
-    fecha_publicacion: row.fecha_publicacion ?? null,
+    fecha_publicacion: row.fec_publicacion ?? null,
     fecha_texto: when.fecha_texto,
     hora_texto: when.hora_texto,
+    id_tipo_contenido: row.id_tipo_contenido,
+    id_estado: row.id_estado,
   };
 }
 
 function ordered(query) {
   return query
-    .order("fecha_publicacion", { ascending: false, nullsFirst: false })
-    .order("id", { ascending: false });
+    .order("fec_publicacion", { ascending: false, nullsFirst: false })
+    .order("id_contenido", { ascending: false });
 }
 
 export async function listContenidosPanel() {
@@ -99,20 +128,22 @@ function queryFailed(error) {
 function mapContenidoDetalle(row) {
   if (!row) return null;
 
-  const when = formatWhen(row.fecha_publicacion);
+  const when = formatWhen(row.fec_publicacion);
 
   return {
-    id: row.id,
+    id: row.id_contenido,
     titulo: row.titulo,
     descripcion: row.descripcion ?? "",
     resumen: row.resumen ?? "",
     contenido: row.contenido,
-    tipo: row.tipo,
+    tipo: nested(row.tipo_contenido)?.nombre_tipo_contenido ?? "",
     imagen_url: row.imagen_url ?? null,
-    fecha_publicacion: row.fecha_publicacion ?? null,
-    estado: row.estado,
+    fecha_publicacion: row.fec_publicacion ?? null,
+    estado: nested(row.estado_publicacion)?.nombre_estado ?? "",
     fecha_texto: when.fecha_texto,
     hora_texto: when.hora_texto,
+    id_tipo_contenido: row.id_tipo_contenido,
+    id_estado: row.id_estado,
   };
 }
 
@@ -120,7 +151,7 @@ async function findContenidoRow(id) {
   const { data, error } = await adminClient()
     .from("contenidos")
     .select(DETAIL_COLUMNS)
-    .eq("id", id)
+    .eq("id_contenido", id)
     .maybeSingle();
 
   if (error) {
@@ -130,12 +161,21 @@ async function findContenidoRow(id) {
   return data;
 }
 
-function fechaAlPublicar(estado, fechaActual) {
-  if (estado === "publicada" && !fechaActual) {
+function esPublicadaId(idEstado, catalogos) {
+  const item = findCatalogoById(catalogos?.estado_publicacion, idEstado);
+  return mismoNombreCatalogo(item?.nombre, NOMBRE_ESTADO_PUBLICADA);
+}
+
+function fechaAlPublicar(idEstado, fechaActual, catalogos) {
+  if (esPublicadaId(idEstado, catalogos) && !fechaActual) {
     return new Date().toISOString();
   }
 
   return fechaActual ?? null;
+}
+
+function nowIso() {
+  return new Date().toISOString();
 }
 
 export async function obtenerContenidoAdmin(id) {
@@ -143,16 +183,18 @@ export async function obtenerContenidoAdmin(id) {
   return mapContenidoDetalle(row);
 }
 
-export async function crearContenido(input) {
+export async function crearContenido(input, usuarioId, catalogos) {
   const row = {
     titulo: input.titulo,
     descripcion: input.descripcion,
     resumen: input.resumen,
     contenido: input.contenido,
-    tipo: input.tipo,
     imagen_url: input.imagen_url ?? null,
-    estado: input.estado,
-    fecha_publicacion: input.estado === "publicada" ? new Date().toISOString() : null,
+    id_tipo_contenido: input.id_tipo_contenido,
+    id_estado: input.id_estado,
+    id_usuario_creador: usuarioId,
+    fec_publicacion: fechaAlPublicar(input.id_estado, null, catalogos),
+    fec_actualizacion: nowIso(),
   };
 
   const { data, error } = await adminClient()
@@ -168,7 +210,7 @@ export async function crearContenido(input) {
   return mapContenidoDetalle(data);
 }
 
-export async function actualizarContenido(id, input) {
+export async function actualizarContenido(id, input, catalogos) {
   const current = await findContenidoRow(id);
 
   if (!current) {
@@ -180,9 +222,10 @@ export async function actualizarContenido(id, input) {
     descripcion: input.descripcion,
     resumen: input.resumen,
     contenido: input.contenido,
-    tipo: input.tipo,
-    estado: input.estado,
-    fecha_publicacion: fechaAlPublicar(input.estado, current.fecha_publicacion),
+    id_tipo_contenido: input.id_tipo_contenido,
+    id_estado: input.id_estado,
+    fec_publicacion: fechaAlPublicar(input.id_estado, current.fec_publicacion, catalogos),
+    fec_actualizacion: nowIso(),
   };
 
   if (input.imagen_url !== undefined) {
@@ -192,7 +235,7 @@ export async function actualizarContenido(id, input) {
   const { data, error } = await adminClient()
     .from("contenidos")
     .update(patch)
-    .eq("id", id)
+    .eq("id_contenido", id)
     .select(DETAIL_COLUMNS)
     .single();
 
@@ -207,7 +250,7 @@ export async function actualizarContenido(id, input) {
   return mapContenidoDetalle(data);
 }
 
-export async function cambiarEstadoContenido(id, estado) {
+export async function cambiarEstadoContenido(id, idEstado, catalogos) {
   const current = await findContenidoRow(id);
 
   if (!current) {
@@ -217,10 +260,11 @@ export async function cambiarEstadoContenido(id, estado) {
   const { data, error } = await adminClient()
     .from("contenidos")
     .update({
-      estado,
-      fecha_publicacion: fechaAlPublicar(estado, current.fecha_publicacion),
+      id_estado: idEstado,
+      fec_publicacion: fechaAlPublicar(idEstado, current.fec_publicacion, catalogos),
+      fec_actualizacion: nowIso(),
     })
-    .eq("id", id)
+    .eq("id_contenido", id)
     .select(DETAIL_COLUMNS)
     .single();
 
@@ -238,7 +282,7 @@ export async function eliminarContenido(id) {
     throw new ContenidoError("NOT_FOUND", "Contenido no encontrado.");
   }
 
-  const { error } = await adminClient().from("contenidos").delete().eq("id", id);
+  const { error } = await adminClient().from("contenidos").delete().eq("id_contenido", id);
 
   if (error) {
     throw queryFailed(error);

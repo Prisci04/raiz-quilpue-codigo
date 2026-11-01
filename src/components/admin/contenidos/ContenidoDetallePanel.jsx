@@ -16,18 +16,26 @@ import {
 } from "lucide-react";
 import AdminBadge from "@/components/admin/AdminBadge";
 import ContenidoDocumento from "@/components/contenido/ContenidoDocumento";
+import { esEstadoPublicada } from "@/lib/actividades";
+import {
+  NOMBRE_TIPO_CAPSULA,
+  NOMBRE_TIPO_COMUNIDAD,
+  NOMBRE_TIPO_CULTURA,
+  NOMBRE_TIPO_NOTICIA,
+  NOMBRE_TIPO_PATRIMONIO,
+} from "@/lib/catalogos.mjs";
 import { TIPO_LABELS_ADMIN } from "@/lib/contenidos/documento.mjs";
 
 const TIPO_ICONS = {
-  noticia: Newspaper,
-  patrimonio: Landmark,
-  capsula_historica: ScrollText,
-  cultura: Palette,
-  comunidad: Users,
+  [NOMBRE_TIPO_NOTICIA]: Newspaper,
+  [NOMBRE_TIPO_PATRIMONIO]: Landmark,
+  [NOMBRE_TIPO_CAPSULA]: ScrollText,
+  [NOMBRE_TIPO_CULTURA]: Palette,
+  [NOMBRE_TIPO_COMUNIDAD]: Users,
 };
 
 function Status({ value }) {
-  const published = value === "publicada";
+  const published = esEstadoPublicada(value);
   return (
     <AdminBadge tone={published ? "success" : "warning"}>
       {published ? "Publicado" : "Borrador"}
@@ -79,7 +87,7 @@ export default function ContenidoDetallePanel({ contenido }) {
   const hora = contenido.hora_texto || "";
   const tipoLabel = TIPO_LABELS_ADMIN[contenido.tipo] ?? contenido.tipo;
   const TipoIcon = TIPO_ICONS[contenido.tipo] ?? FileText;
-  const published = contenido.estado === "publicada";
+  const published = esEstadoPublicada(contenido.estado);
   const body = hasDocumento(contenido.contenido);
 
   return (

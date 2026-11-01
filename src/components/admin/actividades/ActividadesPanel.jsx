@@ -9,7 +9,13 @@ import { CalendarCheck, CalendarDays, CircleCheck, Clock3, Eye, ImageIcon, Penci
 import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import { deleteActividad, saveActividadEstado } from "@/lib/api/community";
-import { isActividadPasada } from "@/lib/actividades";
+import {
+  esEstadoBorrador,
+  esEstadoPublicada,
+  isActividadPasada,
+  labelModalidad,
+} from "@/lib/actividades";
+import { NOMBRE_ESTADO_BORRADOR, NOMBRE_ESTADO_PUBLICADA } from "@/lib/catalogos.mjs";
 
 const dateLabel = (value) => {
   if (!value) return "Fecha pendiente";
@@ -22,23 +28,24 @@ const dateLabel = (value) => {
 };
 
 function isFinalizada(activity) {
-  return activity.estado === "cancelada" || isActividadPasada(activity.fecha);
+  return isActividadPasada(activity.fecha);
 }
 
 function matchesFilter(activity, filter) {
   if (filter === "todas") return true;
   if (filter === "finalizada") return isFinalizada(activity);
   if (filter === "publicada") {
-    return activity.estado === "publicada" && !isActividadPasada(activity.fecha);
+    return esEstadoPublicada(activity.estado) && !isActividadPasada(activity.fecha);
   }
-  return activity.estado === filter;
+  if (filter === "borrador") return esEstadoBorrador(activity.estado);
+  return false;
 }
 
 function Status({ value, pasada }) {
-  if (value === "cancelada" || (pasada && value === "publicada")) {
+  if (pasada && esEstadoPublicada(value)) {
     return <AdminBadge tone="neutral">Finalizada</AdminBadge>;
   }
-  const published = value === "publicada";
+  const published = esEstadoPublicada(value);
   return <AdminBadge tone={published ? "success" : "warning"}>{published ? "Publicada" : "Borrador"}</AdminBadge>;
 }
 
@@ -66,9 +73,9 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
     setBusyId(activity.id);
     setActionError("");
     try {
-      const next = activity.estado === "publicada" ? "borrador" : "publicada";
+      const next = esEstadoPublicada(activity.estado) ? NOMBRE_ESTADO_BORRADOR : NOMBRE_ESTADO_PUBLICADA;
       await saveActividadEstado(activity.id, next);
-      setNoticeText(next === "publicada" ? "Actividad publicada correctamente." : "Actividad guardada como borrador.");
+      setNoticeText(esEstadoPublicada(next) ? "Actividad publicada correctamente." : "Actividad guardada como borrador.");
       router.refresh();
     } catch (saveError) {
       setActionError(saveError.message);
@@ -95,8 +102,8 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
 
   const cards = [
     { label: "Total actividades", value: activities.length, icon: CalendarDays, id: "todas" },
-    { label: "Publicadas", value: activities.filter((item) => item.estado === "publicada" && !isActividadPasada(item.fecha)).length, icon: CircleCheck, id: "publicada" },
-    { label: "Borradores", value: activities.filter((item) => item.estado === "borrador").length, icon: Clock3, id: "borrador" },
+    { label: "Publicadas", value: activities.filter((item) => esEstadoPublicada(item.estado) && !isActividadPasada(item.fecha)).length, icon: CircleCheck, id: "publicada" },
+    { label: "Borradores", value: activities.filter((item) => esEstadoBorrador(item.estado)).length, icon: Clock3, id: "borrador" },
     { label: "Finalizadas", value: activities.filter(isFinalizada).length, icon: CalendarCheck, id: "finalizada" },
   ];
 
@@ -168,7 +175,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                       <p className="mt-1 text-xs text-[#8d7b6d]">{activity.lugar || "Lugar pendiente"}</p>
                     </td>
                     <td className="px-3 py-4 text-[#5c4d42]">
-                      {activity.modalidad === "virtual" ? "Online" : activity.modalidad === "hibrida" ? "Híbrida" : "Presencial"}
+                      {labelModalidad(activity.modalidad)}
                     </td>
                     <td className="px-3 py-4">
                       <Status value={activity.estado} pasada={isActividadPasada(activity.fecha)} />
@@ -194,7 +201,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                         >
                           <Pencil size={15} />
                         </Link>
-                        {activity.estado === "publicada" ? (
+                        {esEstadoPublicada(activity.estado) ? (
                           <Link
                             href={`/actividades/${activity.id}`}
                             target="_blank"
@@ -213,7 +220,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                           onClick={() => toggleStatus(activity)}
                           className="min-h-10 rounded-md border border-[#e6ddd4] px-3 text-xs text-[#5c4636] hover:bg-[#f3eee8] disabled:opacity-50"
                         >
-                          {activity.estado === "publicada" ? "Borrador" : "Publicar"}
+                          {esEstadoPublicada(activity.estado) ? "Borrador" : "Publicar"}
                         </button>
                         <button
                           type="button"

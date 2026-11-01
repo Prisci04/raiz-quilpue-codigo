@@ -7,8 +7,7 @@ import { crearInscripcion } from "@/services/admin-community.service";
 export const dynamic = "force-dynamic";
 
 const INSCRIPTION_ERRORS = {
-  NO_PLACES: [409, "NO_PLACES", "No quedan cupos disponibles."],
-  ALREADY_REGISTERED: [409, "ALREADY_REGISTERED", "Este correo ya está inscrito en la actividad."],
+  NO_PLACES: [409, "NO_PLACES", "No quedan cupos ni lugares en lista de espera."],
   INVALID_CONTACT: [400, "VALIDATION", "Revisa el correo y el teléfono. Usa un dominio como .cl o .com y un celular 9 1234 5678."],
   ACTIVITY_ENDED: [409, "ACTIVITY_ENDED", "Las inscripciones de esta actividad ya cerraron."],
   ACTIVITY_UNAVAILABLE: [404, "ACTIVITY_UNAVAILABLE", "La actividad no acepta inscripciones."],
@@ -26,7 +25,7 @@ export async function POST(request, { params }) {
       const mapped = INSCRIPTION_ERRORS[result.error] ?? INSCRIPTION_ERRORS.ACTIVITY_UNAVAILABLE;
       return noStore(jsonError(...mapped));
     }
-    return noStore(jsonSuccess({ inscrito: true }, {}, 201));
+    return noStore(jsonSuccess({ inscrito: true, lista_espera: Boolean(result.lista_espera) }, {}, 201));
   } catch {
     logInternalError("POST /api/actividades/[id]/inscripciones");
     return noStore(jsonError(500, "INTERNAL_SERVER_ERROR", "No fue posible registrar la inscripción."));

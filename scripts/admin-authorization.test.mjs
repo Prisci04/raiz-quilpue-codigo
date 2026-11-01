@@ -5,19 +5,62 @@ import { resolve, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import test from "node:test";
 
+import {
+  createSessionValue,
+  passwordFingerprint,
+} from "../src/lib/auth/token.mjs";
+
 // Execute the real server modules, replacing only framework I/O and repositories.
 // Node >= 22.15 supports synchronous module hooks; no HTTP server or database needed.
+process.env.SUPABASE_SECRET_KEY ??= "test-session-secret";
+
 const root = fileURLToPath(new URL("../", import.meta.url));
 const require = createRequire(import.meta.url);
 const swc = require("next/dist/build/swc");
 await swc.loadBindings();
 globalThis.fetch = async () => { throw new Error("Network disabled in authorization tests"); };
 
+const TEST_PASSWORD = "$2b$12$testhash";
+const TEST_PV = passwordFingerprint(TEST_PASSWORD);
+
+function signedToken(userId = 1) {
+  const now = Date.now();
+  return createSessionValue({
+    userId,
+    issuedAt: now,
+    lastActivity: now,
+    passwordFingerprint: TEST_PV,
+  });
+}
+
 const state = globalThis.__rqSecurityTest = {};
-const activeUser = { id: 1, nombre: "Test", email: "admin@example.com", estado: "activo", tipo_usuario: "interno" };
-const role = (codigo, estado = "activo") => ({ codigo, nombre: codigo, estado });
-function reset({ user = activeUser, roles = [], token = "a".repeat(43), session = true } = {}) {
-  Object.assign(state, { user, roles, token, session, error: null, calls: [], queries: [], deleted: 0, bodyReads: 0 });
+const activeUser = {
+  id: 1,
+  nombre: "Test",
+  apellido: "Admin",
+  email: "admin@example.com",
+  password: TEST_PASSWORD,
+};
+const role = (codigo) => {
+  const nombres = { administrador: "Administrador", editor: "Editor" };
+  return {
+    codigo,
+    nombre: nombres[codigo] ?? codigo,
+    nombre_rol: nombres[codigo] ?? codigo,
+  };
+};
+function reset({ user = activeUser, roles = [], token, session = true, readonlyCookies = false } = {}) {
+  Object.assign(state, {
+    user,
+    roles,
+    token: token === undefined ? signedToken(user?.id ?? 1) : token,
+    session,
+    readonlyCookies,
+    error: null,
+    calls: [],
+    queries: [],
+    bodyReads: 0,
+  });
 }
 
 function query(table) {
@@ -27,21 +70,54 @@ function query(table) {
   const chain = {
     select() { return chain; },
     eq(key, value) { filters.push([key, value]); return chain; },
+    ilike(key, value) { filters.push([key, value]); return chain; },
     order() { return chain; },
     limit() { return chain; },
     maybeSingle() { record.single = true; return chain; },
     then(onValue, onError) {
       let data = [];
-      if (table === "usuario_roles") {
-        data = state.roles.filter((entry) => filters.every(([key, value]) =>
-          key === "usuario_id" ? value === state.user?.id : entry[key.replace("roles.", "")] === value,
-        )).map((roles) => ({ roles }));
-      } else if (table === "usuarios") {
-        data = state.users ?? [];
-        for (const [key, value] of filters) data = data.filter((entry) => entry[key] === value);
-      } else if (table === "roles") data = state.roles.filter((entry) => entry.estado === "activo");
-      else throw new Error(`Unexpected table: ${table}`);
-      return Promise.resolve({ data: record.single ? data[0] ?? null : data, error: state.error }).then(onValue, onError);
+      if (table === "usuarios") {
+        if (state.users) {
+          data = state.users;
+        } else if (state.user) {
+          data = [{
+            id_user: state.user.id,
+            nombre_user: state.user.nombre,
+            apellido_user: state.user.apellido,
+            correo_user: state.user.email,
+            telefono: null,
+            fec_creacion: "2026-01-01",
+            roles: state.roles[0]
+              ? { nombre_rol: state.roles[0].nombre_rol }
+              : null,
+          }];
+        }
+        for (const [key, value] of filters) {
+          if (key === "id_user" || key === "id") {
+            data = data.filter((entry) => Number(entry.id_user) === Number(value));
+          } else if (key === "roles.nombre_rol") {
+            data = data.filter((entry) => {
+              const nombre = Array.isArray(entry.roles)
+                ? entry.roles[0]?.nombre_rol
+                : entry.roles?.nombre_rol;
+              return nombre === value;
+            });
+          } else {
+            data = data.filter((entry) => entry[key] === value);
+          }
+        }
+      } else if (table === "roles") {
+        data = state.roles.map((entry) => ({
+          id_rol: entry.id_rol ?? 1,
+          nombre_rol: entry.nombre_rol,
+        }));
+      } else {
+        throw new Error(`Unexpected table: ${table}`);
+      }
+      return Promise.resolve({
+        data: record.single ? data[0] ?? null : data,
+        error: state.error,
+      }).then(onValue, onError);
     },
   };
   return chain;
@@ -51,22 +127,34 @@ state.load = (name) => {
   state.calls.push(name);
   if (name.startsWith("list")) return [];
   if (name.startsWith("count")) return 0;
-  return { id: 1, titulo: "Test", estado: "borrador" };
+  return { id: 1, titulo: "Test", estado: "borrador", estado_revision: "Aprobado" };
 };
 
 const mocks = new Map([
   ["server-only", "export {};"],
   ["next/link", "export default function Link() { return null; }"],
-  ["next/headers", `export async function cookies() { return { get() { return { value: globalThis.__rqSecurityTest.token }; } }; }`],
+  ["next/headers", `export async function cookies() {
+    const s = globalThis.__rqSecurityTest;
+    return {
+      get() { return { value: s.token }; },
+      set() {
+        if (!s.readonlyCookies) return;
+        const error = new Error("Cookies can only be modified in a Server Action or Route Handler.");
+        error.__NEXT_ERROR_CODE = "E1180";
+        throw error;
+      },
+    };
+  }`],
   ["next/navigation", `export function redirect(location) { throw Object.assign(new Error('redirect'), { location }); } export function notFound() { throw new Error('notFound'); }`],
   ["@/lib/supabase/admin", `export function getSupabaseAdminClient() { return { from: globalThis.__rqSecurityTest.query }; }`],
   ["@/services/auth.service", `
     const s = globalThis.__rqSecurityTest;
-    export async function findSesionByTokenHash() { return s.session ? { id: 1, usuario_id: 1, fecha_expiracion: new Date(Date.now()+3600000).toISOString(), ultima_actividad: new Date().toISOString() } : null; }
-    export async function findUsuarioById() { return s.user; }
-    export async function deleteSesionByTokenHash() { s.deleted++; }
-    export async function insertSesion() { throw new Error('Session creation disabled'); }
-    export async function touchSesion() {}
+    export async function findUsuarioById(id) {
+      if (!s.session || !s.user) return null;
+      if (Number(s.user.id) !== Number(id)) return null;
+      return s.user;
+    }
+    export async function findUsuarioByEmail() { return s.user; }
   `],
 ]);
 
@@ -122,14 +210,16 @@ function request(method = "GET") {
 function assertNoBusinessAccess() {
   assert.deepEqual(state.calls, []);
   assert.equal(state.bodyReads, 0);
-  assert.equal(state.queries.some(({ table }) => table !== "usuario_roles"), false);
+  const allowed = new Set(["usuarios", "roles"]);
+  assert.equal(state.queries.some(({ table }) => !allowed.has(table)), false);
 }
 
-test("usuarioTieneRol requires matching active role, including mixed assignments", async () => {
+test("usuarioTieneRol exige el rol de catálogo asociado al usuario", async () => {
   for (const [roles, expected] of [
-    [[], false], [[role("editor")], false], [[role("administrador", "inactivo")], false],
-    [[role("administrador")], true], [[role("administrador", null)], false],
-    [[role("administrador", "inactivo"), role("editor")], false],
+    [[], false],
+    [[role("editor")], false],
+    [[role("administrador")], true],
+    [[role("otro")], false],
   ]) {
     reset({ roles });
     assert.equal(await users.usuarioTieneRol(1, "administrador"), expected);
@@ -137,22 +227,33 @@ test("usuarioTieneRol requires matching active role, including mixed assignments
   }
 });
 
-test("inactive roles are excluded from the list used to protect the last active administrator", async () => {
+test("el listado de usuarios mapea el rol directo desde la tabla roles", async () => {
   reset();
-  state.users = [{ ...activeUser, usuario_roles: [{ roles: role("administrador", "inactivo") }, { roles: role("editor") }] }];
+  state.users = [{
+    id_user: 1,
+    nombre_user: "Test",
+    apellido_user: "Admin",
+    correo_user: "admin@example.com",
+    telefono: null,
+    fec_creacion: "2026-01-01",
+    roles: { nombre_rol: "Editor" },
+  }];
   const result = await users.listUsuariosInternos();
-  assert.deepEqual(result.usuarios[0].roles, [{ codigo: "editor", nombre: "editor" }]);
+  assert.deepEqual(result.usuarios[0].roles, [{ codigo: "editor", nombre: "Editor" }]);
   delete state.users;
 });
 
-test("inactive users invalidate the session separately from role denial", async () => {
-  reset({ user: { ...activeUser, estado: "inactivo" }, roles: [role("administrador")] });
+test("un usuario inexistente invalida la sesión", async () => {
+  reset({ session: false, roles: [role("administrador")] });
   assert.equal(await validateSession(), null);
-  assert.equal(state.deleted, 1);
-  reset({ roles: [role("administrador", "inactivo")] });
+  reset({ roles: [role("administrador")] });
   assert.equal((await validateSession()).user.id, 1);
-  assert.equal(state.deleted, 0);
-  assert.equal((await guards.requireAdministrador(request())).response.status, 403);
+  assert.equal((await guards.requireAdministrador(request())).response, null);
+});
+
+test("una página no revienta si Next impide borrar una cookie inválida", async () => {
+  reset({ session: false, readonlyCookies: true, roles: [role("administrador")] });
+  assert.equal(await validateSession(), null);
 });
 
 test("active administrator/editor are allowed, unrelated role and database failures fail closed", async () => {
@@ -178,10 +279,7 @@ const scenarios = [
   ["sin cookie", { token: null }, 401],
   ["cookie manipulada", { token: "invalid" }, 401],
   ["sesion inexistente", { session: false }, 401],
-  ["usuario inactivo", { user: { ...activeUser, estado: "inactivo" } }, 401],
-  ["usuario publico", { user: { ...activeUser, tipo_usuario: "publico" } }, 403],
   ["sin rol", {}, 403],
-  ["rol inactivo", { roles: [role("administrador", "inactivo"), role("editor", "inactivo")] }, 403],
   ["rol ajeno", { roles: [role("otro")] }, 403],
 ];
 for (const path of filesUnder(join(root, "src/app/api/admin"), "route.js")) {
@@ -238,10 +336,10 @@ for (const path of filesUnder(join(root, "src/app/admin/(panel)"), "page.jsx")) 
   });
 }
 
-test("role deactivation is rechecked on the next API call", async () => {
+test("un cambio de rol se vuelve a comprobar en la siguiente llamada", async () => {
   reset({ roles: [role("editor")] });
   assert.equal((await guards.requireGestorContenido(request())).response, null);
-  state.roles[0].estado = "inactivo";
+  state.roles = [role("otro")];
   assert.equal((await guards.requireGestorContenido(request())).response.status, 403);
 });
 
@@ -275,6 +373,20 @@ test("mutation origin remains mandatory for authorized users", async () => {
   const req = new Request("http://localhost/api/admin", { method: "DELETE", headers: { host: "localhost", origin: "http://foreign.example" } });
   assert.equal((await guards.requireAdministrador(req)).response.status, 403);
   assertNoBusinessAccess();
+});
+
+test("admin mutations authenticate from the Cookie header when cookies() is empty", async () => {
+  const token = signedToken(1);
+  reset({ token: null, roles: [role("administrador")] });
+  const req = new Request("http://localhost/api/admin", {
+    method: "DELETE",
+    headers: {
+      origin: "http://localhost",
+      host: "localhost",
+      cookie: `rq_session=${token}`,
+    },
+  });
+  assert.equal((await guards.requireGestorContenido(req)).response, null);
 });
 
 test.after(() => hooks.deregister());

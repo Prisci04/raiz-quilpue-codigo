@@ -1,13 +1,31 @@
-export const NOMBRE_MAX_LENGTH = 120;
-export const APELLIDO_MAX_LENGTH = 120;
-export const EMAIL_MAX_LENGTH = 254;
-export const TELEFONO_MAX_LENGTH = 30;
+export const NOMBRE_MAX_LENGTH = 100;
+export const APELLIDO_MAX_LENGTH = 100;
+export const EMAIL_MAX_LENGTH = 250;
+export const TELEFONO_MAX_LENGTH = 50;
 export const PASSWORD_MIN_LENGTH = 12;
 export const PASSWORD_MAX_LENGTH = 128;
 
 export const ROL_CODIGOS = ["administrador", "editor"];
 
+export const ROL_NOMBRES = {
+  administrador: "Administrador",
+  editor: "Editor",
+};
+
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+
+export function rolCodigoFromNombre(nombre) {
+  if (typeof nombre !== "string") {
+    return null;
+  }
+
+  const codigo = nombre.trim().toLowerCase();
+  return ROL_CODIGOS.includes(codigo) ? codigo : null;
+}
+
+export function rolNombreFromCodigo(codigo) {
+  return ROL_NOMBRES[codigo] ?? null;
+}
 
 function fail(message) {
   return { ok: false, message };
@@ -35,22 +53,22 @@ function readOptionalText(value, maxLength, label) {
   return { ok: true, value: trimmed };
 }
 
-function readNombre(value) {
+function readRequiredName(value, label, maxLength) {
   if (typeof value !== "string") {
-    return fail("El nombre es obligatorio.");
+    return fail(`El ${label} es obligatorio.`);
   }
 
-  const nombre = value.trim();
+  const trimmed = value.trim();
 
-  if (!nombre) {
-    return fail("El nombre es obligatorio.");
+  if (!trimmed) {
+    return fail(`El ${label} es obligatorio.`);
   }
 
-  if (nombre.length > NOMBRE_MAX_LENGTH) {
-    return fail(`El nombre supera el máximo de ${NOMBRE_MAX_LENGTH} caracteres.`);
+  if (trimmed.length > maxLength) {
+    return fail(`El ${label} supera el máximo de ${maxLength} caracteres.`);
   }
 
-  return { ok: true, value: nombre };
+  return { ok: true, value: trimmed };
 }
 
 function readEmail(value) {
@@ -148,10 +166,10 @@ export function parseCreateUsuario(body) {
     return fail("La solicitud no es válida.");
   }
 
-  const nombre = readNombre(body.nombre);
+  const nombre = readRequiredName(body.nombre, "nombre", NOMBRE_MAX_LENGTH);
   if (!nombre.ok) return nombre;
 
-  const apellido = readOptionalText(body.apellido, APELLIDO_MAX_LENGTH, "El apellido");
+  const apellido = readRequiredName(body.apellido, "apellido", APELLIDO_MAX_LENGTH);
   if (!apellido.ok) return apellido;
 
   const email = readEmail(body.email);
@@ -184,10 +202,10 @@ export function parseUpdateUsuario(body) {
     return fail("La solicitud no es válida.");
   }
 
-  const nombre = readNombre(body.nombre);
+  const nombre = readRequiredName(body.nombre, "nombre", NOMBRE_MAX_LENGTH);
   if (!nombre.ok) return nombre;
 
-  const apellido = readOptionalText(body.apellido, APELLIDO_MAX_LENGTH, "El apellido");
+  const apellido = readRequiredName(body.apellido, "apellido", APELLIDO_MAX_LENGTH);
   if (!apellido.ok) return apellido;
 
   const email = readEmail(body.email);
@@ -216,10 +234,10 @@ export function parsePerfilUpdate(body) {
     return fail("La solicitud no es válida.");
   }
 
-  const nombre = readNombre(body.nombre);
+  const nombre = readRequiredName(body.nombre, "nombre", NOMBRE_MAX_LENGTH);
   if (!nombre.ok) return nombre;
 
-  const apellido = readOptionalText(body.apellido, APELLIDO_MAX_LENGTH, "El apellido");
+  const apellido = readRequiredName(body.apellido, "apellido", APELLIDO_MAX_LENGTH);
   if (!apellido.ok) return apellido;
 
   const telefono = readOptionalText(body.telefono, TELEFONO_MAX_LENGTH, "El teléfono");
@@ -262,18 +280,4 @@ export function parsePasswordChange(body) {
       passwordNueva: passwordNueva.value,
     },
   };
-}
-
-export function parseEstadoUsuario(body) {
-  if (!isObject(body) || typeof body.estado !== "string") {
-    return fail("La solicitud no es válida.");
-  }
-
-  const estado = body.estado.trim().toLowerCase();
-
-  if (estado !== "activo" && estado !== "inactivo") {
-    return fail("El estado no es válido.");
-  }
-
-  return { ok: true, value: estado };
 }

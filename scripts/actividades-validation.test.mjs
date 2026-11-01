@@ -1,7 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { compareActividades, cuposDisponibles, isActividadPasada } from "../src/lib/actividades.js";
+import {
+  compareActividades,
+  capacidadInscripcion,
+  cuposDisponibles,
+  esParticipacionInscripcion,
+  inscripcionAceptaNuevos,
+  inscripcionEnEspera,
+  isActividadPasada,
+  listaEsperaDisponibles,
+  markListaEspera,
+} from "../src/lib/actividades.js";
 import {
   parseActividadEstado,
   parseActividadInput,
@@ -10,20 +20,50 @@ import {
 
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://proyecto.supabase.co";
 
+const CATALOGOS = {
+  modalidad: [
+    { id: 1, nombre: "Presencial" },
+    { id: 2, nombre: "Virtual" },
+    { id: 3, nombre: "Híbrida" },
+  ],
+  tipo_participacion: [
+    { id: 1, nombre: "Abierta" },
+    { id: 2, nombre: "Inscripción" },
+  ],
+  costo_actividad: [
+    { id: 1, nombre: "Gratuita" },
+    { id: 2, nombre: "Pagada" },
+    { id: 3, nombre: "Aporte voluntario" },
+  ],
+  publico_objetivo: [
+    { id: 1, nombre: "Todas las edades" },
+    { id: 2, nombre: "Mayores de 18 años" },
+  ],
+  estado_publicacion: [
+    { id: 1, nombre: "Borrador" },
+    { id: 2, nombre: "Publicada" },
+  ],
+  lugares: [{ id: 10, nombre: "Centro Cultural Daniel de la Vega" }],
+};
+
 const base = {
   titulo: "Prueba",
   descripcion: "Desc",
-  modalidad: "presencial",
-  lugar: "Centro Cultural Daniel de la Vega",
-  publico_objetivo: "todas_edades",
-  tipo_participacion: "abierta",
-  tipo_valor: "gratuito",
-  estado: "borrador",
+  fecha: "2099-01-01",
+  id_modalidad: 1,
+  id_lugar: 10,
+  id_publico: 1,
+  id_tipo_participacion: 1,
+  id_costo: 1,
+  id_estado: 1,
 };
 
+function parse(input) {
+  return parseActividadInput({ ...base, ...input }, CATALOGOS);
+}
+
 test("acepta hora HH:MM:SS que viene de la base y la normaliza", () => {
-  const parsed = parseActividadInput({
-    ...base,
+  const parsed = parse({
     hora_inicio: "15:00:00",
     hora_fin: "19:30:00",
   });
@@ -33,93 +73,108 @@ test("acepta hora HH:MM:SS que viene de la base y la normaliza", () => {
 });
 
 test("rechaza hora de término anterior o igual a la de inicio", () => {
-  const parsed = parseActividadInput({ ...base, hora_inicio: "12:00", hora_fin: "10:00" });
+  const parsed = parse({ hora_inicio: "12:00", hora_fin: "10:00" });
   assert.equal(parsed.ok, false);
   assert.match(parsed.message, /término/i);
 });
 
-test("exige un público objetivo válido", () => {
-  const missing = parseActividadInput({ ...base, publico_objetivo: "" });
+test("exige un público objetivo válido por ID", () => {
+  const missing = parse({ id_publico: "" });
   assert.equal(missing.ok, false);
   assert.match(missing.message, /público objetivo/i);
 
-  const invalid = parseActividadInput({ ...base, publico_objetivo: "Público general" });
+  const invalid = parse({ id_publico: 99 });
   assert.equal(invalid.ok, false);
 
-  const mayores = parseActividadInput({ ...base, publico_objetivo: "mayores_18" });
+  const mayores = parse({ id_publico: 2 });
   assert.equal(mayores.ok, true);
-  assert.equal(mayores.value.publico_objetivo, "mayores_18");
+  assert.equal(mayores.value.id_publico, 2);
 });
 
-test("exige lugar solo si la modalidad es presencial", () => {
-  const presencial = parseActividadInput({ ...base, lugar: "" });
+test("exige un lugar para cualquier modalidad", () => {
+  const presencial = parse({ id_lugar: "" });
   assert.equal(presencial.ok, false);
   assert.match(presencial.message, /lugar/i);
 
-  const virtual = parseActividadInput({ ...base, modalidad: "virtual", lugar: "" });
-  assert.equal(virtual.ok, true);
-  assert.equal(virtual.value.lugar, null);
+  const virtual = parse({ id_modalidad: 2, id_lugar: "" });
+  assert.equal(virtual.ok, false);
 
-  const hibrida = parseActividadInput({ ...base, modalidad: "hibrida", lugar: null });
+  const hibrida = parse({ id_modalidad: 3, id_lugar: 10 });
   assert.equal(hibrida.ok, true);
-  assert.equal(hibrida.value.lugar, null);
+  assert.equal(hibrida.value.id_lugar, 10);
 });
 
 test("la imagen de la actividad solo acepta un archivo subido", () => {
   const HOST = "https://proyecto.supabase.co";
   const UUID = "550e8400-e29b-41d4-a716-446655440000";
-  const portada = parseActividadInput({
-    ...base,
+  const portada = parse({
     imagen_url: `${HOST}/storage/v1/object/public/public-media/actividades/4/portada/${UUID}.jpg`,
   });
   assert.equal(portada.ok, true);
 
   assert.equal(
-    parseActividadInput({
-      ...base,
+    parse({
       imagen_url: "https://images.unsplash.com/photo-123?auto=format&fit=crop&w=1200",
     }).ok,
     false,
   );
-  assert.equal(parseActividadInput({ ...base, imagen_url: "https://i.imgur.com/foto.jpg" }).ok, false);
-  assert.equal(parseActividadInput({ ...base, imagen_url: "/images/inicio/imgini5.jpg" }).ok, false);
+  assert.equal(parse({ imagen_url: "https://i.imgur.com/foto.jpg" }).ok, false);
+  assert.equal(parse({ imagen_url: "/images/inicio/imgini5.jpg" }).ok, false);
 });
 
-test("exige monto si es pagada y conserva forma_pago e información adicional", () => {
-  const withoutAmount = parseActividadInput({ ...base, tipo_valor: "pagado" });
+test("exige monto si es pagada y conserva información adicional", () => {
+  const withoutAmount = parse({ id_costo: 2 });
   assert.equal(withoutAmount.ok, false);
 
   const extra = {
     type: "doc",
     content: [{ type: "paragraph", content: [{ type: "text", text: "Llevar agua" }] }],
   };
-  const parsed = parseActividadInput({
-    ...base,
-    tipo_valor: "pagado",
+  const parsed = parse({
+    id_costo: 2,
     valor_monto: 5000,
-    forma_pago: "Transferencia",
     informacion_adicional: extra,
   });
   assert.equal(parsed.ok, true);
-  assert.equal(parsed.value.forma_pago, "Transferencia");
+  assert.equal(parsed.value.valor_monto, 5000);
   assert.equal(parsed.value.informacion_adicional.type, "doc");
+  assert.equal(parsed.value.id_costo, 2);
 });
 
 test("el monto pagado solo acepta dígitos", () => {
-  const ok = parseActividadInput({ ...base, tipo_valor: "pagado", valor_monto: "5000" });
+  const ok = parse({ id_costo: 2, valor_monto: "5000" });
   assert.equal(ok.ok, true);
   assert.equal(ok.value.valor_monto, 5000);
 
   for (const valor_monto of ["5.000", "5 000", "$5000", "5e3", "+5000", "-1", "12ab", "1.5", " "]) {
-    const parsed = parseActividadInput({ ...base, tipo_valor: "pagado", valor_monto });
+    const parsed = parse({ id_costo: 2, valor_monto });
     assert.equal(parsed.ok, false, valor_monto);
     assert.match(parsed.message, /monto/i);
   }
 });
 
-test("el cambio de estado solo acepta un estado válido", () => {
-  assert.equal(parseActividadEstado({ estado: "publicada" }).ok, true);
-  assert.equal(parseActividadEstado({ estado: "archivada" }).ok, false);
+test("el cambio de estado solo acepta un estado válido del catálogo", () => {
+  assert.equal(parseActividadEstado({ estado: "publicada" }, CATALOGOS.estado_publicacion).ok, true);
+  assert.equal(parseActividadEstado({ id_estado: 2 }, CATALOGOS.estado_publicacion).value.id_estado, 2);
+  assert.equal(parseActividadEstado({ estado: "archivada" }, CATALOGOS.estado_publicacion).ok, false);
+  assert.equal(parseActividadEstado({ estado: "cancelada" }, CATALOGOS.estado_publicacion).ok, false);
+});
+
+test("exige cupos al publicar una actividad con inscripción", () => {
+  const draft = parse({
+    id_tipo_participacion: 2,
+    id_estado: 1,
+    cupos_max: null,
+  });
+  assert.equal(draft.ok, true);
+
+  const published = parse({
+    id_tipo_participacion: 2,
+    id_estado: 2,
+    cupos_max: null,
+  });
+  assert.equal(published.ok, false);
+  assert.match(published.message, /cupos/i);
 });
 
 test("la inscripción normaliza el correo y arma el celular chileno con +56", () => {
@@ -169,4 +224,37 @@ test("ordena próximas primero, después sin fecha y las pasadas al final", () =
   assert.deepEqual(sorted.map((row) => row.id), [3, 2, 1]);
   assert.equal(isActividadPasada("2001-01-01"), true);
   assert.equal(cuposDisponibles(20, 6), 14);
+});
+
+test("la lista de espera usa cupos_espera y no un valor fijo", () => {
+  assert.equal(capacidadInscripcion(20), 20);
+  assert.equal(capacidadInscripcion(20, 15), 35);
+  assert.equal(listaEsperaDisponibles(20, 20, 15), 15);
+  assert.equal(listaEsperaDisponibles(20, 21, 15), 14);
+  assert.equal(listaEsperaDisponibles(20, 35, 15), 0);
+  assert.equal(cuposDisponibles(20, 21), 0);
+
+  const ranked = markListaEspera(
+    [
+      { id: 2, fecha_creacion: "2026-01-02T12:00:00Z" },
+      { id: 1, fecha_creacion: "2026-01-01T12:00:00Z" },
+    ],
+    1,
+  );
+  assert.equal(ranked.find((row) => row.id === 1).lista_espera, false);
+  assert.equal(ranked.find((row) => row.id === 1).cupo, 1);
+  assert.equal(ranked.find((row) => row.id === 2).lista_espera, true);
+  assert.equal(ranked.find((row) => row.id === 2).cupo, 2);
+
+  const activity = {
+    tipo_participacion: "Inscripción",
+    cupos: 20,
+    cupos_disponibles: 0,
+    cupos_espera: 15,
+    lista_espera_disponibles: 15,
+  };
+  assert.equal(esParticipacionInscripcion(activity.tipo_participacion), true);
+  assert.equal(inscripcionAceptaNuevos(activity), true);
+  assert.equal(inscripcionEnEspera(activity), true);
+  assert.equal(inscripcionAceptaNuevos({ ...activity, lista_espera_disponibles: 0 }), false);
 });

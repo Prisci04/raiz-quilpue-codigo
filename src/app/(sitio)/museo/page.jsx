@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { listPiezasMuseoPublicas } from "@/services/admin-community.service";
+import { listCatalogo } from "@/services/catalogos.service";
 import MuseoView from "./museo-view";
 
 export const metadata = {
@@ -12,24 +13,20 @@ export default async function MuseoPage() {
   await connection();
 
   let items = [];
+  let categorias = [];
   let error = "";
 
   try {
-    items = (await listPiezasMuseoPublicas()).map((piece) => ({
-      id: piece.id,
-      title: piece.titulo,
-      description: piece.descripcion,
-      content: [piece.fecha_aproximada, piece.lugar].filter(Boolean).join(" · "),
-      tipo: piece.categoria,
-      image: piece.imagen_url,
-      fileName: piece.archivo_nombre,
-      fileUrl: piece.archivo_url,
-      date: piece.fecha_aproximada,
-    }));
+    const [piezas, categoriaMuseo] = await Promise.all([
+      listPiezasMuseoPublicas(),
+      listCatalogo("categoria_museo"),
+    ]);
+    categorias = categoriaMuseo;
+    items = piezas;
   } catch {
     error =
       "No fue posible cargar el museo digital. Inténtalo de nuevo más tarde.";
   }
 
-  return <MuseoView items={items} error={error} />;
+  return <MuseoView items={items} categorias={categorias} error={error} />;
 }

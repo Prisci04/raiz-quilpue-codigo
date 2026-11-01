@@ -2,6 +2,7 @@ import { jsonError, jsonSuccess, parsePositiveInteger } from "@/lib/http";
 import { runAdminCommunity } from "@/lib/admin-community-http";
 import { deleteParticipanteAdmin } from "@/services/admin-community.service";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function DELETE(request, { params }) {

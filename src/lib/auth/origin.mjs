@@ -4,28 +4,36 @@ export function isMutatingMethod(method) {
   return MUTATING_METHODS.has(method);
 }
 
-export function isTrustedOrigin(request) {
-  const origin = request.headers.get("origin");
+function requestHost(request) {
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const hostHeader = request.headers.get("host");
+  return (forwardedHost ?? hostHeader ?? "").split(",")[0].trim();
+}
 
-  if (!origin) {
-    return false;
-  }
-
-  let originUrl;
-
+function hostMatches(url, host) {
   try {
-    originUrl = new URL(origin);
+    return new URL(url).host === host;
   } catch {
     return false;
   }
+}
 
-  const forwardedHost = request.headers.get("x-forwarded-host");
-  const hostHeader = request.headers.get("host");
-  const requestHost = (forwardedHost ?? hostHeader ?? "").split(",")[0].trim();
+export function isTrustedOrigin(request) {
+  const host = requestHost(request);
 
-  if (!requestHost) {
+  if (!host) {
     return false;
   }
 
-  return originUrl.host === requestHost;
+  const origin = request.headers.get("origin");
+  if (origin) {
+    return hostMatches(origin, host);
+  }
+
+  if (request.headers.get("sec-fetch-site") === "same-origin") {
+    return true;
+  }
+
+  const referer = request.headers.get("referer");
+  return Boolean(referer && hostMatches(referer, host));
 }
