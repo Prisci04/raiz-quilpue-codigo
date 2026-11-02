@@ -90,7 +90,7 @@ export default function ActivityCard({ activity }) {
       </div>
 
       <div className="flex flex-1 flex-col px-4 pt-3 pb-4">
-        <h2 className="font-serif text-[1.2rem] leading-snug font-medium text-[#5c331c] sm:text-[1.35rem]">
+        <h2 className="font-sans text-[1.2rem] leading-snug font-semibold text-[#5c331c] sm:text-[1.35rem]">
           {activity.titulo}
         </h2>
 

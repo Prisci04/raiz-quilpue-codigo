@@ -133,7 +133,7 @@ function renderNode(node, key) {
 
   if (node.type === "paragraph") {
     return (
-      <p key={key} className="text-base leading-relaxed">
+      <p key={key} className="leading-normal">
         {children}
       </p>
     );
@@ -144,8 +144,8 @@ function renderNode(node, key) {
     const Tag = level > 2 ? "h3" : "h2";
     const className =
       Tag === "h2"
-        ? "mt-8 font-sans text-2xl font-semibold text-[#5c331c]"
-        : "mt-6 font-sans text-xl font-semibold text-[#5c331c]";
+        ? "mt-7 font-sans text-xl font-semibold leading-tight text-[#5c331c]"
+        : "mt-5 font-sans text-lg font-semibold leading-tight text-[#5c331c]";
 
     return (
       <Tag key={key} className={className}>
@@ -194,7 +194,7 @@ export default function ContenidoDocumento({ documento }) {
   }
 
   return (
-    <div className="mt-8 space-y-4 text-[#704a31]">
+    <div className="mt-6 space-y-4 text-[#704a31]">
       {renderNode(documento, "doc")}
     </div>
   );

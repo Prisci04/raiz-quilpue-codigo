@@ -86,13 +86,16 @@ async function main() {
 
   const adminHome = await request("/admin", { cookie: adminCookie });
   record(
-    "administrador ve Configuración",
-    adminHome.status === 200 && adminHome.text.includes("/admin/configuracion"),
+    "administrador ve Usuarios en Configuración",
+    adminHome.status === 200 &&
+      adminHome.text.includes('href="/admin/configuracion"') &&
+      adminHome.text.includes("Usuarios") &&
+      adminHome.text.includes("Configuración"),
     String(adminHome.status),
   );
   record(
-    "administrador ve Estadísticas",
-    adminHome.status === 200 && adminHome.text.includes('href="/admin/estadisticas"'),
+    "administrador no ve Estadísticas en el menú",
+    adminHome.status === 200 && !adminHome.text.includes('href="/admin/estadisticas"'),
     String(adminHome.status),
   );
 

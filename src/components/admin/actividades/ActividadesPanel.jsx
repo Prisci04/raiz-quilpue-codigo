@@ -1,11 +1,12 @@
 "use client";
 
 import AdminDialog from "@/components/admin/AdminDialog";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { CalendarCheck, CalendarDays, CircleCheck, Clock3, Eye, ImageIcon, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { createPortal } from "react-dom";
+import { CalendarCheck, CalendarDays, CircleCheck, Clock3, Eye, ImageIcon, MoreVertical, Pencil, Plus, Users } from "lucide-react";
 import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import { deleteActividad, saveActividadEstado } from "@/lib/api/community";
@@ -40,6 +41,161 @@ function Status({ value, pasada }) {
   }
   const published = value === "publicada";
   return <AdminBadge tone={published ? "success" : "warning"}>{published ? "Publicada" : "Borrador"}</AdminBadge>;
+}
+
+function ActivityActions({ activity, busy, onToggleStatus, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+  const triggerRef = useRef(null);
+  const [menuPosition, setMenuPosition] = useState(null);
+
+  useLayoutEffect(() => {
+    if (!open) return undefined;
+
+    function updatePosition() {
+      const trigger = triggerRef.current;
+      const menu = menuRef.current;
+      if (!trigger || !menu) return;
+
+      const triggerRect = trigger.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const left = Math.max(
+        8,
+        Math.min(triggerRect.right - menuRect.width, window.innerWidth - menuRect.width - 8),
+      );
+      const top =
+        triggerRect.top - menuRect.height - 4 >= 8
+          ? triggerRect.top - menuRect.height - 4
+          : triggerRect.bottom + 4;
+
+      setMenuPosition({ left, top });
+    }
+
+    updatePosition();
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    function onPointerDown(event) {
+      if (
+        !menuRef.current?.contains(event.target) &&
+        !triggerRef.current?.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    function onKeyDown(event) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+
+    function onFocusIn(event) {
+      if (
+        !menuRef.current?.contains(event.target) &&
+        !triggerRef.current?.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("focusin", onFocusIn);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("focusin", onFocusIn);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative flex justify-start gap-0.5">
+      <Link
+        href={`/admin/actividades/${activity.id}/editar`}
+        title="Editar"
+        aria-label={`Editar ${activity.titulo}`}
+        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
+      >
+        <Pencil size={15} aria-hidden="true" />
+      </Link>
+      {activity.estado === "publicada" ? (
+        <Link
+          href={`/actividades/${activity.id}`}
+          target="_blank"
+          title="Ver actividad"
+          aria-label={`Ver ${activity.titulo} en el portal`}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
+        >
+          <Eye size={15} aria-hidden="true" />
+        </Link>
+      ) : (
+        <span
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center text-[#d3c4b4]"
+          title="El borrador no está publicado"
+        >
+          <Eye size={15} aria-hidden="true" />
+        </span>
+      )}
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={busy}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
+        aria-label={`Más acciones de ${activity.titulo}`}
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <MoreVertical size={18} strokeWidth={1.8} aria-hidden="true" />
+      </button>
+      {open && typeof document !== "undefined"
+        ? createPortal(
+        <div
+          ref={menuRef}
+          className="fixed z-[100] min-w-48 border border-[#e4ddd4] bg-white py-1 shadow-lg"
+          style={{
+            left: menuPosition?.left ?? 0,
+            top: menuPosition?.top ?? 0,
+            visibility: menuPosition ? "visible" : "hidden",
+          }}
+        >
+          <button
+            type="button"
+            disabled={busy}
+            className="block min-h-10 w-full px-3 py-2 text-left text-xs text-[#2c1810] hover:bg-[#faf7f4] disabled:opacity-50"
+            onClick={() => {
+              setOpen(false);
+              onToggleStatus(activity);
+            }}
+          >
+            {activity.estado === "publicada" ? "Pasar a borrador" : "Publicar"}
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            className="block min-h-10 w-full px-3 py-2 text-left text-xs text-[#8d3b28] hover:bg-[#faf7f4] disabled:opacity-50"
+            onClick={() => {
+              setOpen(false);
+              onDelete(activity);
+            }}
+          >
+            Eliminar
+          </button>
+        </div>,
+        document.body,
+      )
+        : null}
+    </div>
+  );
 }
 
 export default function ActividadesPanel({ activities = [], error = "", notice = "" }) {
@@ -127,15 +283,14 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
         </div>
         {visible.length ? (
           <div tabIndex={0} role="region" aria-label="Listado de actividades" className="admin-table-scroll mt-4 overflow-x-auto">
-            <table className="admin-table w-full min-w-[1040px] table-fixed border-collapse text-left text-sm">
+            <table className="admin-table w-full min-w-[864px] table-fixed border-collapse text-left text-sm">
               <thead>
                 <tr className="border-y border-[#efe6dc] text-xs uppercase tracking-wide text-[#8d7b6d]">
                   <th className="w-72 max-w-72 px-3 py-3">Actividad</th>
                   <th className="w-36 px-3 py-3">Fecha y lugar</th>
-                  <th className="w-28 px-3 py-3">Modalidad</th>
                   <th className="w-28 px-3 py-3">Estado</th>
                   <th className="w-40 px-3 py-3 text-right">Participantes</th>
-                  <th className="w-64 px-3 py-3 text-right">Acciones</th>
+                  <th className="w-40 px-3 py-3">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -160,71 +315,39 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                             <ImageIcon size={16} strokeWidth={1.8} aria-hidden="true" />
                           </span>
                         )}
-                        <span className="truncate font-medium">{activity.titulo}</span>
+                        <span className="flex min-w-0 flex-col">
+                          <span className="truncate font-medium">{activity.titulo}</span>
+                          <span className="text-xs text-[#8d7b6d]">
+                            {activity.modalidad === "virtual" ? "Online" : activity.modalidad === "hibrida" ? "Híbrida" : "Presencial"}
+                          </span>
+                        </span>
                       </Link>
                     </td>
                     <td className="px-3 py-4 text-[#5c4d42]">
                       {dateLabel(activity.fecha)}
                       <p className="mt-1 text-xs text-[#8d7b6d]">{activity.lugar || "Lugar pendiente"}</p>
                     </td>
-                    <td className="px-3 py-4 text-[#5c4d42]">
-                      {activity.modalidad === "virtual" ? "Online" : activity.modalidad === "hibrida" ? "Híbrida" : "Presencial"}
-                    </td>
                     <td className="px-3 py-4">
                       <Status value={activity.estado} pasada={isActividadPasada(activity.fecha)} />
                     </td>
-                    <td className="px-3 py-4 text-right">
+                    <td className="px-3 py-4">
                       <Link
                         href={`/admin/actividades/${activity.id}/participantes`}
                         title="Ver participantes"
                         aria-label={`Ver participantes de ${activity.titulo}`}
                         className="inline-flex min-h-10 items-center justify-end gap-1.5 rounded-md px-2 text-[#1e4536] hover:bg-[#e5f6ea]"
                       >
-                        <Users size={15} />
+                        <Users size={15} aria-hidden="true" />
                         Participantes
                       </Link>
                     </td>
                     <td className="px-3 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/admin/actividades/${activity.id}/editar`}
-                          title="Editar"
-                          aria-label={`Editar ${activity.titulo}`}
-                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
-                        >
-                          <Pencil size={15} />
-                        </Link>
-                        {activity.estado === "publicada" ? (
-                          <Link
-                            href={`/actividades/${activity.id}`}
-                            target="_blank"
-                            title="Ver actividad"
-                            aria-label={`Ver ${activity.titulo} en el portal`}
-                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
-                          >
-                            <Eye size={15} />
-                          </Link>
-                        ) : (
-                          <span className="inline-flex h-8 w-8" aria-hidden="true" />
-                        )}
-                        <button
-                          type="button"
-                          disabled={busyId === activity.id}
-                          onClick={() => toggleStatus(activity)}
-                          className="min-h-10 rounded-md border border-[#e6ddd4] px-3 text-xs text-[#5c4636] hover:bg-[#f3eee8] disabled:opacity-50"
-                        >
-                          {activity.estado === "publicada" ? "Borrador" : "Publicar"}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busyId === activity.id}
-                          onClick={() => setDeleteTarget(activity)}
-                          aria-label={`Eliminar ${activity.titulo}`}
-                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#a5452d] hover:bg-[#fff3f0]"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
+                      <ActivityActions
+                        activity={activity}
+                        busy={busyId === activity.id}
+                        onToggleStatus={toggleStatus}
+                        onDelete={setDeleteTarget}
+                      />
                     </td>
                   </tr>
                 ))}

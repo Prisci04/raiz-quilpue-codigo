@@ -66,10 +66,10 @@ export default function AccessSection({ contents = [], activities = [] }) {
     <section aria-labelledby="accesos-heading" className="mx-auto max-w-7xl scroll-mt-24 px-6 py-16">
       <div className="mb-10 max-w-2xl">
         <div className="section-label mb-2">Accesos principales</div>
-        <h2 id="accesos-heading" className="font-serif text-3xl font-semibold text-[#704a31] md:text-4xl">
+        <h2 id="accesos-heading" className="font-sans text-2xl leading-tight font-bold text-[#704a31] md:text-3xl">
           Explora Raíz Quilpué
         </h2>
-        <p className="mt-3 text-sm leading-relaxed text-[#946541] md:text-base">
+        <p className="mt-3 text-sm leading-normal text-[#946541] md:text-base">
           Cuatro espacios para conocer el patrimonio, descubrir historias, participar en actividades y recorrer el museo digital de Quilpué. 
         </p>
       </div>
@@ -111,8 +111,8 @@ export default function AccessSection({ contents = [], activities = [] }) {
                       {countLabel}
                     </p>
                   ) : null}
-                  <h3 className="font-serif text-xl font-semibold text-[#704a31]">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[#946541]">{item.description}</p>
+                  <h3 className="font-sans text-lg font-semibold text-[#704a31]">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-normal text-[#946541]">{item.description}</p>
                   <span className="mt-auto inline-flex items-center gap-2 pt-5 font-mono text-[11px] font-semibold tracking-[0.16em] text-[#db700f] uppercase transition-colors group-hover:text-[#704a31]">
                     {item.cta}
                     <ArrowRight

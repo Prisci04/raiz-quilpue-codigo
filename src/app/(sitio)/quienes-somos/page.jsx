@@ -209,7 +209,7 @@ export default function QuienesSomosPage() {
                   style={{ background: value.background, color: value.ink }}
                 >
                   <span
-                    className="pointer-events-none absolute -top-1 right-1 font-serif text-5xl leading-none font-light select-none sm:text-6xl"
+                    className="pointer-events-none absolute top-3 right-2 font-sans text-3xl leading-none font-light select-none sm:text-4xl"
                     style={{ color: value.numberColor, opacity: 0.38 }}
                     aria-hidden="true"
                   >
