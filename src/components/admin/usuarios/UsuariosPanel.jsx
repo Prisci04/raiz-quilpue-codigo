@@ -11,33 +11,11 @@ import {
   deleteUsuario,
   getSessionUser,
   listUsuariosPanel,
-  setEstadoUsuario,
   updateUsuario,
 } from "@/lib/api/usuarios";
 
-const CONFIRM_COPY = {
-  inactivo: {
-    title: "Desactivar usuario",
-    body: "El usuario dejará de poder entrar al portal y se cerrarán sus sesiones abiertas. ¿Deseas continuar?",
-    action: "Desactivar",
-  },
-  activo: {
-    title: "Activar usuario",
-    body: "El usuario podrá volver a iniciar sesión con su contraseña actual. ¿Deseas continuar?",
-    action: "Activar",
-  },
-  delete: {
-    title: "Eliminar definitivamente",
-    body: "Esta acción eliminará definitivamente al usuario. ¿Deseas continuar?",
-    action: "Eliminar definitivamente",
-  },
-};
-
-function isActiveAdmin(usuario) {
-  return (
-    usuario.estado === "activo" &&
-    usuario.roles.some((rol) => rol.codigo === "administrador")
-  );
+function isAdmin(usuario) {
+  return usuario.roles.some((rol) => rol.codigo === "administrador");
 }
 
 export default function UsuariosPanel() {
@@ -111,11 +89,9 @@ export default function UsuariosPanel() {
     };
   }, []);
 
-  const activeAdminCount = usuarios.filter(isActiveAdmin).length;
+  const adminCount = usuarios.filter(isAdmin).length;
   const lockAdminRole = Boolean(
-    editing &&
-      isActiveAdmin(editing) &&
-      activeAdminCount <= 1,
+    editing && isAdmin(editing) && adminCount <= 1,
   );
 
   function openCreate() {
@@ -170,12 +146,7 @@ export default function UsuariosPanel() {
     setError("");
 
     try {
-      if (confirm.type === "delete") {
-        await deleteUsuario(confirm.usuario.id);
-      } else {
-        await setEstadoUsuario(confirm.usuario.id, confirm.type);
-      }
-
+      await deleteUsuario(confirm.usuario.id);
       setConfirm(null);
       await load();
     } catch (actionError) {
@@ -204,8 +175,6 @@ export default function UsuariosPanel() {
       </section>
     );
   }
-
-  const confirmCopy = confirm ? CONFIRM_COPY[confirm.type] : null;
 
   return (
     <section>
@@ -241,11 +210,10 @@ export default function UsuariosPanel() {
         <UsuariosTable
           usuarios={usuarios}
           currentUserId={currentUserId}
-          activeAdminCount={activeAdminCount}
+          adminCount={adminCount}
           busyId={busyId}
           onEdit={openEdit}
-          onEstado={(usuario, estado) => setConfirm({ type: estado, usuario })}
-          onDelete={(usuario) => setConfirm({ type: "delete", usuario })}
+          onDelete={(usuario) => setConfirm({ usuario })}
         />
       </div>
 
@@ -262,7 +230,7 @@ export default function UsuariosPanel() {
         />
       ) : null}
 
-      {confirm && confirmCopy ? (
+      {confirm ? (
           <AdminDialog onClose={() => setConfirm(null)} busy={busyId !== null}
             role="dialog"
             aria-modal="true"
@@ -271,9 +239,11 @@ export default function UsuariosPanel() {
             className="w-full max-w-md rounded-md border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-5 sm:p-6"
           >
             <h2 id="usuario-confirm-title" className="text-lg font-medium text-[#2c1810]">
-              {confirmCopy.title}
+              Eliminar definitivamente
             </h2>
-            <p id="usuario-confirm-description" className="mt-2 text-sm leading-relaxed text-[#7c5c47]">{confirmCopy.body}</p>
+            <p id="usuario-confirm-description" className="mt-2 text-sm leading-relaxed text-[#7c5c47]">
+              Esta acción eliminará definitivamente al usuario. ¿Deseas continuar?
+            </p>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button
                 type="button"
@@ -287,13 +257,9 @@ export default function UsuariosPanel() {
                 type="button"
                 onClick={runConfirm}
                 disabled={busyId !== null}
-                className={`inline-flex min-h-10 items-center rounded-md px-4 text-[12px] font-medium tracking-[0.08em] text-[#f4ebe3] uppercase disabled:opacity-60 ${
-                  confirm.type === "delete"
-                    ? "bg-[#8d3b28] hover:bg-[#742f20]"
-                    : "bg-[#2c1810] hover:bg-[#3d2418]"
-                }`}
+                className="inline-flex min-h-10 items-center rounded-md bg-[#8d3b28] px-4 text-[12px] font-medium tracking-[0.08em] text-[#f4ebe3] uppercase hover:bg-[#742f20] disabled:opacity-60"
               >
-                {busyId !== null ? "Procesando…" : confirmCopy.action}
+                {busyId !== null ? "Procesando…" : "Eliminar definitivamente"}
               </button>
             </div>
           </AdminDialog>

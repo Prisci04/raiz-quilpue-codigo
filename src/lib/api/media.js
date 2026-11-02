@@ -13,6 +13,27 @@ function failed(body, status) {
   return error;
 }
 
+export async function uploadAporteImage(file) {
+  const body = new FormData();
+
+  body.set("file", file);
+  body.set("contexto", "museo");
+  body.set("tipoImagen", "aporte");
+
+  const response = await fetch("/api/admin/media", {
+    method: "POST",
+    body,
+    credentials: "same-origin",
+  });
+  const payload = await readJson(response);
+
+  if (!response.ok || !payload?.success || !payload.data?.url) {
+    throw failed(payload, response.status);
+  }
+
+  return payload.data;
+}
+
 export async function uploadPortada(file, registroId, contexto = "contenidos") {
   const body = new FormData();
 

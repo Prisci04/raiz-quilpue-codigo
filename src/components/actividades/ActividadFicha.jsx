@@ -2,26 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, MapPin, Ticket, Users, Wallet } from "lucide-react";
 import ContenidoDocumento from "@/components/contenido/ContenidoDocumento";
-import { labelPublicoObjetivo } from "@/lib/actividades";
-
-const MODALIDAD = {
-  presencial: "Presencial",
-  virtual: "Online",
-  hibrida: "Híbrida",
-};
-
-const TIPO_VALOR = {
-  gratuito: "Gratuito",
-  pagado: "Pagado",
-  voluntario: "Voluntario",
-  pendiente: "Pendiente",
-};
-
-const PARTICIPACION = {
-  abierta: "Participación abierta",
-  inscripcion: "Requiere inscripción",
-  pendiente: "Participación pendiente",
-};
+import {
+  esParticipacionInscripcion,
+  labelCosto,
+  labelModalidad,
+  labelParticipacion,
+  labelPublicoObjetivo,
+} from "@/lib/actividades";
 
 function formatLongDate(dateString) {
   if (!dateString) return "Fecha pendiente";
@@ -53,14 +40,6 @@ function formatHorario(inicio, fin) {
   return start || end || "Horario pendiente";
 }
 
-function formatValor(tipo, monto) {
-  const label = TIPO_VALOR[tipo] ?? "Pendiente";
-  if (tipo === "pagado" && Number.isInteger(monto)) {
-    return `${label} · $${monto.toLocaleString("es-CL")}`;
-  }
-  return label;
-}
-
 function Dato({ icon: Icon, label, value }) {
   return (
     <div className="flex items-start gap-3 border-t border-[#bb9c82]/70 py-3">
@@ -75,26 +54,18 @@ function Dato({ icon: Icon, label, value }) {
 
 export default function ActividadFicha({ activity, backHref, backLabel, children }) {
   const cupos = Number.isInteger(activity.cupos) ? activity.cupos : null;
-  const disponibles = Number.isInteger(activity.cupos_disponibles)
-    ? activity.cupos_disponibles
-    : cupos;
-  const hasCupos = cupos === null || disponibles > 0;
   const finalizada = Boolean(activity.pasada);
-  const modalidad = MODALIDAD[activity.modalidad] ?? "Modalidad pendiente";
-  const participacion = PARTICIPACION[activity.tipo_participacion] ?? "Participación pendiente";
+  const modalidad = activity.modalidad ? labelModalidad(activity.modalidad) : "Modalidad pendiente";
+  const participacion = labelParticipacion(activity.tipo_participacion);
   const fecha = formatLongDate(activity.fecha);
   const hora = formatHorario(activity.hora_inicio, activity.hora_fin);
   const lugar = activity.lugar || "Lugar pendiente";
-  const valor = formatValor(activity.tipo_valor, activity.valor_monto);
-  const cuposLabel = activity.tipo_participacion === "inscripcion"
-    ? cupos === null
+  const valor = labelCosto(activity.costo, activity.valor_monto);
+  const cuposLabel = cupos === null
+    ? esParticipacionInscripcion(activity.tipo_participacion)
       ? "Inscripción abierta"
-      : hasCupos
-        ? `${disponibles} de ${cupos} disponibles`
-        : "Sin cupos disponibles"
-    : cupos === null
-      ? "Por confirmar"
-      : `${cupos} cupos`;
+      : "Por confirmar"
+    : `${cupos} ${cupos === 1 ? "cupo" : "cupos"}`;
 
   return (
     <article className="mx-auto max-w-3xl px-6 pt-8 pb-16 sm:pt-10">

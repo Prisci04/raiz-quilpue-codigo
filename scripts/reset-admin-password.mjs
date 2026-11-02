@@ -32,11 +32,9 @@ const client = createClient(url, secretKey, {
 const passwordHash = await bcrypt.hash(password, 12);
 const { data, error } = await client
   .from("usuarios")
-  .update({ password_hash: passwordHash })
-  .eq("email", email)
-  .eq("tipo_usuario", "interno")
-  .eq("estado", "activo")
-  .select("id");
+  .update({ password: passwordHash })
+  .ilike("correo_user", email)
+  .select("id_user");
 
 if (error) throw new Error("Password recovery failed");
 console.log("Updated accounts:", (data ?? []).length);

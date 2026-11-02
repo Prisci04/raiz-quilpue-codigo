@@ -6,7 +6,7 @@ import { jsonError } from "@/lib/http";
 import { usuarioEsGestorContenido, usuarioTieneRol } from "@/services/usuarios.service";
 
 export async function requireInternalSession(request) {
-  const result = await validateSession();
+  const result = await validateSession(request);
 
   if (!result) {
     return {

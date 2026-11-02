@@ -1,4 +1,4 @@
-const PUBLIC_USER_FIELDS = ["id", "nombre", "apellido", "email", "tipoUsuario"];
+const PUBLIC_USER_FIELDS = ["id", "nombre", "apellido", "email"];
 
 export function toPublicUser(user) {
   return {
@@ -6,7 +6,6 @@ export function toPublicUser(user) {
     nombre: user.nombre,
     apellido: user.apellido,
     email: user.email,
-    tipoUsuario: user.tipo_usuario,
   };
 }
 

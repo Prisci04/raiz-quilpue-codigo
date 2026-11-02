@@ -16,10 +16,15 @@ import {
 } from "@/lib/api/contenidos";
 import { discardUploadedPortada, uploadPortada } from "@/lib/api/media";
 import {
+  mismoNombreCatalogo,
+  NOMBRE_ESTADO_BORRADOR,
+  NOMBRE_ESTADO_PUBLICADA,
+  NOMBRE_TIPO_PATRIMONIO,
+} from "@/lib/catalogos.mjs";
+import { getCatalogos } from "@/lib/api/catalogos";
+import {
   DESCRIPCION_MAX_LENGTH,
   RESUMEN_MAX_LENGTH,
-  TIPOS_CONTENIDO,
-  TIPO_LABELS_ADMIN,
   TITULO_MAX_LENGTH,
 } from "@/lib/contenidos/documento.mjs";
 
@@ -57,6 +62,10 @@ function FieldLabel({ children, hint }) {
   );
 }
 
+function catalogIdByNombre(items, nombre) {
+  return items.find((item) => item.nombre?.toLowerCase() === nombre.toLowerCase())?.id ?? "";
+}
+
 export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
   const router = useRouter();
   const fileRef = useRef(null);
@@ -70,12 +79,13 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmPortada, setConfirmPortada] = useState(false);
   const [portadaFile, setPortadaFile] = useState(null);
+  const [catalogos, setCatalogos] = useState(null);
   const [form, setForm] = useState({
     titulo: "",
     descripcion: "",
     resumen: "",
-    tipo: "patrimonio",
-    estado: "borrador",
+    id_tipo_contenido: "",
+    id_estado: "",
     imagen_url: null,
     fecha_texto: "",
     contenido: EMPTY_DOC,
@@ -84,6 +94,32 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
   useEffect(() => {
     router.prefetch("/admin/contenidos");
   }, [router]);
+
+  useEffect(() => {
+    let active = true;
+
+    getCatalogos(["tipo_contenido", "estado_publicacion"])
+      .then((data) => {
+        if (!active) return;
+        setCatalogos(data);
+        setForm((current) => ({
+          ...current,
+          id_tipo_contenido:
+            current.id_tipo_contenido ||
+            catalogIdByNombre(data.tipo_contenido ?? [], NOMBRE_TIPO_PATRIMONIO),
+          id_estado:
+            current.id_estado ||
+            catalogIdByNombre(data.estado_publicacion ?? [], NOMBRE_ESTADO_BORRADOR),
+        }));
+      })
+      .catch((loadErrorCaught) => {
+        if (active) setError(loadErrorCaught.message);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!editing) return undefined;
@@ -97,8 +133,8 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
           titulo: contenido.titulo ?? "",
           descripcion: contenido.descripcion ?? "",
           resumen: contenido.resumen ?? "",
-          tipo: contenido.tipo ?? "patrimonio",
-          estado: contenido.estado ?? "borrador",
+          id_tipo_contenido: contenido.id_tipo_contenido ?? "",
+          id_estado: contenido.id_estado ?? "",
           imagen_url: contenido.imagen_url ?? null,
           fecha_texto: contenido.fecha_texto ?? "",
           contenido: contenido.contenido ?? EMPTY_DOC,
@@ -130,13 +166,13 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
     setForm((current) => ({ ...current, [name]: value }));
   }
 
-  function contentPayload(estado) {
+  function contentPayload(idEstado) {
     return {
       titulo: form.titulo,
       descripcion: form.descripcion,
       resumen: form.resumen,
-      tipo: form.tipo,
-      estado,
+      id_tipo_contenido: form.id_tipo_contenido,
+      id_estado: idEstado,
       contenido: form.contenido,
     };
   }
@@ -145,7 +181,8 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
     setPortadaFile(null);
     setForm((current) => ({
       ...current,
-      estado: saved.estado,
+      id_tipo_contenido: saved.id_tipo_contenido ?? current.id_tipo_contenido,
+      id_estado: saved.id_estado ?? current.id_estado,
       fecha_texto: saved.fecha_texto ?? "",
       imagen_url: saved.imagen_url ?? null,
       contenido: saved.contenido ?? current.contenido,
@@ -263,7 +300,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
 
     try {
       const saved = await updateContenido(contenidoId, {
-        ...contentPayload(form.estado),
+        ...contentPayload(form.id_estado),
         imagen_url: null,
       });
       applySaved(saved);
@@ -290,6 +327,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
   }
 
   const busy = Boolean(saving) || uploading;
+  const catalogsReady = Boolean(catalogos);
   const portadaVisible = portadaPreview || form.imagen_url || "";
 
   return (
@@ -339,7 +377,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
           className="admin-form mt-6 space-y-5"
           onSubmit={(event) => {
             event.preventDefault();
-            save(form.estado, "primary");
+            save(form.id_estado, "primary");
           }}
         >
           <p className="text-xs leading-relaxed text-[#7c5c47]">Los campos con * son obligatorios. Los demás son opcionales.</p>
@@ -360,13 +398,15 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
             <label className="admin-field block min-w-0">
               <FieldLabel>Tipo de contenido *</FieldLabel>
               <select
-                value={form.tipo}
-                onChange={(event) => updateField("tipo", event.target.value)}
+                value={form.id_tipo_contenido}
+                onChange={(event) => updateField("id_tipo_contenido", event.target.value)}
                 className={fieldClass}
+                disabled={!catalogsReady}
+                required
               >
-                {TIPOS_CONTENIDO.map((tipo) => (
-                  <option key={tipo} value={tipo}>
-                    {TIPO_LABELS_ADMIN[tipo]}
+                {(catalogos?.tipo_contenido ?? []).map((tipo) => (
+                  <option key={tipo.id} value={tipo.id}>
+                    {tipo.nombre}
                   </option>
                 ))}
               </select>
@@ -390,12 +430,19 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
             <label className="admin-field block min-w-0">
               <FieldLabel>Estado</FieldLabel>
               <select
-                value={form.estado}
-                onChange={(event) => updateField("estado", event.target.value)}
+                value={form.id_estado}
+                onChange={(event) => updateField("id_estado", event.target.value)}
                 className={fieldClass}
+                disabled={!catalogsReady}
+                required
               >
-                <option value="borrador">Borrador</option>
-                <option value="publicada">Publicado</option>
+                {(catalogos?.estado_publicacion ?? []).map((estado) => (
+                  <option key={estado.id} value={estado.id}>
+                    {mismoNombreCatalogo(estado.nombre, NOMBRE_ESTADO_PUBLICADA)
+                      ? "Publicado"
+                      : estado.nombre}
+                  </option>
+                ))}
               </select>
               <p className="mt-4 text-[13px] font-medium text-[#2c1810]">Fecha de publicación</p>
               <p className="mt-1.5 rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] px-3 py-2.5 text-sm text-[#7c5c47]">
@@ -537,7 +584,7 @@ export default function ContenidoForm({ mode, contenidoId, imageNotice = "" }) {
             )}
             <button
               type="submit"
-              disabled={busy}
+              disabled={busy || !catalogsReady}
               className="inline-flex min-h-10 items-center rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50"
             >
               {busy ? "Guardando…" : "Guardar"}

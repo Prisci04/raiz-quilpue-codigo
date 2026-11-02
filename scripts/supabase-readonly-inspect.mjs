@@ -6,7 +6,7 @@ try {
 }
 const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.SUPABASE_SECRET_KEY;
-const tables = ["usuarios", "roles", "usuario_roles", "sesiones", "actividades", "actividad_inscripciones", "contenidos", "museo_piezas", "museo_aportes"];
+const tables = ["usuarios", "roles", "actividades", "inscripciones", "contenidos", "museo_aportes"];
 
 async function metadata(path, accept = "application/json", credential = key) {
   try {
@@ -38,7 +38,7 @@ if (!base || !key) {
   if (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     for (const name of tables) {
       // LIMIT 0 checks the endpoint permission without retrieving any rows.
-      const column = name === "usuario_roles" ? "usuario_id" : "id";
+      const column = name === "usuarios" ? "id_user" : name === "roles" ? "id_rol" : "id";
       const result = await metadata("/rest/v1/" + name + "?select=" + column + "&limit=0", "application/json", process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
       publicAccess[name] = result.status;
     }

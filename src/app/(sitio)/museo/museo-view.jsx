@@ -3,43 +3,43 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Inbox, Search, X } from "lucide-react";
-import { MUSEO_CATEGORIES } from "@/lib/community-validation.mjs";
+import { MUSEO_CATEGORIES } from "@/lib/museo";
 
 const FILTERS = MUSEO_CATEGORIES;
 // CAMBIAR IMÁGENES DE CATEGORÍAS AQUÍ: se usan rutas de public/images para facilitar su reemplazo.
 const COLLECTIONS = [
   {
-    id: "fotografias",
+    id: "Fotografías",
     label: "Fotografías",
     description: "Calles, barrios, paisajes, edificios y momentos de la vida cotidiana.",
     image: "/images/contenido/archivo-historico.jpg",
   },
   {
-    id: "documentos",
+    id: "Documentos",
     label: "Documentos",
     description: "Afiches, cartas, mapas, periódicos, invitaciones y otros documentos históricos.",
     image: "/images/contenido/2025.jpeg",
   },
   {
-    id: "objetos_piezas",
+    id: "Objetos y piezas",
     label: "Objetos y piezas",
     description: "Objetos cotidianos, herramientas y elementos de distintas épocas.",
     image: "/images/contenido/reloj y vaca Quilpué -01.jpeg",
   },
   {
-    id: "memorias_relatos",
+    id: "Memorias y relatos",
     label: "Memorias y relatos",
     description: "Recuerdos, testimonios y relatos de personas vinculadas con Quilpué.",
     image: "/images/contenido/capsula-recuerdos1.jpg",
   },
   {
-    id: "lugares_memoria",
-    label: "Lugares con memoria",
+    id: "Lugares de memoria",
+    label: "Lugares de memoria",
     description: "Espacios, edificios, calles y lugares importantes para la memoria colectiva.",
     image: "/images/contenido/iglesia desde plaza.jpg",
   },
   {
-    id: "cultura_comunidad",
+    id: "Cultura y comunidad",
     label: "Cultura y comunidad",
     description: "Celebraciones, actividades, organizaciones, tradiciones y expresiones culturales.",
     image: "/images/contenido/carozzi.jpeg",
@@ -65,7 +65,7 @@ function formatDate(dateString) {
   });
 }
 
-export default function MuseoView({ items = [], error = "" }) {
+export default function MuseoView({ items = [], categorias = [], error = "" }) {
   const [activeTipo, setActiveTipo] = useState("todos");
   const [query, setQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
@@ -536,24 +536,23 @@ export default function MuseoView({ items = [], error = "" }) {
             {contributionSent ? (
               <div className="px-1 py-6 text-center sm:px-0 sm:py-12">
                 <p className="font-mono text-xs uppercase tracking-widest text-[#db700f]">Museo Digital</p>
-                <h2 id="contribution-title" className="mt-3 font-sans text-xl leading-tight font-bold text-[#704a31] sm:text-3xl">Gracias por compartir tu historia</h2>
-                <p className="mx-auto mt-3 max-w-xl text-sm leading-normal text-[#946541]">Raíz Quilpué recibió tu aporte y el archivo adjunto. El equipo revisará el material antes de su publicación.</p>
+                <h2 id="contribution-title" className="mt-3 font-serif text-3xl font-semibold text-[#704a31]">Gracias por compartir tu historia</h2>
+                <p className="mt-3 text-sm leading-relaxed text-[#946541]">Raíz Quilpué recibió tu aporte. El equipo revisará el material antes de su publicación.</p>
                 <button type="button" onClick={closeContribution} className="mt-6 min-h-11 bg-[#704a31] px-5 text-sm font-semibold text-[#e7dcd2]">Cerrar</button>
               </div>
             ) : (
               <>
-                <p className="text-center font-sans text-[10px] font-semibold uppercase tracking-[0.18em] text-[#db700f]">Formulario de colaboración</p>
-                <h2 id="contribution-title" className="mt-2 text-center font-sans text-xl leading-tight font-bold text-[#704a31] sm:text-3xl">Comparte una pieza de tu historia</h2>
-                <form className="mx-auto mt-4 grid min-w-0 w-full max-w-2xl gap-3 sm:mt-6 sm:grid-cols-2 sm:gap-4" onSubmit={submitContribution}>
-                  <label className="grid gap-1 text-[13px] text-[#704a31] sm:gap-1.5 sm:text-sm">Nombre *<input name="nombre" required maxLength={160} className="min-h-10 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f] sm:min-h-11" /></label>
-                  <label className="grid gap-1 text-[13px] text-[#704a31] sm:gap-1.5 sm:text-sm">Correo *<input name="correo" required type="email" maxLength={254} className="min-h-10 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f] sm:min-h-11" /></label>
-                  <label className="grid gap-1 text-[13px] text-[#704a31] sm:col-span-2 sm:gap-1.5 sm:text-sm">Tipo de aporte *<select name="categoria" required defaultValue="" className="min-h-10 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f] sm:min-h-11"><option value="" disabled>Selecciona una opción</option>{FILTERS.map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>
-                  <label className="grid gap-1 text-[13px] text-[#704a31] sm:col-span-2 sm:gap-1.5 sm:text-sm">Título *<input name="titulo" required maxLength={200} className="min-h-10 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f] sm:min-h-11" /></label>
-                  <label className="grid gap-1 text-[13px] text-[#704a31] sm:col-span-2 sm:gap-1.5 sm:text-sm">Descripción *<textarea name="descripcion" required maxLength={10000} rows={3} className="border border-[#bb9c82] bg-[#f4ece4] p-2.5 outline-none focus:border-[#db700f] sm:p-3" /></label>
-                  <label className="grid gap-1 text-[13px] text-[#704a31] sm:gap-1.5 sm:text-sm">Fecha aproximada<input name="fecha_aproximada" type="date" className="min-h-10 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f] sm:min-h-11" /><span className="text-xs text-[#946541]">Selecciona la fecha desde el calendario.</span></label>
-                  <label className="grid gap-1 text-[13px] text-[#704a31] sm:gap-1.5 sm:text-sm">Lugar<input name="lugar" maxLength={250} className="min-h-10 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f] sm:min-h-11" /></label>
-                  <label className="grid min-w-0 gap-1 text-[13px] text-[#704a31] sm:col-span-2 sm:gap-1.5 sm:text-sm">Archivo / imagen *<input name="archivo" type="file" required accept="image/jpeg,image/png,image/webp,image/avif,.pdf,application/pdf" className="block min-h-10 min-w-0 max-w-full border border-[#bb9c82] bg-[#f4ece4] p-1.5 text-xs sm:min-h-11 sm:p-2 sm:text-sm" /><span className="text-xs text-[#946541]">Fotografía JPG, PNG, WebP o AVIF, o un PDF. Máximo 5 MB.</span><span className="text-xs text-[#946541]">El archivo se guarda con un enlace público. Evita incluir datos personales sensibles.</span></label>
-                  <label className="grid gap-1 text-[13px] text-[#704a31] sm:col-span-2 sm:gap-1.5 sm:text-sm">Información adicional<textarea name="informacion_adicional" maxLength={3000} rows={2} className="border border-[#bb9c82] bg-[#f4ece4] p-2.5 outline-none focus:border-[#db700f] sm:p-3" /></label>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#db700f]">Formulario de colaboración</p>
+                <h2 id="contribution-title" className="mt-2 font-serif text-3xl font-semibold text-[#704a31]">Comparte una pieza de tu historia</h2>
+                <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={submitContribution}>
+                  <label className="grid gap-1.5 text-sm text-[#704a31]">Nombre *<input name="nombre" required maxLength={160} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31]">Correo *<input name="correo" required type="email" maxLength={254} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Tipo de aporte *<select name="id_categoria_museo" required defaultValue="" className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]"><option value="" disabled>Selecciona una opción</option>{categorias.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}</select></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Título *<input name="titulo" required maxLength={200} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Descripción *<textarea name="descripcion" required maxLength={10000} rows={4} className="border border-[#bb9c82] bg-[#f4ece4] p-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31]">Fecha aproximada<input name="fecha_aproximada" type="date" className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /><span className="text-xs text-[#946541]">Selecciona la fecha desde el calendario.</span></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31]">Lugar<input name="lugar" maxLength={250} className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] px-3 outline-none focus:border-[#db700f]" /></label>
+                  <label className="grid gap-1.5 text-sm text-[#704a31] sm:col-span-2">Imagen *<input name="archivo" type="file" required accept="image/jpeg,image/png,image/webp,image/avif" className="min-h-11 border border-[#bb9c82] bg-[#f4ece4] p-2 text-sm" /><span className="text-xs text-[#946541]">Fotografía JPG, PNG, WebP o AVIF. Máximo 5 MB.</span><span className="text-xs text-[#946541]">La imagen se guarda con un enlace público. Evita incluir datos personales sensibles.</span></label>
                   {contributionError ? <p role="alert" className="text-sm font-semibold text-[#a5452d] sm:col-span-2">{contributionError}</p> : null}
                   <div className="flex justify-end sm:col-span-2"><button type="submit" disabled={sendingContribution} className="inline-flex min-h-12 items-center gap-2 bg-[#704a31] px-6 text-sm font-semibold text-[#e7dcd2] hover:bg-[#db700f] disabled:opacity-50">{sendingContribution ? "Enviando…" : "Enviar aporte"}<ArrowRight size={16} /></button></div>
                 </form>
@@ -629,14 +628,6 @@ export default function MuseoView({ items = [], error = "" }) {
                   <p className="text-sm leading-normal text-[#946541]">
                     {selectedItem.description}
                   </p>
-                </div>
-              ) : null}
-              {selectedItem.fileUrl ? (
-                <div className="mb-6 border-t border-[#bb9c82] pt-5">
-                  {selectedItem.fileName ? <p className="mb-2 break-words text-sm text-[#946541]">{selectedItem.fileName}</p> : null}
-                  <a href={selectedItem.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm font-semibold text-[#704a31] underline underline-offset-2">
-                    {selectedItem.fileName?.toLowerCase().endsWith(".pdf") ? "Abrir PDF" : "Abrir archivo"}
-                  </a>
                 </div>
               ) : null}
               {selectedItem.content ? (

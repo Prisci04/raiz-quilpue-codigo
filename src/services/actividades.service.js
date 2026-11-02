@@ -1,44 +1,35 @@
-import { compareActividades, cuposDisponibles } from "@/lib/actividades";
+import { compareActividades, mapActividadVista } from "@/lib/actividades";
+import { NOMBRE_ESTADO_PUBLICADA, NOMBRE_INSCRIPCION_CANCELADA } from "@/lib/catalogos.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-const ESTADO_PUBLICADA = "publicada";
-const ACTIVIDAD_LISTADO_COLUMNS =
-  "id,titulo,descripcion,fecha,hora_inicio,hora_fin,lugar,publico_objetivo,modalidad,tipo_participacion,cupos,tipo_valor,valor_monto,imagen_url,fecha_creacion";
-const ACTIVIDAD_DETALLE_COLUMNS = `${ACTIVIDAD_LISTADO_COLUMNS},forma_pago,informacion_adicional`;
+const ACTIVIDAD_LISTADO_COLUMNS = `
+  id_actividad,
+  titulo,
+  descripcion,
+  fecha,
+  hora_inicio,
+  hora_fin,
+  cupos_max,
+  cupos_espera,
+  valor_monto,
+  imagen_url,
+  fec_creacion,
+  id_modalidad,
+  id_tipo_participacion,
+  id_publico,
+  id_costo,
+  id_lugar,
+  id_estado,
+  modalidad ( nombre_modalidad ),
+  tipo_participacion ( nombre_tipo_participacion ),
+  publico_objetivo ( nombre_publico ),
+  costo_actividad ( nombre_costo ),
+  estado_publicacion!inner ( nombre_estado ),
+  lugar ( nombre_lugar, direccion )
+`;
 
-function mapActividadPublica(row, { includeDetail = false, inscritos = 0 } = {}) {
-  if (!row) {
-    return null;
-  }
-
-  const actividad = {
-    id: row.id,
-    titulo: row.titulo,
-    descripcion: row.descripcion,
-    fecha: row.fecha ?? null,
-    hora_inicio: row.hora_inicio ?? null,
-    hora_fin: row.hora_fin ?? null,
-    lugar: row.lugar ?? null,
-    publico_objetivo: row.publico_objetivo ?? null,
-    modalidad: row.modalidad ?? null,
-    tipo_participacion: row.tipo_participacion,
-    cupos: row.cupos ?? null,
-    inscritos,
-    cupos_disponibles: cuposDisponibles(row.cupos, inscritos),
-    tipo_valor: row.tipo_valor,
-    valor_monto: row.valor_monto ?? null,
-    imagen_url: row.imagen_url ?? null,
-    fecha_creacion: row.fecha_creacion ?? null,
-  };
-
-  if (includeDetail) {
-    actividad.forma_pago = row.forma_pago ?? null;
-    actividad.informacion_adicional = row.informacion_adicional ?? null;
-  }
-
-  return actividad;
-}
+const ACTIVIDAD_DETALLE_COLUMNS = `${ACTIVIDAD_LISTADO_COLUMNS},informacion_adicional`;
 
 function buildPagination(page, limit, total) {
   return {
@@ -53,7 +44,7 @@ function publicadasQuery(columns, options) {
   return getSupabaseServerClient()
     .from("actividades")
     .select(columns, options)
-    .eq("estado", ESTADO_PUBLICADA);
+    .eq("estado_publicacion.nombre_estado", NOMBRE_ESTADO_PUBLICADA);
 }
 
 async function countInscritos(ids) {
@@ -62,16 +53,17 @@ async function countInscritos(ids) {
   if (!ids.length) return counts;
 
   const { data, error } = await getSupabaseAdminClient()
-    .from("actividad_inscripciones")
-    .select("actividad_id")
-    .in("actividad_id", ids);
+    .from("inscripciones")
+    .select("id_actividad, estado_inscripcion!inner(nombre_estado_inscripcion)")
+    .in("id_actividad", ids)
+    .neq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CANCELADA);
 
   if (error) {
     throw new Error("Failed to count inscripciones");
   }
 
   for (const row of data ?? []) {
-    counts.set(row.actividad_id, (counts.get(row.actividad_id) ?? 0) + 1);
+    counts.set(row.id_actividad, (counts.get(row.id_actividad) ?? 0) + 1);
   }
 
   return counts;
@@ -80,7 +72,7 @@ async function countInscritos(ids) {
 export async function getActividades({ page, limit, orderBy = "fecha" }) {
   const ordenarPorCreacion = orderBy === "fecha_creacion";
   const { data, error } = await publicadasQuery(ACTIVIDAD_LISTADO_COLUMNS).order(
-    ordenarPorCreacion ? "fecha_creacion" : "id",
+    ordenarPorCreacion ? "fec_creacion" : "id_actividad",
     { ascending: !ordenarPorCreacion },
   );
 
@@ -89,9 +81,14 @@ export async function getActividades({ page, limit, orderBy = "fecha" }) {
   }
 
   const rows = data ?? [];
-  const counts = await countInscritos(rows.map((row) => row.id));
+  const counts = await countInscritos(rows.map((row) => row.id_actividad));
   const sorted = rows
-    .map((row) => mapActividadPublica(row, { inscritos: counts.get(row.id) ?? 0 }))
+    .map((row) =>
+      mapActividadVista({
+        ...row,
+        inscritos: counts.get(row.id_actividad) ?? 0,
+      }),
+    )
     .sort(
       orderBy === "fecha_creacion"
         ? (left, right) =>
@@ -111,7 +108,7 @@ export async function getActividades({ page, limit, orderBy = "fecha" }) {
 
 export async function getActividadById(id) {
   const { data, error } = await publicadasQuery(ACTIVIDAD_DETALLE_COLUMNS)
-    .eq("id", id)
+    .eq("id_actividad", id)
     .maybeSingle();
 
   if (error) {
@@ -120,9 +117,9 @@ export async function getActividadById(id) {
 
   if (!data) return null;
 
-  const counts = await countInscritos([data.id]);
-  return mapActividadPublica(data, {
-    includeDetail: true,
-    inscritos: counts.get(data.id) ?? 0,
+  const counts = await countInscritos([data.id_actividad]);
+  return mapActividadVista({
+    ...data,
+    inscritos: counts.get(data.id_actividad) ?? 0,
   });
 }

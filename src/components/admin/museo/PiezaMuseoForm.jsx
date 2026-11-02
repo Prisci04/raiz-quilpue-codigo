@@ -7,24 +7,24 @@ import { useRouter } from "next/navigation";
 import { ImageIcon } from "lucide-react";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import { deletePiezaMuseo, getPiezaMuseo, savePiezaMuseo } from "@/lib/api/community";
-import { discardUploadedPortada, uploadPortada } from "@/lib/api/media";
-import { MUSEO_CATEGORIES } from "@/lib/community-validation.mjs";
+import { discardUploadedPortada, uploadAporteImage } from "@/lib/api/media";
+import { getCatalogos } from "@/lib/api/catalogos";
 
 const PORTADA_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 const PORTADA_MAX_BYTES = 5 * 1024 * 1024;
-const EMPTY = {
-  titulo: "",
-  descripcion: "",
-  categoria: "fotografias",
-  fecha_aproximada: "",
-  lugar: "",
-  imagen_url: "",
-  archivo_nombre: "",
-  archivo_url: "",
-  estado: "borrador",
-};
 const inputClass =
   "mt-1.5 w-full rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] px-3 py-2.5 text-sm text-[#2c1810] outline-none focus:border-[#c4a484]";
+
+function emptyForm(categorias) {
+  return {
+    titulo: "",
+    descripcion: "",
+    id_categoria_museo: categorias[0]?.id ? String(categorias[0].id) : "",
+    fecha_aproximada: "",
+    lugar: "",
+    imagen_url: "",
+  };
+}
 
 function Field({ label, children, className = "" }) {
   return (
@@ -41,37 +41,44 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formFromPiece(piece) {
+function formFromPiece(piece, categorias) {
   return {
     titulo: piece.titulo ?? "",
     descripcion: piece.descripcion ?? "",
-    categoria: piece.categoria ?? "fotografias",
+    id_categoria_museo: piece.id_categoria_museo
+      ? String(piece.id_categoria_museo)
+      : categorias[0]?.id
+        ? String(categorias[0].id)
+        : "",
     fecha_aproximada: piece.fecha_aproximada ?? "",
     lugar: piece.lugar ?? "",
     imagen_url: piece.imagen_url ?? "",
-    archivo_nombre: piece.archivo_nombre ?? "",
-    archivo_url: piece.archivo_url ?? "",
-    estado: piece.estado ?? "borrador",
   };
 }
 
-function piecePayload(form, estado) {
+function piecePayload(form) {
   return {
     titulo: form.titulo,
     descripcion: form.descripcion,
-    categoria: form.categoria,
+    id_categoria_museo: form.id_categoria_museo,
     fecha_aproximada: form.fecha_aproximada,
-    lugar: form.lugar,
-    imagen_url: form.imagen_url || null,
-    estado,
+    lugar_referencia: form.lugar,
+    imagen_url: form.imagen_url,
   };
 }
 
-export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) {
+export default function PiezaMuseoForm({
+  pieceId = null,
+  initialPiece = null,
+  categorias: initialCategorias = [],
+}) {
   const editing = Boolean(pieceId);
   const router = useRouter();
   const fileRef = useRef(null);
-  const [form, setForm] = useState(() => (initialPiece ? formFromPiece(initialPiece) : EMPTY));
+  const [categorias, setCategorias] = useState(initialCategorias);
+  const [form, setForm] = useState(() =>
+    initialPiece ? formFromPiece(initialPiece, initialCategorias) : emptyForm(initialCategorias),
+  );
   const [loading, setLoading] = useState(editing && !initialPiece);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -80,14 +87,35 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
   const [success, setSuccess] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [portadaFile, setPortadaFile] = useState(null);
-  const [confirmPortada, setConfirmPortada] = useState(false);
+
+  useEffect(() => {
+    if (initialCategorias.length) return undefined;
+    let active = true;
+    getCatalogos(["categoria_museo"])
+      .then((data) => {
+        if (!active) return;
+        const items = data?.categoria_museo ?? [];
+        setCategorias(items);
+        setForm((current) =>
+          current.id_categoria_museo
+            ? current
+            : { ...current, id_categoria_museo: items[0]?.id ? String(items[0].id) : "" },
+        );
+      })
+      .catch((loadErrorCaught) => {
+        if (active) setError(loadErrorCaught.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [initialCategorias]);
 
   useEffect(() => {
     if (!editing || initialPiece) return undefined;
     let active = true;
     getPiezaMuseo(pieceId)
       .then((piece) => {
-        if (active) setForm(formFromPiece(piece));
+        if (active) setForm(formFromPiece(piece, categorias));
       })
       .catch((loadErrorCaught) => {
         if (active) {
@@ -101,7 +129,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
     return () => {
       active = false;
     };
-  }, [editing, pieceId, initialPiece]);
+  }, [editing, pieceId, initialPiece, categorias]);
 
   const portadaPreview = useMemo(() => {
     if (!portadaFile) return "";
@@ -133,33 +161,21 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
     }
 
     setError("");
-    setConfirmPortada(false);
     setPortadaFile(next);
   }
 
-  async function persist(estado, payload) {
+  async function persist(payload) {
     let uploaded = null;
     const nextPayload = { ...payload };
 
     if (portadaFile) {
-      if (!editing) {
-        const created = await savePiezaMuseo({ ...nextPayload, imagen_url: null }, null);
-        setUploading(true);
-        try {
-          uploaded = await uploadPortada(portadaFile, created.id, "museo");
-          await savePiezaMuseo({ ...nextPayload, imagen_url: uploaded.url }, created.id);
-          router.push("/admin/museo?creado=1");
-        } catch (imageError) {
-          if (uploaded?.url) await discardUploadedPortada(uploaded.url).catch(() => {});
-          router.push(`/admin/museo/${created.id}/editar`);
-          throw new Error(imageError.message || "La pieza se creó, pero no se pudo subir la imagen.");
-        }
-        return null;
-      }
-
       setUploading(true);
-      uploaded = await uploadPortada(portadaFile, pieceId, "museo");
+      uploaded = await uploadAporteImage(portadaFile);
       nextPayload.imagen_url = uploaded.url;
+    }
+
+    if (!nextPayload.imagen_url) {
+      throw new Error("La imagen de la pieza es obligatoria.");
     }
 
     try {
@@ -176,38 +192,17 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
     }
   }
 
-  async function save(estado) {
+  async function save() {
     setSaving(true);
     setError("");
     setSuccess("");
     try {
-      await persist(estado, piecePayload(form, estado));
+      await persist(piecePayload(form));
     } catch (saveError) {
       setError(saveError.message);
     } finally {
       setSaving(false);
       setUploading(false);
-    }
-  }
-
-  async function removePortada() {
-    setConfirmPortada(false);
-    if (portadaFile) {
-      setPortadaFile(null);
-      return;
-    }
-    if (!editing || !form.imagen_url) return;
-
-    setSaving(true);
-    setError("");
-    try {
-      const saved = await savePiezaMuseo(piecePayload({ ...form, imagen_url: "" }, form.estado), pieceId);
-      setForm(formFromPiece(saved));
-      setSuccess("La imagen se eliminó.");
-    } catch (removeError) {
-      setError(removeError.message);
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -224,9 +219,6 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
     }
   }
 
-  const archivoLabel = /\.(jpe?g|png|webp|avif)$/i.test(form.archivo_nombre ?? "")
-    ? "Abrir imagen"
-    : /\.pdf$/i.test(form.archivo_nombre ?? "") ? "Abrir PDF" : "Abrir documento";
   const busy = saving || uploading;
   const portadaVisible = portadaPreview || form.imagen_url || "";
 
@@ -254,7 +246,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
           className="admin-form mt-6 space-y-5"
           onSubmit={(event) => {
             event.preventDefault();
-            save(form.estado);
+            save();
           }}
         >
           <p className="text-xs leading-relaxed text-[#7c5c47]">Los campos con * son obligatorios. Los demás son opcionales.</p>
@@ -264,9 +256,10 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
               <input required maxLength={200} value={form.titulo} onChange={(event) => update("titulo", event.target.value)} className={inputClass} />
             </Field>
             <Field label="Categoría *">
-              <select value={form.categoria} onChange={(event) => update("categoria", event.target.value)} className={inputClass}>
-                {MUSEO_CATEGORIES.map((category) => (
-                  <option key={category.id} value={category.id}>{category.label}</option>
+              <select required value={form.id_categoria_museo} onChange={(event) => update("id_categoria_museo", event.target.value)} className={inputClass}>
+                <option value="" disabled>Selecciona una categoría</option>
+                {categorias.map((category) => (
+                  <option key={category.id} value={category.id}>{category.nombre}</option>
                 ))}
               </select>
             </Field>
@@ -282,7 +275,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
           </div>
 
           <div className="admin-card p-4 sm:p-6">
-            <span className="text-[13px] font-medium text-[#2c1810]">Imagen de la pieza</span>
+            <span className="text-[13px] font-medium text-[#2c1810]">Imagen de la pieza *</span>
             <button
               type="button"
               disabled={busy}
@@ -300,7 +293,7 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
                 </div>
               )}
             </button>
-            <input ref={fileRef} tabIndex={-1} aria-label="Imagen de portada" type="file" accept={PORTADA_TYPES.join(",")} className="sr-only" onChange={choosePortada} />
+            <input ref={fileRef} tabIndex={-1} aria-label="Imagen de la pieza" type="file" accept={PORTADA_TYPES.join(",")} className="sr-only" onChange={choosePortada} />
             {portadaFile ? (
               <p className="mt-3 text-sm text-[#4d4036]">
                 {portadaFile.name}
@@ -312,41 +305,13 @@ export default function PiezaMuseoForm({ pieceId = null, initialPiece = null }) 
                 {portadaVisible ? "Cambiar imagen" : "Seleccionar imagen"}
               </button>
               {portadaFile ? (
-                <button type="button" disabled={busy} onClick={() => { setPortadaFile(null); setConfirmPortada(false); }} className="inline-flex min-h-10 items-center rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50">
+                <button type="button" disabled={busy} onClick={() => setPortadaFile(null)} className="inline-flex min-h-10 items-center rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50">
                   Quitar
                 </button>
               ) : null}
-              {editing && form.imagen_url && !portadaFile ? (
-                <button type="button" disabled={busy} onClick={() => setConfirmPortada(true)} className="inline-flex min-h-10 items-center rounded-sm border border-[#f0c7be] bg-[#fff6f3] px-4 text-sm font-medium text-[#8d3b28] disabled:opacity-50">
-                  Eliminar imagen
-                </button>
-              ) : null}
             </div>
-            {confirmPortada ? (
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#4d4036]">
-                <p>¿Quitar la imagen?</p>
-                <button type="button" className="font-medium text-[#8d3b28]" onClick={removePortada}>Quitar</button>
-                <button type="button" className="text-[#7c5c47]" onClick={() => setConfirmPortada(false)}>Cancelar</button>
-              </div>
-            ) : null}
-            <p className="mt-2 text-[12px] text-[#8d7b6d]">JPEG, PNG, WebP o AVIF. Máximo 5 MB. No es obligatoria.</p>
-            {form.archivo_url ? (
-              <div className="mt-3 text-sm text-[#4d4036]">
-                <p className="font-medium">Archivo de la pieza</p>
-                {form.archivo_nombre ? <p className="mt-1 break-words">{form.archivo_nombre}</p> : null}
-                <a href={form.archivo_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-10 items-center font-medium text-[#a5452d] underline underline-offset-2">
-                  {archivoLabel}
-                </a>
-              </div>
-            ) : null}
+            <p className="mt-2 text-[12px] text-[#8d7b6d]">JPEG, PNG, WebP o AVIF. Máximo 5 MB. La imagen es obligatoria.</p>
           </div>
-
-          <Field label="Estado" className="admin-card p-4 sm:p-6">
-            <select value={form.estado} onChange={(event) => update("estado", event.target.value)} className={inputClass}>
-              <option value="borrador">Borrador</option>
-              <option value="publicada">Publicada</option>
-            </select>
-          </Field>
 
           <div className="admin-form-actions flex flex-wrap items-center justify-end gap-3">
             {editing ? (

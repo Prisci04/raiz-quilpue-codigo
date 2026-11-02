@@ -2,7 +2,6 @@ import { requireGestorContenidoPage } from "@/lib/auth/page-guard";
 import { notFound } from "next/navigation";
 import ActividadDetallePanel from "@/components/admin/actividades/ActividadDetallePanel";
 import { parsePositiveInteger } from "@/lib/http";
-import { mapActividadVista } from "@/lib/actividades";
 import {
   countParticipantesAdmin,
   getActividadAdmin,
@@ -33,6 +32,6 @@ export default async function AdminActividadDetallePage({ params }) {
   }
 
   return (
-    <ActividadDetallePanel activity={mapActividadVista({ ...row, inscritos })} />
+    <ActividadDetallePanel activity={{ ...row, inscritos }} />
   );
 }

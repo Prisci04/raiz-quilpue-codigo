@@ -63,11 +63,6 @@ async function login(email, password) {
 
 async function cleanup(adminCookie) {
   for (const id of createdIds) {
-    await request(`/api/admin/usuarios/${id}/estado`, {
-      method: "PATCH",
-      cookie: adminCookie,
-      body: { estado: "inactivo" },
-    });
     await request(`/api/admin/usuarios/${id}`, {
       method: "DELETE",
       cookie: adminCookie,
@@ -126,23 +121,15 @@ async function main() {
     String(adminPerfil.status),
   );
 
-  const selfOff = await request(`/api/admin/usuarios/${adminPerfil.json.data.id}/estado`, {
-    method: "PATCH",
-    cookie: adminCookie,
-    body: { estado: "inactivo" },
-  });
   const selfDelete = await request(`/api/admin/usuarios/${adminPerfil.json.data.id}`, {
     method: "DELETE",
     cookie: adminCookie,
   });
-  record("administrador no se desactiva", selfOff.status === 403, String(selfOff.status));
   record("administrador no se elimina", selfDelete.status === 403, String(selfDelete.status));
 
   const listed = await request("/api/admin/usuarios", { cookie: adminCookie });
   const activeAdmins = (listed.json?.data?.usuarios ?? []).filter(
-    (usuario) =>
-      usuario.estado === "activo" &&
-      usuario.roles?.some((rol) => rol.codigo === "administrador"),
+    (usuario) => usuario.roles?.some((rol) => rol.codigo === "administrador"),
   );
 
   if (activeAdmins.length === 1) {
@@ -265,8 +252,7 @@ async function main() {
       data?.apellido === "Soto Díaz" &&
       data?.telefono === "+56933334444" &&
       data?.email === editorEmail &&
-      data?.rol?.codigo === "editor" &&
-      data?.estado === "activo",
+      data?.rol?.codigo === "editor",
     `${updated.status} ${updated.json?.error?.code ?? ""}`,
   );
 
@@ -311,7 +297,7 @@ async function main() {
       passwordConfirmacion: editorNext,
     },
   });
-  const currentMe = await request("/api/auth/me", { cookie: editorCookie });
+  const currentMe = await request("/api/auth/me", { cookie: changed.cookie || editorCookie });
   const otherMe = await request("/api/auth/me", { cookie: otherCookie });
   const oldLogin = await login(editorEmail, editorPassword);
   const newLogin = await login(editorEmail, editorNext);

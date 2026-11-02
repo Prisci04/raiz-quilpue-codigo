@@ -1,6 +1,6 @@
 import { jsonSuccess } from "@/lib/http";
 import { requireInternalSession } from "@/lib/auth/guard";
-import { getCurrentTokenHash } from "@/lib/auth/session";
+import { createSession } from "@/lib/auth/session";
 import {
   noStore,
   readUsuarioBody,
@@ -28,14 +28,10 @@ export async function PATCH(request) {
       throw new UsuarioError("VALIDATION", parsed.message);
     }
 
-    const tokenHash = await getCurrentTokenHash();
-    const result = await changePasswordActual(
-      auth.user.id,
-      parsed.value,
-      tokenHash,
-    );
+    const result = await changePasswordActual(auth.user.id, parsed.value);
+    await createSession(auth.user.id, result.passwordHash);
 
-    return noStore(jsonSuccess(result));
+    return noStore(jsonSuccess({ ok: true }));
   } catch (error) {
     return respondUsuarioFailure(error, "PATCH /api/admin/perfil/password");
   }

@@ -3,7 +3,6 @@ import "server-only";
 import { jsonError } from "@/lib/http";
 import { noStore } from "@/lib/contenidos/respond";
 import { requireGestorContenido } from "@/lib/auth/guard";
-import { MuseoIntegrityError } from "@/lib/museo/errors.mjs";
 
 export async function runAdminCommunity(request, context, operation) {
   try {
@@ -13,11 +12,8 @@ export async function runAdminCommunity(request, context, operation) {
       return noStore(auth.response);
     }
 
-    return noStore(await operation());
+    return noStore(await operation(auth.user));
   } catch (error) {
-    if (error instanceof MuseoIntegrityError) {
-      return noStore(jsonError(error.status, error.code, error.message));
-    }
     console.error(`[${context}]`, error);
 
     return noStore(

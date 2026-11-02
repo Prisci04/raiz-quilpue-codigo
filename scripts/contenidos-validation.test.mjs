@@ -46,26 +46,42 @@ const doc = {
   ],
 };
 
+const catalogos = {
+  tipo_contenido: [
+    { id: 1, nombre: "Noticia" },
+    { id: 2, nombre: "Patrimonio" },
+    { id: 3, nombre: "Cápsula histórica" },
+    { id: 4, nombre: "Cultura" },
+    { id: 5, nombre: "Comunidad" },
+  ],
+  estado_publicacion: [
+    { id: 1, nombre: "Borrador" },
+    { id: 2, nombre: "Publicada" },
+  ],
+};
+
 const base = {
   titulo: " Título ",
   descripcion: " Texto de la tarjeta ",
   resumen: " Texto del popup ",
-  tipo: "noticia",
-  estado: "borrador",
+  id_tipo_contenido: 1,
+  id_estado: 1,
   contenido: doc,
 };
 
 test("crea normalizando texto y dejando el café por defecto sin marca", () => {
-  const parsed = parseCreateContenido(base);
+  const parsed = parseCreateContenido(base, catalogos);
 
   assert.equal(parsed.ok, true);
   assert.equal(parsed.value.titulo, "Título");
+  assert.equal(parsed.value.id_tipo_contenido, 1);
+  assert.equal(parsed.value.id_estado, 1);
   assert.equal(parsed.value.imagen_url, null);
   assert.deepEqual(parsed.value.contenido.content[1].content[0].marks, [{ type: "bold" }]);
 });
 
 test("rechaza contenido inválido y h1", () => {
-  assert.equal(parseCreateContenido({ ...base, contenido: { type: "html" } }).ok, false);
+  assert.equal(parseCreateContenido({ ...base, contenido: { type: "html" } }, catalogos).ok, false);
   assert.equal(
     parseDocumento({
       type: "doc",
@@ -79,8 +95,8 @@ test("rechaza contenido inválido y h1", () => {
     }).ok,
     false,
   );
-  assert.equal(parseCreateContenido({ ...base, tipo: "Patrimonio" }).ok, false);
-  assert.equal(parseCreateContenido({ ...base, titulo: "   " }).ok, false);
+  assert.equal(parseCreateContenido({ ...base, id_tipo_contenido: 99 }, catalogos).ok, false);
+  assert.equal(parseCreateContenido({ ...base, titulo: "   " }, catalogos).ok, false);
 });
 
 test("acepta un color hex libre y convierte el café por defecto en texto sin marca", () => {
@@ -165,13 +181,14 @@ test("al pegar HTML se quitan los colores de origen", () => {
 });
 
 test("el cambio de estado solo acepta el campo estado", () => {
-  assert.equal(parseEstadoContenido({ estado: "publicada" }).value.estado, "publicada");
-  assert.equal(parseEstadoContenido({ estado: "oculta" }).ok, false);
-  assert.equal(parseEstadoContenido({ estado: "borrador", titulo: "x" }).ok, false);
+  assert.equal(parseEstadoContenido({ estado: "publicada" }, catalogos).value.id_estado, 2);
+  assert.equal(parseEstadoContenido({ estado: "Publicada" }, catalogos).value.id_estado, 2);
+  assert.equal(parseEstadoContenido({ estado: "oculta" }, catalogos).ok, false);
+  assert.equal(parseEstadoContenido({ estado: "borrador", titulo: "x" }, catalogos).ok, false);
 });
 
 test("editar puede omitir la portada", () => {
-  const parsed = parseUpdateContenido(base);
+  const parsed = parseUpdateContenido(base, catalogos);
 
   assert.equal(parsed.ok, true);
   assert.equal(parsed.value.imagen_url, undefined);

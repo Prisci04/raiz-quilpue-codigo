@@ -11,6 +11,7 @@ import {
   parseUpdateContenido,
 } from "@/lib/contenidos/validation.mjs";
 import { parseOwnedPortadaUrl } from "@/lib/media/policy.mjs";
+import { listCatalogosContenido } from "@/services/catalogos.service";
 import {
   actualizarContenido,
   cambiarEstadoContenido,
@@ -70,9 +71,12 @@ export async function PATCH(request, { params }) {
       return invalidId();
     }
 
+    const catalogos = await listCatalogosContenido();
     const body = await readContenidoBody(request);
     const soloEstado = body && Object.keys(body).length === 1 && "estado" in body;
-    const parsed = soloEstado ? parseEstadoContenido(body) : parseUpdateContenido(body);
+    const parsed = soloEstado
+      ? parseEstadoContenido(body, catalogos)
+      : parseUpdateContenido(body, catalogos);
 
     if (!parsed.ok) {
       throw new ContenidoError("VALIDATION", parsed.message);
@@ -87,8 +91,8 @@ export async function PATCH(request, { params }) {
     }
 
     const contenido = soloEstado
-      ? await cambiarEstadoContenido(parsedId.value, parsed.value.estado)
-      : await actualizarContenido(parsedId.value, parsed.value);
+      ? await cambiarEstadoContenido(parsedId.value, parsed.value.id_estado, catalogos)
+      : await actualizarContenido(parsedId.value, parsed.value, catalogos);
 
     return noStore(jsonSuccess(contenido));
   } catch (error) {

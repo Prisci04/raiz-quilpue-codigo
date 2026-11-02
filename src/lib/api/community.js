@@ -9,7 +9,7 @@ async function request(path, options = {}) {
 
   const response = await fetch(path, {
     ...options,
-    credentials: "same-origin",
+    credentials: "include",
     headers,
   });
 
@@ -97,9 +97,9 @@ export const deleteAporteMuseo = (id) =>
     method: "DELETE",
   });
 
-export const convertirAporteEnBorrador = (id) =>
+export const aprobarAporteMuseo = (id) =>
   request(
-    `/api/admin/museo/aportes/${id}/convertir`,
+    `/api/admin/museo/aportes/${id}/aprobar`,
     {
       method: "POST",
     },

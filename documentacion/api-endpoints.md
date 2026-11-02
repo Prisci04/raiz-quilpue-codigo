@@ -16,7 +16,7 @@ npm run dev
 
 El portal público consulta las actividades publicadas y registra las inscripciones y aportes al Museo mediante la API. Las rutas administrativas requieren sesión interna y rol editor o administrador; no se debe consultar Supabase directamente desde el navegador.
 
-Para habilitar inscripciones, piezas del Museo y aportes, ejecutar una vez `database-documentacion/009_actividades_museo.sql` en el editor SQL de Supabase.
+El esquema vive en `database-documentacion/001_roles.sql` a `018_museo_aportes.sql`. Esos archivos SQL son la fuente de verdad: no hay tabla `sesiones`, no hay `museo_piezas` y las categorías se persisten por ID.
 
 ---
 
@@ -151,15 +151,17 @@ Registra nombre, apellido, correo y teléfono de una persona en una actividad pu
 
 `POST /api/museo/aportes`
 
-Recibe los datos del formulario de colaboración y el nombre del archivo seleccionado. Como indica el formulario, el archivo no se transfiere ni almacena en el servidor.
+Recibe el formulario de colaboración (`nombre`, `correo`, `id_categoria_museo`, `titulo`, `descripcion`, `fecha_aproximada`, `lugar`) y una imagen obligatoria en `archivo` (JPG, PNG, WEBP o AVIF, máximo 5 MB). La imagen se guarda en `museo/aportes/{uuid}.ext`. No se aceptan PDF.
+
+El aporte queda en revisión `Pendiente`. El listado público del museo solo muestra aportes `Aprobado`; no hay conversión a otra tabla.
 
 ### Administración
 
 Las rutas `GET/POST /api/admin/actividades`, `GET/PATCH/DELETE /api/admin/actividades/{id}` y `GET /api/admin/actividades/{id}/participantes` gestionan actividades e inscripciones.
 
-Las rutas `GET/POST /api/admin/museo`, `GET/PATCH/DELETE /api/admin/museo/{id}`, `GET /api/admin/museo/aportes` y `DELETE /api/admin/museo/aportes/{id}` gestionan piezas y aportes. Estas rutas requieren sesión interna y rol de gestor de contenidos.
+Las rutas `GET/POST /api/admin/museo`, `GET/PATCH/DELETE /api/admin/museo/{id}`, `GET /api/admin/museo/aportes`, `POST /api/admin/museo/aportes/{id}/aprobar`, `POST /api/admin/museo/aportes/{id}/rechazar` y `DELETE /api/admin/museo/aportes/{id}` gestionan piezas y aportes. Estas rutas requieren sesión interna y rol de gestor de contenidos.
 
-Las categorías del museo son `fotografias`, `documentos`, `objetos_piezas`, `memorias_relatos`, `lugares_memoria` y `cultura_comunidad`.
+Las categorías oficiales del museo son `Fotografías`, `Documentos`, `Objetos y piezas`, `Memorias y relatos`, `Lugares de memoria` y `Cultura y comunidad`.
 
 ---
 
@@ -213,4 +215,4 @@ El admin no usa las rutas públicas para editar actividades. Sus rutas administr
 | `saveActividad(id, datos)` | `PATCH /api/admin/actividades/{id}` |
 | `deleteActividad(id)` | `DELETE /api/admin/actividades/{id}` |
 
-`listActividadesAdmin` lista todos los estados, no solo `publicada`. Crear, editar y borrar no se exponen en `/api/actividades`.
+`listActividadesAdmin` lista todos los estados, no solo `Publicada`. Crear, editar y borrar no se exponen en `/api/actividades`.

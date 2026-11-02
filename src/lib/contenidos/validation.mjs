@@ -1,9 +1,12 @@
 import {
+  findCatalogoById,
+  findCatalogoByNombre,
+  parseCatalogoId,
+} from "../catalogos.mjs";
+import {
   DESCRIPCION_MAX_LENGTH,
-  ESTADOS_CONTENIDO,
   IMAGEN_URL_MAX_LENGTH,
   RESUMEN_MAX_LENGTH,
-  TIPOS_CONTENIDO,
   TITULO_MAX_LENGTH,
   parseDocumento,
 } from "./documento.mjs";
@@ -29,22 +32,6 @@ function readRequiredText(value, maxLength, emptyMessage, longMessage) {
   if (text.length > maxLength) return fail(longMessage);
 
   return { ok: true, value: text };
-}
-
-function readTipo(value) {
-  if (typeof value !== "string" || !TIPOS_CONTENIDO.includes(value)) {
-    return fail("El tipo de contenido no es válido.");
-  }
-
-  return { ok: true, value };
-}
-
-function readEstado(value) {
-  if (typeof value !== "string" || !ESTADOS_CONTENIDO.includes(value)) {
-    return fail("El estado no es válido.");
-  }
-
-  return { ok: true, value };
 }
 
 function readImagen(value, { allowOmit }) {
@@ -73,7 +60,24 @@ function readImagen(value, { allowOmit }) {
   return { ok: true, value: owned.publicUrl };
 }
 
-function readFields(body, { allowOmitImage }) {
+function readEstadoId(value, catalogos) {
+  const items = catalogos?.estado_publicacion;
+  const byId = findCatalogoById(items, value);
+
+  if (byId) {
+    return { ok: true, value: byId.id };
+  }
+
+  const byNombre = findCatalogoByNombre(items, value);
+
+  if (byNombre) {
+    return { ok: true, value: byNombre.id };
+  }
+
+  return fail("El estado no es válido.");
+}
+
+function readFields(body, catalogos, { allowOmitImage }) {
   if (!isRecord(body)) {
     return fail("La solicitud no es válida.");
   }
@@ -102,10 +106,14 @@ function readFields(body, { allowOmitImage }) {
   );
   if (!resumen.ok) return resumen;
 
-  const tipo = readTipo(body.tipo);
+  const tipo = parseCatalogoId(
+    body.id_tipo_contenido,
+    catalogos?.tipo_contenido,
+    "El tipo de contenido",
+  );
   if (!tipo.ok) return tipo;
 
-  const estado = readEstado(body.estado);
+  const estado = readEstadoId(body.id_estado ?? body.estado, catalogos);
   if (!estado.ok) return estado;
 
   const imagen = readImagen(body.imagen_url, { allowOmit: allowOmitImage });
@@ -120,30 +128,30 @@ function readFields(body, { allowOmitImage }) {
       titulo: titulo.value,
       descripcion: descripcion.value,
       resumen: resumen.value,
-      tipo: tipo.value,
-      estado: estado.value,
+      id_tipo_contenido: tipo.value,
+      id_estado: estado.value,
       imagen_url: imagen.value,
       contenido: contenido.value,
     },
   };
 }
 
-export function parseCreateContenido(body) {
-  return readFields(body, { allowOmitImage: false });
+export function parseCreateContenido(body, catalogos) {
+  return readFields(body, catalogos, { allowOmitImage: false });
 }
 
-export function parseUpdateContenido(body) {
-  return readFields(body, { allowOmitImage: true });
+export function parseUpdateContenido(body, catalogos) {
+  return readFields(body, catalogos, { allowOmitImage: true });
 }
 
-export function parseEstadoContenido(body) {
+export function parseEstadoContenido(body, catalogos) {
   if (!isRecord(body) || Object.keys(body).length !== 1) {
     return fail("La solicitud no es válida.");
   }
 
-  const estado = readEstado(body.estado);
+  const estado = readEstadoId(body.estado ?? body.id_estado, catalogos);
 
   if (!estado.ok) return estado;
 
-  return { ok: true, value: { estado: estado.value } };
+  return { ok: true, value: { id_estado: estado.value } };
 }

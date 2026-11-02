@@ -16,7 +16,7 @@ export async function POST(request, { params }) {
   return runAdminCommunity(
     request,
     "POST /api/admin/museo/aportes/[id]/rechazar",
-    async () => {
+    async (user) => {
       const { id } = await params;
 
       const parsed = parsePositiveInteger(id, {
@@ -32,7 +32,7 @@ export async function POST(request, { params }) {
       }
 
       const result =
-        await rechazarAporteMuseoAdmin(parsed.value);
+        await rechazarAporteMuseoAdmin(parsed.value, user.id);
 
       if (result?.error === "NOT_FOUND") {
         return jsonError(

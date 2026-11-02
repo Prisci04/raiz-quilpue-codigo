@@ -1,5 +1,3 @@
-import UsuarioStatusBadge from "@/components/admin/usuarios/UsuarioStatusBadge";
-
 function nombreVisible(usuario) {
   return [usuario.nombre, usuario.apellido].filter(Boolean).join(" ");
 }
@@ -30,42 +28,29 @@ function ActionButton({ children, onClick, tone = "default", disabled, title }) 
 function UsuarioActions({
   usuario,
   isSelf,
-  isLastActiveAdmin,
+  isLastAdmin,
   busy,
   onEdit,
-  onEstado,
   onDelete,
   align = "end",
 }) {
-  const active = usuario.estado === "activo";
-
   return (
     <div className={`flex flex-wrap gap-1 ${align === "end" ? "justify-end" : "justify-start"}`}>
       <ActionButton onClick={() => onEdit(usuario)} disabled={busy}>
         Editar
       </ActionButton>
-      {active ? (
+      {!isSelf ? (
         <ActionButton
-          onClick={() => onEstado(usuario, "inactivo")}
-          disabled={busy || isSelf || isLastActiveAdmin}
+          tone="danger"
+          onClick={() => onDelete(usuario)}
+          disabled={busy || isLastAdmin}
           title={
-            isSelf
-              ? "No puedes desactivar tu propia cuenta."
-              : isLastActiveAdmin
-                ? "Debe quedar al menos un administrador activo."
-                : undefined
+            isLastAdmin
+              ? "Debe quedar al menos un administrador."
+              : undefined
           }
         >
-          Desactivar
-        </ActionButton>
-      ) : (
-        <ActionButton onClick={() => onEstado(usuario, "activo")} disabled={busy}>
-          Activar
-        </ActionButton>
-      )}
-      {!active && !isSelf ? (
-        <ActionButton tone="danger" onClick={() => onDelete(usuario)} disabled={busy}>
-          Eliminar definitivamente
+          Eliminar
         </ActionButton>
       ) : null}
     </div>
@@ -75,10 +60,9 @@ function UsuarioActions({
 export default function UsuariosTable({
   usuarios,
   currentUserId,
-  activeAdminCount,
+  adminCount,
   busyId,
   onEdit,
-  onEstado,
   onDelete,
 }) {
   if (usuarios.length === 0) {
@@ -94,22 +78,18 @@ export default function UsuariosTable({
     <ul className="space-y-3 md:hidden">
       {usuarios.map((usuario) => {
         const isSelf = Number(usuario.id) === Number(currentUserId);
-        const isLastActiveAdmin =
-          usuario.estado === "activo" &&
+        const isLastAdmin =
           usuario.roles.some((rol) => rol.codigo === "administrador") &&
-          activeAdminCount <= 1;
+          adminCount <= 1;
 
         return (
           <li
             key={usuario.id}
             className="rounded-md border border-[#bb9c82]/70 border-t-2 border-t-[#db700f] bg-[#fffdf9] p-4"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-medium text-[#2c1810]">{nombreVisible(usuario)}</p>
-                <p className="mt-1 truncate text-sm text-[#7c5c47]">{usuario.email}</p>
-              </div>
-              <UsuarioStatusBadge estado={usuario.estado} />
+            <div className="min-w-0">
+              <p className="font-medium text-[#2c1810]">{nombreVisible(usuario)}</p>
+              <p className="mt-1 truncate text-sm text-[#7c5c47]">{usuario.email}</p>
             </div>
             <p className="mt-3 font-mono text-[10px] tracking-[0.16em] text-[#946541] uppercase">
               {rolVisible(usuario)}
@@ -118,10 +98,9 @@ export default function UsuariosTable({
               <UsuarioActions
                 usuario={usuario}
                 isSelf={isSelf}
-                isLastActiveAdmin={isLastActiveAdmin}
+                isLastAdmin={isLastAdmin}
                 busy={busyId === usuario.id}
                 onEdit={onEdit}
-                onEstado={onEstado}
                 onDelete={onDelete}
                 align="start"
               />
@@ -137,17 +116,15 @@ export default function UsuariosTable({
             <th className="px-4 py-3 font-medium sm:px-5">Nombre</th>
             <th className="px-4 py-3 font-medium sm:px-5">Correo</th>
             <th className="px-4 py-3 font-medium sm:px-5">Rol</th>
-            <th className="px-4 py-3 font-medium sm:px-5">Estado</th>
             <th className="px-4 py-3 text-right font-medium sm:px-5">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {usuarios.map((usuario) => {
             const isSelf = Number(usuario.id) === Number(currentUserId);
-            const isLastActiveAdmin =
-              usuario.estado === "activo" &&
+            const isLastAdmin =
               usuario.roles.some((rol) => rol.codigo === "administrador") &&
-              activeAdminCount <= 1;
+              adminCount <= 1;
 
             return (
               <tr
@@ -160,16 +137,12 @@ export default function UsuariosTable({
                 <td className="px-4 py-3 text-[#7c5c47] sm:px-5">{usuario.email}</td>
                 <td className="px-4 py-3 text-[#2c1810] sm:px-5">{rolVisible(usuario)}</td>
                 <td className="px-4 py-3 sm:px-5">
-                  <UsuarioStatusBadge estado={usuario.estado} />
-                </td>
-                <td className="px-4 py-3 sm:px-5">
                   <UsuarioActions
                     usuario={usuario}
                     isSelf={isSelf}
-                    isLastActiveAdmin={isLastActiveAdmin}
+                    isLastAdmin={isLastAdmin}
                     busy={busyId === usuario.id}
                     onEdit={onEdit}
-                    onEstado={onEstado}
                     onDelete={onDelete}
                   />
                 </td>

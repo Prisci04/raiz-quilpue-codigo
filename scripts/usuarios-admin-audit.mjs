@@ -95,8 +95,8 @@ async function login(email, password) {
 async function inspectUsuario(id) {
   const { data, error } = await supabase
     .from("usuarios")
-    .select("tipo_usuario,estado,password_hash")
-    .eq("id", id)
+    .select("id_user,correo_user,password,id_rol")
+    .eq("id_user", id)
     .maybeSingle();
 
   if (error) {
@@ -106,22 +106,10 @@ async function inspectUsuario(id) {
   return data;
 }
 
-async function countSesiones(usuarioId) {
-  const { count, error } = await supabase
-    .from("sesiones")
-    .select("id", { count: "exact", head: true })
-    .eq("usuario_id", usuarioId);
-
-  if (error) {
-    throw new Error(error.code ?? "sesiones");
-  }
-
-  return count ?? 0;
-}
-
 function exposesSecret(text, password) {
   return (
     text.includes("password_hash") ||
+    /"password"\s*:/.test(text) ||
     text.includes(password) ||
     text.includes("SUPABASE_SECRET_KEY")
   );
@@ -129,11 +117,6 @@ function exposesSecret(text, password) {
 
 async function cleanup(adminCookie) {
   for (const id of createdIds) {
-    await request(`/api/admin/usuarios/${id}/estado`, {
-      method: "PATCH",
-      cookie: adminCookie,
-      body: { estado: "inactivo" },
-    });
     await request(`/api/admin/usuarios/${id}`, {
       method: "DELETE",
       cookie: adminCookie,
@@ -166,17 +149,6 @@ async function main() {
   record(
     "listado no incluye password_hash",
     list.status === 200 && !listText.includes("password_hash"),
-  );
-
-  const selfOff = await request(`/api/admin/usuarios/${seed.id}/estado`, {
-    method: "PATCH",
-    cookie: adminCookie,
-    body: { estado: "inactivo" },
-  });
-  record(
-    "administrador no puede desactivarse",
-    selfOff.status === 403,
-    `${selfOff.status} ${selfOff.json?.error?.code ?? ""}`,
   );
 
   const selfDelete = await request(`/api/admin/usuarios/${seed.id}`, {
@@ -240,10 +212,9 @@ async function main() {
 
   if (editor?.id) {
     const row = await inspectUsuario(editor.id);
-    record("tipo_usuario interno y estado activo", row?.tipo_usuario === "interno" && row?.estado === "activo");
     record(
       "contraseña guardada como hash",
-      Boolean(row?.password_hash?.startsWith("$2")) && row.password_hash !== editorPassword,
+      Boolean(row?.password?.startsWith("$2")) && row.password !== editorPassword,
     );
   }
 
@@ -252,6 +223,7 @@ async function main() {
     cookie: adminCookie,
     body: {
       nombre: "Otra",
+      apellido: "Persona",
       email: editorEmail,
       password: editorPassword,
       rolCodigo: "editor",
@@ -328,30 +300,8 @@ async function main() {
   record("editor recibe 403 al editar", editorPatch.status === 403, String(editorPatch.status));
 
   if (editor?.id) {
-    const sessionsBefore = await countSesiones(editor.id);
-    record("editor tiene sesión activa", sessionsBefore >= 1, String(sessionsBefore));
-
-    const deactivated = await request(`/api/admin/usuarios/${editor.id}/estado`, {
-      method: "PATCH",
-      cookie: adminCookie,
-      body: { estado: "inactivo" },
-    });
-    const sessionsAfter = await countSesiones(editor.id);
     const me = await request("/api/auth/me", { cookie: editorCookie, origin: false });
-    const blockedLogin = await login(editorEmail, editorPassword);
-    record(
-      "desactivar usuario",
-      deactivated.status === 200 && deactivated.json?.data?.estado === "inactivo",
-      `${deactivated.status} ${deactivated.json?.error?.code ?? ""}`,
-    );
-    record("desactivar elimina sesiones", sessionsAfter === 0, String(sessionsAfter));
-    record("sesión previa queda inválida", me.status === 401, String(me.status));
-    record(
-      "inactivo no inicia sesión y el mensaje es genérico",
-      blockedLogin.status === 401 &&
-        !blockedLogin.text.toLowerCase().includes("desactiv"),
-      String(blockedLogin.status),
-    );
+    record("sesión de editor vigente", me.status === 200, String(me.status));
 
     const renamed = await request(`/api/admin/usuarios/${editor.id}`, {
       method: "PATCH",
@@ -390,44 +340,11 @@ async function main() {
       `${backToEditor.status}`,
     );
 
-    if (secondAdmin?.id) {
-      const deleteActive = await request(`/api/admin/usuarios/${secondAdmin.id}`, {
-        method: "DELETE",
-        cookie: adminCookie,
-      });
-      record(
-        "usuario activo no se elimina",
-        deleteActive.status === 409 &&
-          deleteActive.json?.error?.message ===
-            "Debes desactivar el usuario antes de eliminarlo.",
-        `${deleteActive.status} ${deleteActive.json?.error?.code ?? ""}`,
-      );
-    }
-
-    const reactivated = await request(`/api/admin/usuarios/${editor.id}/estado`, {
-      method: "PATCH",
-      cookie: adminCookie,
-      body: { estado: "activo" },
-    });
-    const loginAgain = await login(editorEmail, editorPassword);
-    record(
-      "reactivar no crea sesión y permite entrar después",
-      reactivated.status === 200 &&
-        reactivated.json?.data?.estado === "activo" &&
-        loginAgain.status === 200,
-      `${reactivated.status}/${loginAgain.status}`,
-    );
-
-    await request(`/api/admin/usuarios/${editor.id}/estado`, {
-      method: "PATCH",
-      cookie: adminCookie,
-      body: { estado: "inactivo" },
-    });
     const removed = await request(`/api/admin/usuarios/${editor.id}`, {
       method: "DELETE",
       cookie: adminCookie,
     });
-    record("usuario inactivo se elimina", removed.status === 200, String(removed.status));
+    record("usuario se elimina", removed.status === 200, String(removed.status));
     if (removed.status === 200) {
       const index = createdIds.indexOf(editor.id);
       if (index >= 0) createdIds.splice(index, 1);
@@ -435,17 +352,12 @@ async function main() {
   }
 
   if (secondAdmin?.id) {
-    await request(`/api/admin/usuarios/${secondAdmin.id}/estado`, {
-      method: "PATCH",
-      cookie: adminCookie,
-      body: { estado: "inactivo" },
-    });
     const removedAdmin = await request(`/api/admin/usuarios/${secondAdmin.id}`, {
       method: "DELETE",
       cookie: adminCookie,
     });
     record(
-      "administrador extra inactivo se elimina",
+      "administrador extra se elimina",
       removedAdmin.status === 200,
       String(removedAdmin.status),
     );
@@ -460,9 +372,8 @@ async function main() {
     (usuario) => usuario.email === adminEmail.toLowerCase(),
   );
   record(
-    "el administrador original sigue activo",
-    seedStill?.estado === "activo" &&
-      seedStill?.roles?.some((rol) => rol.codigo === "administrador"),
+    "el administrador original sigue existiendo",
+    Boolean(seedStill?.roles?.some((rol) => rol.codigo === "administrador")),
   );
 
   const failed = results.filter((item) => !item.ok);
