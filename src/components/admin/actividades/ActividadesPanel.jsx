@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createPortal } from "react-dom";
-import { CalendarCheck, CalendarDays, CircleCheck, Clock3, Eye, ImageIcon, MoreVertical, Pencil, Plus, Users } from "lucide-react";
+import { CalendarCheck, CalendarDays, CircleCheck, Clock3, Eye, ImageIcon, MoreVertical, Pencil, Plus, Trash2, Users } from "lucide-react";
 import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import { deleteActividad, saveActividadEstado } from "@/lib/api/community";
