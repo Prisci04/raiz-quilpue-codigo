@@ -4,14 +4,23 @@ import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { ArrowRight, Inbox } from "lucide-react";
 import ContenidoPreviewModal from "@/components/contenido/ContenidoPreviewModal";
+import {
+  NOMBRE_TIPO_CAPSULA,
+  NOMBRE_TIPO_COMUNIDAD,
+  NOMBRE_TIPO_CULTURA,
+  NOMBRE_TIPO_NOTICIA,
+  NOMBRE_TIPO_PATRIMONIO,
+} from "@/lib/catalogos.mjs";
+import { esTipoPatrimonio, tipoContenidoDesdeFiltro } from "@/lib/contenido";
+import { TIPO_LABELS_PUBLICO } from "@/lib/contenidos/documento.mjs";
 
 const FILTERS = [
   { id: "todos", label: "Todos" },
-  { id: "noticia", label: "Noticias" },
-  { id: "patrimonio", label: "Patrimonio" },
-  { id: "capsula_historica", label: "Cápsulas históricas" },
-  { id: "cultura", label: "Cultura" },
-  { id: "comunidad", label: "Comunidad" },
+  { id: NOMBRE_TIPO_NOTICIA, label: TIPO_LABELS_PUBLICO[NOMBRE_TIPO_NOTICIA] },
+  { id: NOMBRE_TIPO_PATRIMONIO, label: TIPO_LABELS_PUBLICO[NOMBRE_TIPO_PATRIMONIO] },
+  { id: NOMBRE_TIPO_CAPSULA, label: TIPO_LABELS_PUBLICO[NOMBRE_TIPO_CAPSULA] },
+  { id: NOMBRE_TIPO_CULTURA, label: TIPO_LABELS_PUBLICO[NOMBRE_TIPO_CULTURA] },
+  { id: NOMBRE_TIPO_COMUNIDAD, label: TIPO_LABELS_PUBLICO[NOMBRE_TIPO_COMUNIDAD] },
 ];
 
 function formatDate(dateString) {
@@ -26,7 +35,7 @@ function formatDate(dateString) {
 }
 
 function tipoLabel(tipo) {
-  return FILTERS.find((item) => item.id === tipo)?.label ?? tipo;
+  return TIPO_LABELS_PUBLICO[tipo] ?? FILTERS.find((item) => item.id === tipo)?.label ?? tipo;
 }
 
 export default function ContenidoView({
@@ -36,8 +45,9 @@ export default function ContenidoView({
   initialQuery = "",
 }) {
   const requestedQuery = initialQuery.trim().toLowerCase();
-  const initialType = FILTERS.some((filter) => filter.id === initialTipo)
-    ? initialTipo
+  const resolvedTipo = tipoContenidoDesdeFiltro(initialTipo);
+  const initialType = FILTERS.some((filter) => filter.id === resolvedTipo)
+    ? resolvedTipo
     : "todos";
   const [tipo, setTipo] = useState(initialType);
   const [selectedId, setSelectedId] = useState(null);
@@ -112,18 +122,18 @@ export default function ContenidoView({
           </div>
         ) : (
           <>
-            {(tipo === "todos" || tipo === "patrimonio") &&
-            visibleItems.some((item) => item.tipo === "patrimonio") ? (
+            {(tipo === "todos" || esTipoPatrimonio(tipo)) &&
+            visibleItems.some((item) => esTipoPatrimonio(item.tipo)) ? (
               <section>
                 <SectionHeading
                   eyebrow="Colección"
                   title="Patrimonio cultural"
-                  count={visibleItems.filter((item) => item.tipo === "patrimonio").length}
+                  count={visibleItems.filter((item) => esTipoPatrimonio(item.tipo)).length}
                   countLabel="piezas"
                 />
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {visibleItems
-                    .filter((item) => item.tipo === "patrimonio")
+                    .filter((item) => esTipoPatrimonio(item.tipo))
                     .map((item, index) => (
                       <ContentCard
                         key={item.id}
@@ -137,18 +147,18 @@ export default function ContenidoView({
               </section>
             ) : null}
 
-            {(tipo === "todos" || tipo !== "patrimonio") &&
-            visibleItems.some((item) => item.tipo !== "patrimonio") ? (
+            {(tipo === "todos" || !esTipoPatrimonio(tipo)) &&
+            visibleItems.some((item) => !esTipoPatrimonio(item.tipo)) ? (
               <section>
                 <SectionHeading
                   eyebrow="Publicaciones"
                   title="Noticias y publicaciones"
-                  count={visibleItems.filter((item) => item.tipo !== "patrimonio").length}
+                  count={visibleItems.filter((item) => !esTipoPatrimonio(item.tipo)).length}
                   countLabel="artículos"
                 />
                 <div className="space-y-4">
                   {visibleItems
-                    .filter((item) => item.tipo !== "patrimonio")
+                    .filter((item) => !esTipoPatrimonio(item.tipo))
                     .map((item, index) => (
                       <ContentCard
                         key={item.id}

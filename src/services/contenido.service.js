@@ -1,10 +1,22 @@
+import { NOMBRE_ESTADO_PUBLICADA } from "@/lib/catalogos.mjs";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-const ESTADO_PUBLICADA = "publicada";
-const CONTENIDO_LIST_COLUMNS =
-  "id,titulo,descripcion,resumen,tipo,imagen_url,fecha_publicacion,fecha_creacion";
-const CONTENIDO_DETAIL_COLUMNS =
-  "id,titulo,descripcion,resumen,contenido,tipo,imagen_url,fecha_publicacion,fecha_creacion";
+const CONTENIDO_LIST_COLUMNS = `
+  id_contenido,
+  titulo,
+  descripcion,
+  resumen,
+  imagen_url,
+  fec_publicacion,
+  fec_creacion,
+  tipo_contenido ( nombre_tipo_contenido ),
+  estado_publicacion!inner ( nombre_estado )
+`;
+const CONTENIDO_DETAIL_COLUMNS = `${CONTENIDO_LIST_COLUMNS},contenido`;
+
+function nested(value) {
+  return Array.isArray(value) ? value[0] : value;
+}
 
 function mapContenidoPublico(row, { includeContenido = false } = {}) {
   if (!row) {
@@ -12,14 +24,14 @@ function mapContenidoPublico(row, { includeContenido = false } = {}) {
   }
 
   const contenido = {
-    id: row.id,
+    id: row.id_contenido,
     titulo: row.titulo,
     descripcion: row.descripcion ?? null,
     resumen: row.resumen ?? null,
-    tipo: row.tipo,
+    tipo: nested(row.tipo_contenido)?.nombre_tipo_contenido ?? "",
     imagen_url: row.imagen_url ?? null,
-    fecha_publicacion: row.fecha_publicacion ?? null,
-    fecha_creacion: row.fecha_creacion ?? null,
+    fecha_publicacion: row.fec_publicacion ?? null,
+    fecha_creacion: row.fec_creacion ?? null,
   };
 
   if (includeContenido) {
@@ -46,11 +58,11 @@ function publicadasQuery(columns, options) {
   return getSupabaseServerClient()
     .from("contenidos")
     .select(columns, options)
-    .eq("estado", ESTADO_PUBLICADA);
+    .eq("estado_publicacion.nombre_estado", NOMBRE_ESTADO_PUBLICADA);
 }
 
 async function getPublicContenidosCount() {
-  const { count, error } = await publicadasQuery("id", {
+  const { count, error } = await publicadasQuery("id_contenido,estado_publicacion!inner(nombre_estado)", {
     count: "exact",
     head: true,
   });
@@ -69,9 +81,9 @@ export async function getContenidos({ page, limit }) {
   const { data, error, count } = await publicadasQuery(CONTENIDO_LIST_COLUMNS, {
     count: "exact",
   })
-    .order("fecha_publicacion", { ascending: false, nullsFirst: false })
-    .order("fecha_creacion", { ascending: false })
-    .order("id", { ascending: false })
+    .order("fec_publicacion", { ascending: false, nullsFirst: false })
+    .order("fec_creacion", { ascending: false })
+    .order("id_contenido", { ascending: false })
     .range(desde, hasta);
 
   if (error) {
@@ -94,7 +106,7 @@ export async function getContenidos({ page, limit }) {
 
 export async function getContenidoById(id) {
   const { data, error } = await publicadasQuery(CONTENIDO_DETAIL_COLUMNS)
-    .eq("id", id)
+    .eq("id_contenido", id)
     .maybeSingle();
 
   if (error) {

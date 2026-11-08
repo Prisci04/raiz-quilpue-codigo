@@ -3,26 +3,24 @@ import "server-only";
 import { toExactIlikePattern } from "@/lib/auth/credentials";
 import { hashPassword } from "@/lib/auth/password";
 import { UsuarioError } from "@/lib/usuarios/errors.mjs";
-import { ROL_CODIGOS } from "@/lib/usuarios/validation.mjs";
+import {
+  ROL_CODIGOS,
+  rolCodigoFromNombre,
+  rolNombreFromCodigo,
+} from "@/lib/usuarios/validation.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
-const USUARIO_COLUMNS =
-  "id,nombre,apellido,email,telefono,estado,fecha_creacion,tipo_usuario";
-
 const USUARIO_LIST_COLUMNS = `
-  id,
-  nombre,
-  apellido,
-  email,
+  id_user,
+  nombre_user,
+  apellido_user,
+  correo_user,
   telefono,
-  estado,
-  fecha_creacion,
-  usuario_roles (
-    roles (
-      codigo,
-      nombre,
-      estado
-    )
+  fec_creacion,
+  id_rol,
+  roles (
+    id_rol,
+    nombre_rol
   )
 `;
 
@@ -39,65 +37,72 @@ function queryFailed(error) {
   return failure;
 }
 
-function mapRoles(links) {
-  return (links ?? [])
-    .map((link) => link?.roles)
-    .filter((rol) => rol?.codigo && rol?.nombre && rol.estado === "activo")
-    .map((rol) => ({
-      codigo: rol.codigo,
-      nombre: rol.nombre,
-    }));
+function mapRol(roles) {
+  const row = Array.isArray(roles) ? roles[0] : roles;
+  const codigo = rolCodigoFromNombre(row?.nombre_rol);
+
+  if (!codigo) {
+    return [];
+  }
+
+  return [{ codigo, nombre: row.nombre_rol }];
 }
 
 function mapUsuario(row) {
   return {
-    id: row.id,
-    nombre: row.nombre,
-    apellido: row.apellido ?? null,
-    email: row.email,
+    id: row.id_user,
+    nombre: row.nombre_user,
+    apellido: row.apellido_user ?? null,
+    email: row.correo_user,
     telefono: row.telefono ?? null,
-    estado: row.estado,
-    fecha_creacion: row.fecha_creacion,
-    roles: mapRoles(row.usuario_roles),
+    fecha_creacion: row.fec_creacion,
+    roles: mapRol(row.roles),
   };
 }
 
-function isActiveAdmin(usuario) {
-  return (
-    usuario.estado === "activo" &&
-    usuario.roles.some((rol) => rol.codigo === "administrador")
-  );
+function isAdmin(usuario) {
+  return usuario.roles.some((rol) => rol.codigo === "administrador");
 }
 
-function countOtherActiveAdmins(usuarios, userId) {
+function countOtherAdmins(usuarios, userId) {
   return usuarios.filter((usuario) => {
-    return Number(usuario.id) !== Number(userId) && isActiveAdmin(usuario);
+    return Number(usuario.id) !== Number(userId) && isAdmin(usuario);
   }).length;
 }
 
-async function findRolActivoByCodigo(codigo) {
+async function findRolByCodigo(codigo) {
+  const nombreRol = rolNombreFromCodigo(codigo);
+
+  if (!nombreRol) {
+    return null;
+  }
+
   const { data, error } = await client()
     .from("roles")
-    .select("id,codigo,nombre,estado")
-    .eq("codigo", codigo)
+    .select("id_rol,nombre_rol")
+    .eq("nombre_rol", nombreRol)
     .maybeSingle();
 
   if (error) {
     throw queryFailed(error);
   }
 
-  if (!data || data.estado !== "activo") {
+  if (!data) {
     return null;
   }
 
-  return data;
+  return {
+    id: data.id_rol,
+    codigo: rolCodigoFromNombre(data.nombre_rol),
+    nombre: data.nombre_rol,
+  };
 }
 
 async function emailTaken(email, excludeId) {
   const { data, error } = await client()
     .from("usuarios")
-    .select("id")
-    .ilike("email", toExactIlikePattern(email))
+    .select("id_user")
+    .ilike("correo_user", toExactIlikePattern(email))
     .maybeSingle();
 
   if (error?.code === MULTIPLE_ROWS) {
@@ -112,16 +117,15 @@ async function emailTaken(email, excludeId) {
     return false;
   }
 
-  return Number(data.id) !== Number(excludeId);
+  return Number(data.id_user) !== Number(excludeId);
 }
 
-async function listInternos() {
+async function listUsuarios() {
   const { data, error } = await client()
     .from("usuarios")
     .select(USUARIO_LIST_COLUMNS)
-    .eq("tipo_usuario", "interno")
-    .order("nombre", { ascending: true })
-    .order("id", { ascending: true });
+    .order("nombre_user", { ascending: true })
+    .order("id_user", { ascending: true });
 
   if (error) {
     throw queryFailed(error);
@@ -130,12 +134,11 @@ async function listInternos() {
   return (data ?? []).map(mapUsuario);
 }
 
-async function findInternoById(id) {
+async function findUsuarioById(id) {
   const { data, error } = await client()
     .from("usuarios")
     .select(USUARIO_LIST_COLUMNS)
-    .eq("id", id)
-    .eq("tipo_usuario", "interno")
+    .eq("id_user", id)
     .maybeSingle();
 
   if (error) {
@@ -145,8 +148,8 @@ async function findInternoById(id) {
   return data ? mapUsuario(data) : null;
 }
 
-async function requireInterno(id) {
-  const usuario = await findInternoById(id);
+async function requireUsuario(id) {
+  const usuario = await findUsuarioById(id);
 
   if (!usuario) {
     throw new UsuarioError("NOT_FOUND", "Usuario no encontrado.");
@@ -155,79 +158,35 @@ async function requireInterno(id) {
   return usuario;
 }
 
-async function replaceRol(usuarioId, rolId) {
-  const { data: previous, error: readError } = await client()
-    .from("usuario_roles")
-    .select("rol_id")
-    .eq("usuario_id", usuarioId);
-
-  if (readError) {
-    throw queryFailed(readError);
-  }
-
-  const current = previous ?? [];
-
-  if (current.length === 1 && Number(current[0].rol_id) === Number(rolId)) {
-    return;
-  }
-
-  const { error: deleteError } = await client()
-    .from("usuario_roles")
-    .delete()
-    .eq("usuario_id", usuarioId);
-
-  if (deleteError) {
-    throw queryFailed(deleteError);
-  }
-
-  const { error: insertError } = await client().from("usuario_roles").insert({
-    usuario_id: usuarioId,
-    rol_id: rolId,
-  });
-
-  if (!insertError) {
-    return;
-  }
-
-  if (current.length > 0) {
-    await client()
-      .from("usuario_roles")
-      .insert(
-        current.map((row) => ({
-          usuario_id: usuarioId,
-          rol_id: row.rol_id,
-        })),
-      );
-  }
-
-  throw queryFailed(insertError);
-}
-
-async function assertKeepsAnActiveAdmin(usuario, nextRolCodigo) {
-  const leavesAdmin =
-    isActiveAdmin(usuario) && nextRolCodigo !== "administrador";
+async function assertKeepsAnAdmin(usuario, nextRolCodigo) {
+  const leavesAdmin = isAdmin(usuario) && nextRolCodigo !== "administrador";
 
   if (!leavesAdmin) {
     return;
   }
 
-  const usuarios = await listInternos();
+  const usuarios = await listUsuarios();
 
-  if (countOtherActiveAdmins(usuarios, usuario.id) === 0) {
+  if (countOtherAdmins(usuarios, usuario.id) === 0) {
     throw new UsuarioError(
       "LAST_ADMIN",
-      "Debe quedar al menos un administrador activo.",
+      "Debe quedar al menos un administrador.",
     );
   }
 }
 
 export async function usuarioTieneRol(usuarioId, codigo) {
+  const nombreRol = rolNombreFromCodigo(codigo);
+
+  if (!nombreRol) {
+    return false;
+  }
+
   const { data, error } = await client()
-    .from("usuario_roles")
-    .select("roles!inner(codigo,estado)")
-    .eq("usuario_id", usuarioId)
-    .eq("roles.codigo", codigo)
-    .eq("roles.estado", "activo")
+    .from("usuarios")
+    .select("id_user, roles!inner(nombre_rol)")
+    .eq("id_user", usuarioId)
+    .eq("roles.nombre_rol", nombreRol)
     .limit(1);
 
   if (error) {
@@ -248,12 +207,11 @@ export async function usuarioEsGestorContenido(usuarioId) {
 
 export async function listUsuariosInternos() {
   const [usuarios, rolesResult] = await Promise.all([
-    listInternos(),
+    listUsuarios(),
     client()
       .from("roles")
-      .select("codigo,nombre,estado")
-      .eq("estado", "activo")
-      .order("nombre", { ascending: true }),
+      .select("id_rol,nombre_rol")
+      .order("nombre_rol", { ascending: true }),
   ]);
 
   if (rolesResult.error) {
@@ -261,17 +219,17 @@ export async function listUsuariosInternos() {
   }
 
   const roles = (rolesResult.data ?? [])
-    .filter((rol) => ROL_CODIGOS.includes(rol.codigo))
     .map((rol) => ({
-      codigo: rol.codigo,
-      nombre: rol.nombre,
-    }));
+      codigo: rolCodigoFromNombre(rol.nombre_rol),
+      nombre: rol.nombre_rol,
+    }))
+    .filter((rol) => ROL_CODIGOS.includes(rol.codigo));
 
   return { usuarios, roles };
 }
 
 export async function createUsuarioInterno(input) {
-  const rol = await findRolActivoByCodigo(input.rolCodigo);
+  const rol = await findRolByCodigo(input.rolCodigo);
 
   if (!rol) {
     throw new UsuarioError(
@@ -292,15 +250,16 @@ export async function createUsuarioInterno(input) {
   const { data, error } = await client()
     .from("usuarios")
     .insert({
-      nombre: input.nombre,
-      apellido: input.apellido,
-      email: input.email,
+      nombre_user: input.nombre,
+      apellido_user: input.apellido,
+      correo_user: input.email,
       telefono: input.telefono,
-      password_hash: passwordHash,
-      tipo_usuario: "interno",
-      estado: "activo",
+      password: passwordHash,
+      id_rol: rol.id,
     })
-    .select(USUARIO_COLUMNS)
+    .select(
+      "id_user,nombre_user,apellido_user,correo_user,telefono,fec_creacion",
+    )
     .single();
 
   if (error?.code === UNIQUE_VIOLATION) {
@@ -314,31 +273,20 @@ export async function createUsuarioInterno(input) {
     throw queryFailed(error);
   }
 
-  const { error: roleError } = await client().from("usuario_roles").insert({
-    usuario_id: data.id,
-    rol_id: rol.id,
-  });
-
-  if (roleError) {
-    await client().from("usuarios").delete().eq("id", data.id);
-    throw queryFailed(roleError);
-  }
-
   return {
-    id: data.id,
-    nombre: data.nombre,
-    apellido: data.apellido ?? null,
-    email: data.email,
+    id: data.id_user,
+    nombre: data.nombre_user,
+    apellido: data.apellido_user ?? null,
+    email: data.correo_user,
     telefono: data.telefono ?? null,
-    estado: data.estado,
-    fecha_creacion: data.fecha_creacion,
+    fecha_creacion: data.fec_creacion,
     roles: [{ codigo: rol.codigo, nombre: rol.nombre }],
   };
 }
 
 export async function updateUsuarioInterno(id, input) {
-  const current = await requireInterno(id);
-  const rol = await findRolActivoByCodigo(input.rolCodigo);
+  const current = await requireUsuario(id);
+  const rol = await findRolByCodigo(input.rolCodigo);
 
   if (!rol) {
     throw new UsuarioError(
@@ -354,112 +302,35 @@ export async function updateUsuarioInterno(id, input) {
     );
   }
 
-  await assertKeepsAnActiveAdmin(current, rol.codigo);
-
-  const previousCodigo = current.roles[0]?.codigo ?? null;
-
-  await replaceRol(id, rol.id);
+  await assertKeepsAnAdmin(current, rol.codigo);
 
   const { error } = await client()
     .from("usuarios")
     .update({
-      nombre: input.nombre,
-      apellido: input.apellido,
-      email: input.email,
+      nombre_user: input.nombre,
+      apellido_user: input.apellido,
+      correo_user: input.email,
       telefono: input.telefono,
+      id_rol: rol.id,
     })
-    .eq("id", id)
-    .eq("tipo_usuario", "interno");
+    .eq("id_user", id);
+
+  if (error?.code === UNIQUE_VIOLATION) {
+    throw new UsuarioError(
+      "EMAIL_TAKEN",
+      "Ya existe un usuario con ese correo.",
+    );
+  }
 
   if (error) {
-    if (previousCodigo) {
-      const previousRol = await findRolActivoByCodigo(previousCodigo);
-
-      if (previousRol) {
-        await replaceRol(id, previousRol.id);
-      }
-    }
-
-    if (error.code === UNIQUE_VIOLATION) {
-      throw new UsuarioError(
-        "EMAIL_TAKEN",
-        "Ya existe un usuario con ese correo.",
-      );
-    }
-
     throw queryFailed(error);
   }
 
-  return requireInterno(id);
-}
-
-export async function setEstadoUsuarioInterno(id, estado, actorId) {
-  const current = await requireInterno(id);
-
-  if (current.estado === estado) {
-    return current;
-  }
-
-  if (estado === "inactivo") {
-    if (Number(current.id) === Number(actorId)) {
-      throw new UsuarioError(
-        "SELF_ACTION",
-        "No puedes desactivar tu propia cuenta.",
-      );
-    }
-
-    if (isActiveAdmin(current)) {
-      const usuarios = await listInternos();
-
-      if (countOtherActiveAdmins(usuarios, current.id) === 0) {
-        throw new UsuarioError(
-          "LAST_ADMIN",
-          "Debe quedar al menos un administrador activo.",
-        );
-      }
-    }
-
-    const { error } = await client()
-      .from("usuarios")
-      .update({ estado: "inactivo" })
-      .eq("id", id)
-      .eq("tipo_usuario", "interno");
-
-    if (error) {
-      throw queryFailed(error);
-    }
-
-    const { error: sessionError } = await client()
-      .from("sesiones")
-      .delete()
-      .eq("usuario_id", id);
-
-    if (sessionError) {
-      await client()
-        .from("usuarios")
-        .update({ estado: "activo" })
-        .eq("id", id)
-        .eq("tipo_usuario", "interno");
-
-      throw queryFailed(sessionError);
-    }
-  } else {
-    const { error } = await client()
-      .from("usuarios")
-      .update({ estado: "activo" })
-      .eq("id", id)
-      .eq("tipo_usuario", "interno");
-
-    if (error) {
-      throw queryFailed(error);
-    }
-  }
-
-  return requireInterno(id);
+  return requireUsuario(id);
 }
 
 export async function deleteUsuarioInterno(id, actorId) {
-  const current = await requireInterno(id);
+  const current = await requireUsuario(id);
 
   if (Number(current.id) === Number(actorId)) {
     throw new UsuarioError(
@@ -468,19 +339,18 @@ export async function deleteUsuarioInterno(id, actorId) {
     );
   }
 
-  if (current.estado !== "inactivo") {
-    throw new UsuarioError(
-      "MUST_DEACTIVATE",
-      "Debes desactivar el usuario antes de eliminarlo.",
-    );
+  if (isAdmin(current)) {
+    const usuarios = await listUsuarios();
+
+    if (countOtherAdmins(usuarios, current.id) === 0) {
+      throw new UsuarioError(
+        "LAST_ADMIN",
+        "Debe quedar al menos un administrador.",
+      );
+    }
   }
 
-  const { error } = await client()
-    .from("usuarios")
-    .delete()
-    .eq("id", id)
-    .eq("tipo_usuario", "interno")
-    .eq("estado", "inactivo");
+  const { error } = await client().from("usuarios").delete().eq("id_user", id);
 
   if (error) {
     throw queryFailed(error);

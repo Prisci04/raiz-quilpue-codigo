@@ -49,7 +49,8 @@ export function coordinatePatch(input) {
 }
 
 export function actividadTieneUbicacionFisica(activity) {
-  return activity?.modalidad === "presencial" || activity?.modalidad === "hibrida";
+  const modalidad = String(activity?.modalidad ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  return modalidad === "presencial" || modalidad === "hibrida";
 }
 
 export function puedeMostrarMapa(activity) {

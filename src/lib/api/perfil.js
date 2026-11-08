@@ -49,9 +49,3 @@ export function updatePassword(payload) {
     body: JSON.stringify(payload),
   });
 }
-
-export function closeOtherSessions() {
-  return requestJson("/api/admin/perfil/sesiones", {
-    method: "DELETE",
-  });
-}

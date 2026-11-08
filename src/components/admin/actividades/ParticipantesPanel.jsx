@@ -14,6 +14,7 @@ import {
   Clock3,
   Download,
   FileText,
+  Hourglass,
   ImageIcon,
   ListFilter,
   MapPin,
@@ -23,12 +24,20 @@ import {
 } from "lucide-react";
 import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
-import { cuposDisponibles, todayISO } from "@/lib/actividades";
+import {
+  cuposDisponibles,
+  esEstadoPublicada,
+  labelParticipacion,
+  listaEsperaDisponibles,
+  todayISO,
+} from "@/lib/actividades";
 import { deleteParticipante } from "@/lib/api/community";
 
 const PAGE_SIZE = 10;
 const FILTERS = [
   { id: "todos", label: "Todos" },
+  { id: "confirmados", label: "Con cupo" },
+  { id: "espera", label: "Lista de espera" },
   { id: "hoy", label: "Inscritos hoy" },
   { id: "semana", label: "Últimos 7 días" },
 ];
@@ -38,18 +47,13 @@ const AVATARS = [
   "bg-[#dce4f5] text-[#4a5d8a]",
   "bg-[#dceee0] text-[#1e6b3f]",
 ];
-const PARTICIPACION = {
-  inscripcion: "Con inscripción",
-  abierta: "Abierta",
-  pendiente: "Pendiente",
-};
 const MONTHS_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"];
 
 function Status({ value, pasada }) {
-  if (value === "cancelada" || (pasada && value === "publicada")) {
+  if (pasada && esEstadoPublicada(value)) {
     return <AdminBadge tone="neutral">Finalizada</AdminBadge>;
   }
-  const published = value === "publicada";
+  const published = esEstadoPublicada(value);
   return <AdminBadge tone={published ? "success" : "warning"}>{published ? "Publicada" : "Borrador"}</AdminBadge>;
 }
 
@@ -154,12 +158,18 @@ export default function ParticipantesPanel({
   const [removeTarget, setRemoveTarget] = useState(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("todos");
-  const [sort, setSort] = useState({ key: "fecha_creacion", direction: "desc" });
+  const [sort, setSort] = useState({ key: "fecha_creacion", direction: "asc" });
   const [page, setPage] = useState(1);
   const [menu, setMenu] = useState(null);
 
   const participants = useMemo(
-    () => initialParticipants.filter((item) => !removedIds.has(item.id)),
+    () =>
+      initialParticipants
+        .filter((item) => !removedIds.has(item.id))
+        .map((person) => ({
+          ...person,
+          lista_espera: Boolean(person.lista_espera),
+        })),
     [initialParticipants, removedIds],
   );
 
@@ -173,8 +183,15 @@ export default function ParticipantesPanel({
   }, [menu]);
 
   const cupos = Number.isInteger(activity.cupos) ? activity.cupos : null;
-  const remaining = cuposDisponibles(activity.cupos, participants.length);
-  const filledPct = cupos ? Math.min(100, Math.round((participants.length / cupos) * 100)) : 0;
+  const waitlistCount = participants.filter((person) => person.lista_espera).length;
+  const confirmedCount = participants.length - waitlistCount;
+  const remaining = cuposDisponibles(activity.cupos, confirmedCount);
+  const waitlistRemaining = listaEsperaDisponibles(
+    activity.cupos,
+    participants.length,
+    activity.cupos_espera,
+  );
+  const filledPct = cupos ? Math.min(100, Math.round((confirmedCount / cupos) * 100)) : 0;
   const fechaActividad = activityDateLabel(activity.fecha);
   const horario = horarioLabel(activity.hora_inicio, activity.hora_fin);
 
@@ -187,6 +204,8 @@ export default function ParticipantesPanel({
       const haystack = `${person.nombre} ${person.apellido} ${person.email} ${person.telefono}`
         .toLocaleLowerCase("es-CL");
       if (term && !haystack.includes(term)) return false;
+      if (filter === "espera") return person.lista_espera;
+      if (filter === "confirmados") return !person.lista_espera;
       const day = inscriptionDay(person.fecha_creacion);
       if (filter === "hoy") return day === today;
       if (filter === "semana") return day >= weekStart && day <= today;
@@ -215,7 +234,7 @@ export default function ParticipantesPanel({
     setSort((current) => (
       current.key === key
         ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
-        : { key, direction: key === "fecha_creacion" ? "desc" : "asc" }
+        : { key, direction: "asc" }
     ));
   }
 
@@ -230,10 +249,11 @@ export default function ParticipantesPanel({
       const margin = 14;
       const tableWidth = pageWidth - margin * 2;
       const columns = [
-        { label: "NOMBRE", width: 58 },
-        { label: "CORREO", width: 102 },
-        { label: "TELÉFONO", width: 43 },
-        { label: "INSCRIPCIÓN", width: tableWidth - 203 },
+        { label: "NOMBRE", width: 52 },
+        { label: "CORREO", width: 86 },
+        { label: "TELÉFONO", width: 38 },
+        { label: "ESTADO", width: 40 },
+        { label: "INSCRIPCIÓN", width: tableWidth - 216 },
       ];
       let y = 41;
 
@@ -292,6 +312,7 @@ export default function ParticipantesPanel({
           `${person.nombre ?? ""} ${person.apellido ?? ""}`.trim() || "—",
           person.email,
           person.telefono,
+          person.lista_espera ? `Espera${person.cupo ? ` · ${person.cupo}` : ""}` : "Cupo",
           `${when.date}${when.time ? ` · ${when.time}` : ""}`,
         ];
         const cells = values.map((value, cellIndex) =>
@@ -436,9 +457,9 @@ export default function ParticipantesPanel({
               <Users size={15} aria-hidden="true" />
             </span>
             <div className="min-w-0">
-              <p className="text-[11px] leading-4 text-[#8a7968]">Participantes registrados</p>
+              <p className="text-[11px] leading-4 text-[#8a7968]">Con cupo</p>
               <p className="text-sm leading-5 font-medium text-[#2c1810]">
-                {participants.length}
+                {confirmedCount}
                 {cupos !== null ? (
                   <span className="ml-1.5 text-[13px] font-normal text-[#8d7b6d]">de {cupos} cupos</span>
                 ) : null}
@@ -479,96 +500,100 @@ export default function ParticipantesPanel({
         <article className="rounded-xl border border-[#efe6dc] bg-white px-3 py-2.5">
           <div className="flex items-center gap-2.5">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f8ebe6] text-[#c45c38]">
-              <FileText size={15} aria-hidden="true" />
+              {cupos !== null ? <Hourglass size={15} aria-hidden="true" /> : <FileText size={15} aria-hidden="true" />}
             </span>
             <div>
-              <p className="text-[11px] leading-4 text-[#8a7968]">Tipo de participación</p>
-              <p className="text-sm leading-5 font-medium text-[#2c1810]">
-                {PARTICIPACION[activity.tipo_participacion] ?? "Por confirmar"}
+              <p className="text-[11px] leading-4 text-[#8a7968]">
+                {cupos !== null ? "Lista de espera" : "Tipo de participación"}
               </p>
+              <p className="text-sm leading-5 font-medium text-[#2c1810]">
+                {cupos !== null
+                  ? `${waitlistCount} de ${Number.isInteger(activity.cupos_espera) ? activity.cupos_espera : 0}`
+                  : labelParticipacion(activity.tipo_participacion, { corta: true })}
+              </p>
+              {cupos !== null && waitlistRemaining !== null ? (
+                <p className="text-[12px] text-[#8d7b6d]">{waitlistRemaining} disponibles</p>
+              ) : null}
             </div>
           </div>
         </article>
       </div>
 
       <div className="mt-6 rounded-2xl border border-[#efe6dc] bg-white p-4 sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h2 className="font-serif text-lg font-medium text-[#2c1810]">
-              {`Participantes (${filtered.length})`}
-            </h2>
-            <p className="mt-1 text-sm text-[#8d7b6d]">Lista de personas inscritas en esta actividad.</p>
-          </div>
-          <div ref={menuRef}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                event.stopPropagation();
-                setMenu(null);
-                menuRef.current?.querySelector("button")?.focus();
-              }
-            }}
-            onBlur={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget)) setMenu(null);
-            }}
-            className="flex w-full min-w-0 flex-wrap items-center gap-1.5 lg:w-auto">
-            <label className="flex min-h-11 min-w-0 basis-full sm:basis-auto flex-1 items-center gap-2 rounded-xl border border-[#eadfd4] bg-[#fbf8f5] px-2.5 sm:px-3 lg:w-56 lg:flex-none">
-              <Search size={15} className="shrink-0 text-[#a4846c]" aria-hidden="true" />
-              <input
-                value={query}
-                onChange={(event) => {
-                  setQuery(event.target.value);
-                  setPage(1);
-                }}
-                placeholder="Buscar por nombre, correo o teléfono..."
-                aria-label="Buscar participantes"
-                className="min-w-0 flex-1 bg-transparent text-sm text-[#2c1810] outline-none placeholder:text-[#b5a394]"
-              />
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setMenu((current) => (current === "filter" ? null : "filter"))}
-                aria-expanded={menu === "filter"}
-                className={`inline-flex min-h-11 items-center gap-1 rounded-xl border px-2.5 text-xs whitespace-nowrap ${
-                  filter === "todos"
-                    ? "border-[#eadfd4] bg-white text-[#5c4636] hover:bg-[#faf6f1]"
-                    : "border-[#1e4536] bg-[#1e4536] text-white"
-                }`}
-              >
-                <ListFilter size={14} aria-hidden="true" />
-                Filtrar
-                <ChevronDown size={13} aria-hidden="true" />
-              </button>
-              {menu === "filter" ? (
-                <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-xl border border-[#efe6dc] bg-white py-1 shadow-lg">
-                  {FILTERS.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => {
-                        setFilter(option.id);
-                        setPage(1);
-                        setMenu(null);
-                      }}
-                      className={`block w-full px-3 py-2 text-left text-sm ${
-                        filter === option.id ? "bg-[#faf6f1] font-medium text-[#2c1810]" : "text-[#4d4036] hover:bg-[#faf6f1]"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
+        <h2 className="font-serif text-lg font-medium text-[#2c1810]">
+          {`Participantes (${filtered.length})`}
+        </h2>
+        <div
+          ref={menuRef}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.stopPropagation();
+              setMenu(null);
+              menuRef.current?.querySelector("button")?.focus();
+            }
+          }}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setMenu(null);
+          }}
+          className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center"
+        >
+          <label className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-sm border border-[#eadfd4] bg-[#fbf8f5] px-3">
+            <Search size={15} strokeWidth={1.8} className="shrink-0 text-[#a89888]" aria-hidden="true" />
+            <input
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Buscar participantes..."
+              aria-label="Buscar participantes"
+              className="min-w-0 flex-1 bg-transparent text-sm text-[#2c1810] outline-none placeholder:text-[#b3a496]"
+            />
+          </label>
+          <div className="relative shrink-0">
             <button
               type="button"
-              onClick={() => exportPdf(filtered)}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#2c1810] px-3 text-sm font-medium whitespace-nowrap text-[#f4ebe3] hover:bg-[#3d2418] sm:px-2.5"
+              onClick={() => setMenu((current) => (current === "filter" ? null : "filter"))}
+              aria-expanded={menu === "filter"}
+              className={`inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-sm border px-4 text-sm sm:w-auto ${
+                filter === "todos"
+                  ? "border-[#eadfd4] bg-white text-[#3d342c] hover:bg-[#faf6f1]"
+                  : "border-[#1e4536] bg-[#1e4536] font-medium text-white"
+              }`}
             >
-              <Download size={12} aria-hidden="true" />
-              Descargar participantes
+              <ListFilter size={15} strokeWidth={1.8} aria-hidden="true" />
+              Filtrar
+              <ChevronDown size={14} aria-hidden="true" />
             </button>
+            {menu === "filter" ? (
+              <div className="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-sm border border-[#e4ddd4] bg-white py-1 shadow-lg">
+                {FILTERS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => {
+                      setFilter(option.id);
+                      setPage(1);
+                      setMenu(null);
+                    }}
+                    className={`block min-h-10 w-full px-3 py-2 text-left text-[13px] ${
+                      filter === option.id ? "bg-[#faf7f4] font-medium text-[#2c1810]" : "text-[#2c1810] hover:bg-[#faf7f4]"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
+          <button
+            type="button"
+            onClick={() => exportPdf(filtered)}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] hover:bg-[#faf6f1]"
+          >
+            <Download size={15} strokeWidth={1.8} aria-hidden="true" />
+            Descargar
+          </button>
         </div>
 
         {pageRows.length ? (
@@ -594,7 +619,14 @@ export default function ParticipantesPanel({
                             <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${avatarClass(person)}`}>
                               {initials(person)}
                             </span>
-                            <span className="font-medium text-[#2c1810]">{person.nombre} {person.apellido}</span>
+                            <span className="min-w-0">
+                              <span className="font-medium text-[#2c1810]">{person.nombre} {person.apellido}</span>
+                              {person.lista_espera ? (
+                                <span className="mt-0.5 block">
+                                  <AdminBadge tone="warning">Lista de espera{person.cupo ? ` · ${person.cupo}` : ""}</AdminBadge>
+                                </span>
+                              ) : null}
+                            </span>
                           </span>
                         </td>
                         <td className="px-3 py-3">{person.email}</td>

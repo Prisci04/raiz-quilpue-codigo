@@ -13,7 +13,7 @@ formularios, capas de persistencia, validaciones, semántica de PATCH y fallback
 La solución Google funcionaba localmente; la migración es una decisión de proyecto.
 El antiguo problema de configuración Embed no es una tarea pendiente.
 
-Auditoría Git inicial, 7 de noviembre de 2026:
+Auditoría Git de la migración original, 7 de noviembre de 2026 (registro histórico; ver integración posterior más abajo):
 - Rama `pruebas/dev-aparte`, HEAD `5036dd9`, árbol limpio.
 - Referencias disponibles: `origin/main=e5245ce`, `origin/pruebas/dev-aparte=5036dd9`.
 - `HEAD..origin/main`: vacío; `origin/main..HEAD`: solo `5036dd9`.
@@ -27,7 +27,7 @@ Auditoría Git inicial, 7 de noviembre de 2026:
 | Pieza existente | Clasificación y decisión |
 |---|---|
 | Login, roles, guardas HTTP, CRUD general y validaciones de negocio | Reutilizables sin cambios |
-| `ActividadForm` | Adaptado: estado/payload incluye coordenadas, conserva pago/documento/legacy |
+| `ActividadForm` | Adaptado: estado/payload incluye coordenadas y conserva documento/legacy; integrado con los catálogos normalizados de main |
 | `ActividadUbicacionField` | Adaptado: conserva sección y textos editoriales, búsqueda manual |
 | `ActividadFicha` y `ActividadDetallePanel` | Adaptados: mapa OSM y enlaces independientes |
 | `actividad-ubicacion.mjs` | Adaptado: coordenadas, modalidades, normalización, URLs externas y error de esquema |
@@ -72,7 +72,7 @@ El mapa es secundario al contenido, de ancho disponible y 288 px de alto.
 
 | Campo | Tipo SQL | Semántica |
 |---|---|---|
-| lugar | Existente | Recinto/indicaciones editoriales; obligatorio para presencial |
+| id_lugar / lugar | Existente | FK del recinto compartido y su nombre resuelto mediante join; se conserva el selector normalizado de main |
 | direccion | VARCHAR(500), nullable | Texto editorial, nunca sobrescrito por una búsqueda |
 | latitud | DOUBLE PRECISION, nullable | WGS84, -90 a 90 |
 | longitud | DOUBLE PRECISION, nullable | WGS84, -180 a 180 |
@@ -256,15 +256,51 @@ node --test scripts/hu23-browser.test.mjs
 Remove-Item Env:HU23_LIVE_OSM_TILES
 ```
 
-Resultado verificado: HU-23 36 aprobadas; suite completa 526 aprobadas, sin fallos
+Resultado anterior a la integración de main: HU-23 36 aprobadas; suite completa 526 aprobadas, sin fallos
 ni omisiones. Lint y git diff --check aprobados.
 El build pasó al autorizar la descarga de Poppins existente; no se cambió la fuente.
 Node conserva su aviso preexistente de módulos ES en archivos .js; no se modificó
 el tipo global del proyecto para ocultarlo.
 
+## Integración con main normalizado (`c83061b`)
+
+La migración OpenStreetMap se conservó en el commit local `76ba457` antes de
+integrar `origin/main`. Main incorpora catálogos, claves `id_*`, tabla `lugar`,
+regiones/comunas y la nueva estructura SQL 001–018. Estos cambios se conservan;
+HU-23 no restaura el esquema anterior de textos libres ni sus APIs eliminadas.
+
+Se combinaron manualmente ocho archivos conflictivos: PATCH administrativo,
+ficha pública, formulario, mapper de actividades, wrapper HTTP, validador y los
+dos servicios de actividades. Se mantuvieron los catálogos, autorización,
+inscripciones y lógica de main, añadiendo coordenadas, navegación y fallbacks.
+Se quitaron también tres espacios finales de `001_roles.sql`, sin cambiar SQL,
+para que la comprobación de whitespace del diff integrado resulte limpia.
+
+El formulario usa el selector Región/Comuna/Lugar de main. La búsqueda manual y
+el punto del mapa complementan ese recinto. Cambiarlo actualiza el nombre visible
+y descarta un punto anterior incompatible; elegir o corregir coordenadas no
+modifica la fila compartida de `lugar` ni sus indicaciones editoriales.
+
+SQL `019_actividad_ubicacion.sql` complementa `011_actividades.sql`: agrega la
+dirección opcional propia del evento y su pareja de coordenadas en `actividades`.
+No reemplaza las coordenadas del catálogo `lugar` ni ejecuta backfill. La dirección
+pública usa la del evento o, si no existe, la del recinto. `direccion_evento`
+distingue el valor persistido de ese fallback de presentación: editar otro dato
+no copia la dirección del recinto a una columna todavía no disponible.
+
+Las pruebas HU-23 se adaptaron al contrato normalizado y mantienen escenarios de
+PATCH parcial, estado, esquemas incompletos, null y compatibilidad histórica.
+Resultado de la integración: **37 pruebas HU-23 y 405 de la suite completa
+aprobadas**, sin omisiones; ESLint, build y `git diff --check` aprobados. El total
+de la suite difiere del anterior porque main reorganiza también sus propias
+pruebas. Chromium ejercita los componentes reales a 1440/1024/390 px con catálogos,
+geocodificación, persistencia y tiles simulados localmente; no valida Supabase
+remoto. Se conserva la prueba optativa de tiles reales descrita arriba.
+
+No se ejecutó SQL remoto ni se modificaron Supabase, Google Cloud o `.env.local`.
+
 ## Pendientes antes de producción
 
-- Recuperar acceso al remoto Git y revisar novedades antes de integrar.
 - Coordinar/aplicar SQL 019 manualmente, con verificación del esquema real.
 - Configurar geocodificación apropiada para el despliegue y su límite global.
 - Validar rutas autenticadas, persistencia real, dominio, contacto público,

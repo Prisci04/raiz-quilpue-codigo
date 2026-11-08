@@ -154,7 +154,7 @@ const tampered = await request("/api/auth/me", {
 });
 record("cookie manipulada", tampered.status === 401, String(tampered.status));
 
-const shaped = "a".repeat(43);
+const shaped = "aaaa.bbbb";
 const unknownToken = await request("/api/auth/me", {
   method: "GET",
   origin: false,

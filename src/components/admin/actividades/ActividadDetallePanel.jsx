@@ -16,26 +16,14 @@ import {
 } from "lucide-react";
 import AdminBadge from "@/components/admin/AdminBadge";
 import ContenidoDocumento from "@/components/contenido/ContenidoDocumento";
-import { labelPublicoObjetivo } from "@/lib/actividades";
-
-const MODALIDAD = {
-  presencial: "Presencial",
-  virtual: "Online",
-  hibrida: "Híbrida",
-};
-
-const PARTICIPACION = {
-  inscripcion: "Con inscripción",
-  abierta: "Abierta",
-  pendiente: "Pendiente",
-};
-
-const TIPO_VALOR = {
-  gratuito: "Gratuito",
-  pagado: "Pagado",
-  voluntario: "Voluntario",
-  pendiente: "Pendiente",
-};
+import {
+  esEstadoPublicada,
+  esParticipacionInscripcion,
+  labelCosto,
+  labelModalidad,
+  labelParticipacion,
+  labelPublicoObjetivo,
+} from "@/lib/actividades";
 
 const MONTHS = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -43,10 +31,10 @@ const MONTHS = [
 ];
 
 function Status({ value, pasada }) {
-  if (value === "cancelada" || (pasada && value === "publicada")) {
+  if (pasada && esEstadoPublicada(value)) {
     return <AdminBadge tone="neutral">Finalizada</AdminBadge>;
   }
-  const published = value === "publicada";
+  const published = esEstadoPublicada(value);
   return <AdminBadge tone={published ? "success" : "warning"}>{published ? "Publicada" : "Borrador"}</AdminBadge>;
 }
 
@@ -69,23 +57,21 @@ function horarioLabel(inicio, fin) {
   return "Horario pendiente";
 }
 
-function valorLabel(tipo, monto) {
-  const label = TIPO_VALOR[tipo] ?? "Pendiente";
-  if (tipo === "pagado" && Number.isInteger(monto)) {
-    return `${label} · $${monto.toLocaleString("es-CL")}`;
-  }
-  return label;
-}
-
 function cuposLabel(activity) {
   const cupos = Number.isInteger(activity.cupos) ? activity.cupos : null;
   const disponibles = Number.isInteger(activity.cupos_disponibles)
     ? activity.cupos_disponibles
     : cupos;
+  const espera = Number.isInteger(activity.lista_espera_disponibles)
+    ? activity.lista_espera_disponibles
+    : null;
+  const esperaMax = Number.isInteger(activity.cupos_espera) ? activity.cupos_espera : 0;
 
-  if (activity.tipo_participacion === "inscripcion") {
+  if (esParticipacionInscripcion(activity.tipo_participacion)) {
     if (cupos === null) return "Inscripción abierta";
-    return `${disponibles} de ${cupos} disponibles`;
+    if (disponibles > 0) return `${disponibles} de ${cupos} disponibles`;
+    if (espera > 0) return `Lista de espera · ${espera} de ${esperaMax}`;
+    return "Cupos y lista de espera completos";
   }
 
   if (cupos === null) return "Por confirmar";
@@ -206,17 +192,14 @@ export default function ActividadDetallePanel({ activity }) {
         {physical && activity.direccion ? <Dato icon={MapPin} label="Dirección" value={activity.direccion} /> : null}
         <Dato icon={MapPin} label="Ubicación" value={!physical ? "Sin uso en modalidad virtual" : puedeMostrarMapa(activity) ? "Coordenadas guardadas" : "Sin coordenadas"} />
         <Dato icon={Users} label="Público" value={labelPublicoObjetivo(activity.publico_objetivo)} />
-        <Dato icon={Wallet} label="Valor" value={valorLabel(activity.tipo_valor, activity.valor_monto)} />
+        <Dato icon={Wallet} label="Valor" value={labelCosto(activity.costo, activity.valor_monto)} />
         <Dato icon={Ticket} label="Cupos" value={cuposLabel(activity)} />
-        <Dato icon={Globe} label="Modalidad" value={MODALIDAD[activity.modalidad] ?? "Pendiente"} />
+        <Dato icon={Globe} label="Modalidad" value={labelModalidad(activity.modalidad)} />
         <Dato
           icon={Users}
           label="Participación"
-          value={PARTICIPACION[activity.tipo_participacion] ?? "Por confirmar"}
+          value={labelParticipacion(activity.tipo_participacion, { corta: true })}
         />
-        {activity.forma_pago ? (
-          <Dato icon={Wallet} label="Forma de pago" value={activity.forma_pago} />
-        ) : null}
       </div>
 
       {physical ? <div className="admin-card mt-5 space-y-3 p-4">

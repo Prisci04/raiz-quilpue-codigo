@@ -8,14 +8,44 @@ import test from "node:test";
 // Real API handlers, validators, services and mappers; only auth/DB/Storage are local doubles.
 globalThis.fetch = async () => { throw new Error("Network disabled"); };
 const root = fileURLToPath(new URL("../", import.meta.url));
+const catalogs = {
+  modalidad: [{id:1,nombre:"Presencial"},{id:2,nombre:"Virtual"},{id:3,nombre:"Híbrida"}],
+  tipo_participacion: [{id:1,nombre:"Abierta"},{id:2,nombre:"Inscripción"}],
+  costo_actividad: [{id:1,nombre:"Gratuita"}],
+  publico_objetivo: [{id:1,nombre:"Todas las edades"}],
+  estado_publicacion: [{id:1,nombre:"Borrador"},{id:2,nombre:"Publicada"}],
+  lugares: [{id:10,nombre:"Centro cultural"}],
+};
+globalThis.__hu23Catalogs = catalogs;
+function joined(row) {
+  const name = (key, id) => catalogs[key].find(item => item.id === id)?.nombre;
+  return {...row,
+    modalidad:{nombre_modalidad:name("modalidad",row.id_modalidad)},
+    tipo_participacion:{nombre_tipo_participacion:name("tipo_participacion",row.id_tipo_participacion)},
+    publico_objetivo:{nombre_publico:name("publico_objetivo",row.id_publico)},
+    costo_actividad:{nombre_costo:name("costo_actividad",row.id_costo)},
+    estado_publicacion:{nombre_estado:name("estado_publicacion",row.id_estado)},
+    lugar:{id_lugar:10,nombre_lugar:"Centro cultural",direccion:"Dirección del recinto",id_comuna:20,
+      comuna:{id_comuna:20,nombre_comuna:"Quilpué",id_region:30,region:{id_region:30,nombre_region:"Valparaíso"}}},
+  };
+}
+// PostgREST projections may include nested joins with their own commas.
+function topColumns(columns) {
+  let depth=0,start=0; const fields=[];
+  for(let i=0;i<columns.length;i++) {
+    if(columns[i]==="(")depth++; if(columns[i]===")")depth--;
+    if(columns[i]==="," && depth===0){fields.push(columns.slice(start,i).trim());start=i+1;}
+  }
+  return [...fields,columns.slice(start).trim()];
+}
 const fixture = {
-  id: 1, titulo: "Encuentro", descripcion: "Actividad cultural", fecha: "2099-01-02",
-  hora_inicio: "12:00", hora_fin: "13:00", lugar: "Centro cultural",
+  id_actividad: 1, titulo: "Encuentro", descripcion: "Actividad cultural", fecha: "2099-01-02",
+  hora_inicio: "12:00", hora_fin: "13:00", id_lugar: 10,
   direccion: "Av. Los Carrera 100, Quilpué", google_place_id: "place-test",
   latitud: null, longitud: null,
-  publico_objetivo: "todas_edades", modalidad: "presencial", tipo_participacion: "inscripcion",
-  cupos: 20, tipo_valor: "gratuito", valor_monto: null, forma_pago: null,
-  informacion_adicional: null, imagen_url: null, estado: "publicada",
+  id_publico: 1, id_modalidad: 1, id_tipo_participacion: 2,
+  cupos_max: 20, id_costo: 1, valor_monto: null,
+  informacion_adicional: null, imagen_url: null, id_estado: 2,
 };
 const state = globalThis.__hu23Persistencia = {};
 function reset(extra = {}) { Object.assign(state, { rows: [{ ...fixture }], writes: [], selects: [], reads: 0, missing: false, missingCoordinates: false, missingLegacyId: false, dbError: null, ...extra }); }
@@ -25,7 +55,8 @@ state.client = {
     const filters = [];
     const query = {
       select(value) { columns = value; return query; },
-      eq(key, value) { filters.push((row) => row[key] === value); return query; },
+      eq(key, value) { filters.push((row) => key.split(".").reduce((value, part) => value?.[part], joined(row)) === value); return query; },
+      neq(key, value) { filters.push((row) => key.split(".").reduce((item, part) => item?.[part], joined(row)) !== value); return query; },
       in(key, values) { filters.push((row) => values.includes(row[key])); return query; },
       order() { return query; },
       maybeSingle() { single = true; return query; }, single() { single = true; return query; },
@@ -38,15 +69,20 @@ state.client = {
         let error = state.dbError;
         const absent = state.missing ? ["direccion", "google_place_id", "latitud", "longitud"]
           : state.missingCoordinates ? ["latitud", "longitud"] : state.missingLegacyId ? ["google_place_id"] : [];
-        const missing = absent.find((key) => columns.split(",").includes(key) || Object.hasOwn(payload ?? {}, key));
+        const missing = absent.find((key) => topColumns(columns).includes(key) || Object.hasOwn(payload ?? {}, key));
         if (!error && missing) error = { code: "42703", message: `column actividades.${missing} does not exist` };
         if (error) return Promise.resolve({ data: null, error }).then(done, fail);
         let rows = table === "actividades" ? state.rows.filter((row) => filters.every((filter) => filter(row))) : [];
         if (operation === "insert") {
-          const row = { ...payload, id: 2 }; state.rows.push(row); rows = [row];
+          const row = { ...payload, id_actividad: 2 }; state.rows.push(row); rows = [row];
         } else if (operation === "update") rows.forEach((row) => Object.assign(row, payload));
         if (operation) state.writes.push({ operation, payload: { ...payload } });
-        const selected = rows.map((row) => Object.fromEntries(columns.split(",").map((key) => [key, row[key]])));
+        const selected = rows.map((row) => {
+          const result=joined(row);
+          for(const key of ["direccion","google_place_id","latitud","longitud"])
+            if(!topColumns(columns).includes(key)) delete result[key];
+          return result;
+        });
         return Promise.resolve({ data: single ? selected[0] ?? null : selected, error: null }).then(done, fail);
       },
     };
@@ -55,6 +91,7 @@ state.client = {
 };
 const mocks = {
   "server-only": "export {};",
+  "@/services/actividad-catalogos.service": "export async function listCatalogosParaActividad(){return globalThis.__hu23Catalogs;}",
   "@/lib/supabase/admin": "export function getSupabaseAdminClient(){return globalThis.__hu23Persistencia.client;}",
   "@/lib/supabase/server": "export function getSupabaseServerClient(){return globalThis.__hu23Persistencia.client;}",
   "@/lib/auth/guard": "export async function requireGestorContenido(){return {response:null,user:{id:1}};}",
@@ -86,24 +123,23 @@ const request = (method, value) => new Request("http://localhost/api/admin/activ
 async function patch(value) { return route.PATCH(request("PATCH", value), context); }
 
 test("POST and GET preserve editorial address and selected Place ID for every modality", async () => {
-  for (const modalidad of ["presencial", "hibrida", "virtual"]) {
+  for (const id_modalidad of [1, 3, 2]) {
     reset();
-    const response = await collection.POST(request("POST", { ...fixture, modalidad, direccion: "  Dirección propia  " }));
+    const response = await collection.POST(request("POST", { ...fixture, id_modalidad, direccion: "  Dirección propia  " }));
     assert.equal(response.status, 201);
     const { data } = await response.json();
     assert.equal(data.direccion, "Dirección propia");
     assert.equal(data.google_place_id, fixture.google_place_id);
-    assert.equal(state.rows[1].modalidad, modalidad);
+    assert.equal(state.rows[1].id_modalidad, id_modalidad);
     assert.equal((await (await route.GET(request("GET"), context)).json()).data.direccion, fixture.direccion);
   }
 });
 test("partial editing preserves omitted location and nullable business fields", async () => {
   reset();
-  state.rows[0].forma_pago = "Transferencia";
   state.rows[0].informacion_adicional = { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Traer materiales." }] }] };
   const before = structuredClone(state.rows[0]);
   assert.equal((await patch({ titulo: "Título editado" })).status, 200);
-  for (const key of ["direccion", "google_place_id", "lugar", "forma_pago", "informacion_adicional", "cupos"]) {
+  for (const key of ["direccion", "google_place_id", "id_lugar", "informacion_adicional", "cupos_max"]) {
     assert.deepEqual(state.rows[0][key], before[key], key);
   }
   assert.equal((await patch({ direccion: "Calle nueva 10", google_place_id: "new-place" })).status, 200);
@@ -115,22 +151,25 @@ test("explicit null clears a reference independently of editorial address and lu
   assert.equal((await patch({ google_place_id: null })).status, 200);
   assert.equal(state.rows[0].google_place_id, null);
   assert.equal(state.rows[0].direccion, fixture.direccion);
-  assert.equal(state.rows[0].lugar, fixture.lugar);
+  assert.equal(state.rows[0].id_lugar, fixture.id_lugar);
   assert.equal((await patch({ direccion: null })).status, 200);
   assert.equal(state.rows[0].direccion, null);
 });
 test("status-only PATCH changes only estado, including publication and nulls", async () => {
   reset();
-  for (const estado of ["borrador", "publicada", "cancelada"]) {
+  for (const estado of ["Borrador", "Publicada"]) {
     assert.equal((await patch({ estado })).status, 200);
-    assert.deepEqual(state.writes.at(-1).payload, { estado });
-    assert.deepEqual(state.rows[0], { ...fixture, estado });
+    const id_estado=catalogs.estado_publicacion.find(item=>item.nombre===estado).id;
+    const {fec_actualizacion,...payload}=state.writes.at(-1).payload;
+    assert.ok(fec_actualizacion); assert.deepEqual(payload,{id_estado});
+    const {fec_actualizacion: timestamp,...row}=state.rows[0];
+    assert.ok(timestamp); assert.deepEqual(row,{...fixture,id_estado});
   }
 });
 test("switching to virtual preserves historical text/reference for an explicit future decision", async () => {
   reset();
-  assert.equal((await patch({ modalidad: "virtual" })).status, 200);
-  assert.deepEqual(state.rows[0], { ...fixture, modalidad: "virtual" });
+  assert.equal((await patch({ id_modalidad: 2 })).status, 200);
+  assert.equal(state.rows[0].id_modalidad,2);
   assert.equal((await patch({ google_place_id: null })).status, 200);
   assert.equal(state.rows[0].direccion, fixture.direccion);
 });
@@ -158,16 +197,16 @@ test("public detail carries new fields through both mappers; lists keep their mi
   assert.equal(mapActividadVista(detail).google_place_id, fixture.google_place_id);
   state.selects = [];
   const list = await publicService.getActividades({ page: 1, limit: 10 });
-  assert.equal(list.data[0].direccion, undefined);
-  assert.ok(state.selects.filter((item) => item.table === "actividades").every((item) => !item.columns.includes("direccion")));
-  state.rows[0].estado = "borrador";
+  assert.equal(list.data[0].direccion, "Dirección del recinto");
+  assert.ok(state.selects.filter((item) => item.table === "actividades").every((item) => !topColumns(item.columns).includes("direccion")));
+  state.rows[0].id_estado = 1;
   assert.equal(await publicService.getActividadById(1), null);
 });
-test("before SQL 013: legacy reads, creates, edits and quick publication remain functional", async () => {
+test("before SQL 019: legacy reads, creates, edits and quick publication remain functional", async () => {
   reset({ missing: true });
   delete state.rows[0].direccion;
   delete state.rows[0].google_place_id;
-  assert.equal((await publicService.getActividadById(1)).direccion, null);
+  assert.equal((await publicService.getActividadById(1)).direccion, "Dirección del recinto");
   assert.equal((await admin.getActividadAdmin(1)).google_place_id, null);
   assert.equal((await patch({ titulo: "Histórica editada" })).status, 200);
   assert.equal((await patch({ estado: "borrador" })).status, 200);
@@ -175,7 +214,7 @@ test("before SQL 013: legacy reads, creates, edits and quick publication remain 
   assert.equal((await collection.POST(request("POST", legacy))).status, 201);
   assert.ok(state.writes.every(({ payload }) => !Object.hasOwn(payload, "direccion") && !Object.hasOwn(payload, "google_place_id")));
 });
-test("before SQL 013: new nonnull location fails with explicit 503 instead of losing input", async () => {
+test("before SQL 019: new nonnull location fails with explicit 503 instead of losing input", async () => {
   for (const value of [{ direccion: "Dirección nueva" }, { google_place_id: "selected-place" }]) {
     reset({ missing: true });
     delete state.rows[0].direccion; delete state.rows[0].google_place_id;
@@ -223,5 +262,14 @@ test("partial schemas retain available editorial data and do not require the leg
   reset({ missingLegacyId: true }); delete state.rows[0].google_place_id;
   assert.equal((await patch({ latitud: -33, longitud: -71 })).status, 200);
   assert.equal((await admin.getActividadAdmin(1)).latitud, -33);
+});
+test("catalog joins do not silently persist the shared place address before SQL 019", async () => {
+  reset({missing:true}); delete state.rows[0].direccion; delete state.rows[0].google_place_id;
+  const current=await admin.getActividadAdmin(1);
+  assert.equal(current.direccion_evento,null); assert.equal(current.direccion,"Dirección del recinto");
+  assert.equal(mapActividadVista(current).direccion_evento,null);
+  assert.equal(current.id_lugar,10); assert.equal(current.modalidad,"Presencial");
+  assert.equal((await patch({descripcion:"Editada"})).status,200);
+  assert.ok(state.writes.every(({payload})=>!Object.hasOwn(payload,"direccion")));
 });
 test.after(() => hooks.deregister());

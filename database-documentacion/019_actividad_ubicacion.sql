@@ -1,7 +1,7 @@
 /* HU-23 — REQUIERE APLICACIÓN REMOTA por un responsable autorizado.
    Preparado para revisión; no ejecutar automáticamente desde la aplicación.
    Definitivo Leaflet/OSM: aditivo, conserva lugar, filas históricas, RLS y permisos.
-   El nombre del archivo se conserva para trazabilidad de la versión Google anterior.
+   Complementa 011_actividades sin modificar los catálogos ni el lugar compartido.
 */
 BEGIN;
 ALTER TABLE public.actividades

@@ -51,13 +51,6 @@ export function updateUsuario(id, payload) {
   });
 }
 
-export function setEstadoUsuario(id, estado) {
-  return requestJson(`/api/admin/usuarios/${id}/estado`, {
-    method: "PATCH",
-    body: JSON.stringify({ estado }),
-  });
-}
-
 export function deleteUsuario(id) {
   return requestJson(`/api/admin/usuarios/${id}`, {
     method: "DELETE",

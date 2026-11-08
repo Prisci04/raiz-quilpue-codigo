@@ -4,12 +4,13 @@ import test from "node:test";
 import { generatePassword } from "../src/lib/usuarios/generate-password.mjs";
 import {
   parseCreateUsuario,
-  parseEstadoUsuario,
   parsePasswordChange,
   parsePerfilUpdate,
   parseUpdateUsuario,
   passwordChecks,
   passwordMeetsPolicy,
+  rolCodigoFromNombre,
+  rolNombreFromCodigo,
 } from "../src/lib/usuarios/validation.mjs";
 
 const VALID = {
@@ -41,18 +42,19 @@ test("crear usuario normaliza datos y descarta campos de confianza", () => {
   assert.equal("rol_id" in parsed.value, false);
 });
 
-test("rechaza contraseña débil, rol visual y correo inválido", () => {
+test("rechaza contraseña débil, rol visual, correo inválido y apellido vacío", () => {
   assert.equal(passwordMeetsPolicy("corta"), false);
   assert.equal(parseCreateUsuario({ ...VALID, password: "soloLetras12" }).ok, false);
   assert.equal(parseCreateUsuario({ ...VALID, rolCodigo: "Administrador del portal" }).ok, false);
   assert.equal(parseCreateUsuario({ ...VALID, email: "no-es-correo" }).ok, false);
   assert.equal(parseCreateUsuario({ ...VALID, nombre: "   " }).ok, false);
+  assert.equal(parseCreateUsuario({ ...VALID, apellido: "   " }).ok, false);
 });
 
-test("editar no exige contraseña", () => {
+test("editar no exige contraseña y sí exige apellido", () => {
   const parsed = parseUpdateUsuario({
     nombre: "María",
-    apellido: "",
+    apellido: "González",
     email: "maria@raizquilpue.cl",
     telefono: "",
     rolCodigo: "administrador",
@@ -60,20 +62,32 @@ test("editar no exige contraseña", () => {
   });
 
   assert.equal(parsed.ok, true);
-  assert.equal(parsed.value.apellido, null);
+  assert.equal(parsed.value.apellido, "González");
   assert.equal(parsed.value.telefono, null);
   assert.equal("password" in parsed.value, false);
+  assert.equal(
+    parseUpdateUsuario({
+      nombre: "María",
+      apellido: "",
+      email: "maria@raizquilpue.cl",
+      rolCodigo: "administrador",
+    }).ok,
+    false,
+  );
 });
 
-test("estado solo acepta activo o inactivo", () => {
-  assert.equal(parseEstadoUsuario({ estado: "activo" }).value, "activo");
-  assert.equal(parseEstadoUsuario({ estado: "borrador" }).ok, false);
+test("los roles de catálogo se mapean por nombre", () => {
+  assert.equal(rolCodigoFromNombre("Administrador"), "administrador");
+  assert.equal(rolCodigoFromNombre("Editor"), "editor");
+  assert.equal(rolNombreFromCodigo("administrador"), "Administrador");
+  assert.equal(rolNombreFromCodigo("editor"), "Editor");
+  assert.equal(rolCodigoFromNombre("otro"), null);
 });
 
 test("perfil solo acepta nombre, apellido y teléfono", () => {
   const parsed = parsePerfilUpdate({
     nombre: " Priscila ",
-    apellido: "",
+    apellido: " Soto ",
     telefono: " +569 ",
     email: "otro@raizquilpue.cl",
     rol: "editor",
@@ -84,9 +98,17 @@ test("perfil solo acepta nombre, apellido y teléfono", () => {
   assert.equal(parsed.ok, true);
   assert.deepEqual(parsed.value, {
     nombre: "Priscila",
-    apellido: null,
+    apellido: "Soto",
     telefono: "+569",
   });
+  assert.equal(
+    parsePerfilUpdate({
+      nombre: "Priscila",
+      apellido: "",
+      telefono: "+569",
+    }).ok,
+    false,
+  );
 });
 
 test("cambio de contraseña exige coincidencia y política", () => {

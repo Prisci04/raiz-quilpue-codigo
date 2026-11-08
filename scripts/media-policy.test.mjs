@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { parseCreateContenido, parseUpdateContenido } from "../src/lib/contenidos/validation.mjs";
 import {
+  buildAporteObjectPath,
   buildObjectPath,
   inspectImageFile,
   mediaTarget,
@@ -28,12 +29,20 @@ const doc = {
   type: "doc",
   content: [{ type: "paragraph", content: [{ type: "text", text: "Hola" }] }],
 };
+const catalogos = {
+  tipo_contenido: [{ id: 1, nombre: "Noticia" }],
+  estado_publicacion: [
+    { id: 1, nombre: "Borrador" },
+    { id: 2, nombre: "Publicada" },
+  ],
+};
+
 const base = {
   titulo: "Título",
   descripcion: "Tarjeta",
   resumen: "Resumen",
-  tipo: "noticia",
-  estado: "borrador",
+  id_tipo_contenido: 1,
+  id_estado: 1,
   contenido: doc,
 };
 
@@ -76,6 +85,8 @@ test("el nombre del usuario no entra en la ruta y el archivo lleva uuid", () => 
     buildObjectPath(mediaTarget("museo", "portada", "4"), "jpg"),
     /^museo\/4\/portada\/[0-9a-f-]{36}\.jpg$/,
   );
+  assert.match(buildAporteObjectPath("jpg"), /^museo\/aportes\/[0-9a-f-]{36}\.jpg$/);
+  assert.equal(buildAporteObjectPath("pdf"), null);
 });
 
 test("solo acepta la URL pública de la portada de este proyecto", () => {
@@ -99,8 +110,8 @@ test("solo acepta la URL pública de la portada de este proyecto", () => {
 
   const previous = process.env.NEXT_PUBLIC_SUPABASE_URL;
   process.env.NEXT_PUBLIC_SUPABASE_URL = HOST;
-  assert.equal(parseCreateContenido({ ...base, imagen_url: "https://images.unsplash.com/photo.jpg" }).ok, false);
-  assert.equal(parseUpdateContenido({ ...base, imagen_url: PORTADA }).ok, true);
-  assert.equal(parseUpdateContenido({ ...base, imagen_url: null }).value.imagen_url, null);
+  assert.equal(parseCreateContenido({ ...base, imagen_url: "https://images.unsplash.com/photo.jpg" }, catalogos).ok, false);
+  assert.equal(parseUpdateContenido({ ...base, imagen_url: PORTADA }, catalogos).ok, true);
+  assert.equal(parseUpdateContenido({ ...base, imagen_url: null }, catalogos).value.imagen_url, null);
   process.env.NEXT_PUBLIC_SUPABASE_URL = previous;
 });

@@ -42,7 +42,7 @@ export async function POST(request) {
     const user = await findUsuarioByEmail(credentials.email);
     const passwordOk = await verifyPassword(
       credentials.password,
-      user?.password_hash,
+      user?.password,
     );
 
     if (!loginAllowed(user, passwordOk)) {
@@ -51,7 +51,7 @@ export async function POST(request) {
       );
     }
 
-    await createSession(user.id);
+    await createSession(user.id, user.password);
 
     return noStore(jsonSuccess(toPublicUser(user)));
   } catch {

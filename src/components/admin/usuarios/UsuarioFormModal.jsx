@@ -107,13 +107,14 @@ export default function UsuarioFormModal({
 
           <div>
             <label htmlFor="usuario-apellido" className="text-[13px] font-medium text-[#2c1810]">
-              Apellido
+              Apellido *
             </label>
             <input
               id="usuario-apellido"
               value={form.apellido}
               onChange={(event) => updateField("apellido", event.target.value)}
               className={fieldClassName()}
+              required
             />
           </div>
           </div>
@@ -169,7 +170,7 @@ export default function UsuarioFormModal({
             </select>
             {lockAdminRole ? (
               <p className="mt-1.5 text-[12px] text-[#7c5c47]">
-                Debe quedar al menos un administrador activo.
+                Debe quedar al menos un administrador.
               </p>
             ) : null}
           </div>

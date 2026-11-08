@@ -9,6 +9,7 @@ import {
   saveActividadAdmin,
   saveActividadEstadoAdmin,
 } from "@/services/admin-community.service";
+import { listCatalogosParaActividad } from "@/services/actividad-catalogos.service";
 
 export const dynamic = "force-dynamic";
 
@@ -29,17 +30,22 @@ export async function GET(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
-  return runAdminCommunity(request, "PATCH /api/admin/actividades/[id]", async () => {
+  return runAdminCommunity(request, "PATCH /api/admin/actividades/[id]", async (user) => {
     const parsed = await parseId(params);
     if (!parsed.ok) return jsonError(400, "VALIDATION", "El identificador no es válido.");
 
     const body = await readJsonBody(request);
     if (!body || !Object.keys(body).length) return jsonError(400, "VALIDATION", "La solicitud no es válida.");
-    const soloEstado = Boolean(body) && Object.keys(body).length === 1 && "estado" in body;
+    const catalogos = await listCatalogosParaActividad();
+    const soloEstado =
+      Boolean(body) &&
+      Object.keys(body).length === 1 &&
+      ("estado" in body || "id_estado" in body);
+
     if (soloEstado) {
-      const input = parseActividadEstado(body);
+      const input = parseActividadEstado(body, catalogos.estado_publicacion);
       if (!input.ok) return jsonError(400, "VALIDATION", input.message);
-      const saved = await saveActividadEstadoAdmin(parsed.value, input.value.estado);
+      const saved = await saveActividadEstadoAdmin(parsed.value, input.value.id_estado);
       return saved
         ? jsonSuccess(saved)
         : jsonError(404, "NOT_FOUND", "Actividad no encontrada.");
@@ -48,9 +54,10 @@ export async function PATCH(request, { params }) {
     const current = await getActividadAdmin(parsed.value);
     if (!current) return jsonError(404, "NOT_FOUND", "Actividad no encontrada.");
 
-    const merged = { ...current, ...coordinatePatch(body) };
+    // The joined place address is for display, not an implicit event override.
+    const merged = { ...current, direccion: current.direccion_evento, ...coordinatePatch(body) };
     const sameImage = merged.imagen_url === current.imagen_url;
-    const input = parseActividadInput(sameImage ? { ...merged, imagen_url: null } : merged);
+    const input = parseActividadInput(sameImage ? { ...merged, imagen_url: null } : merged, catalogos);
     if (!input.ok) return jsonError(400, "VALIDATION", input.message);
     if (sameImage) {
       input.value.imagen_url = current.imagen_url;
@@ -61,7 +68,7 @@ export async function PATCH(request, { params }) {
       }
     }
 
-    const saved = await saveActividadAdmin(parsed.value, input.value);
+    const saved = await saveActividadAdmin(parsed.value, input.value, user.id);
     return saved
       ? jsonSuccess(saved)
       : jsonError(404, "NOT_FOUND", "Actividad no encontrada.");

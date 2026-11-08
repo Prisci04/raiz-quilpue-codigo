@@ -1,22 +1,18 @@
 import "server-only";
 
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
-import { deleteOtrasSesiones } from "@/services/auth.service";
 import { UsuarioError } from "@/lib/usuarios/errors.mjs";
+import { rolCodigoFromNombre } from "@/lib/usuarios/validation.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const PERFIL_COLUMNS = `
-  id,
-  nombre,
-  apellido,
-  email,
+  id_user,
+  nombre_user,
+  apellido_user,
+  correo_user,
   telefono,
-  estado,
-  usuario_roles (
-    roles (
-      codigo,
-      nombre
-    )
+  roles (
+    nombre_rol
   )
 `;
 
@@ -27,18 +23,16 @@ function queryFailed(error) {
 }
 
 function mapPerfil(row) {
-  const rol = (row.usuario_roles ?? [])
-    .map((link) => link?.roles)
-    .find((item) => item?.codigo && item?.nombre);
+  const rolRow = Array.isArray(row.roles) ? row.roles[0] : row.roles;
+  const codigo = rolCodigoFromNombre(rolRow?.nombre_rol);
 
   return {
-    id: row.id,
-    nombre: row.nombre,
-    apellido: row.apellido ?? null,
-    email: row.email,
+    id: row.id_user,
+    nombre: row.nombre_user,
+    apellido: row.apellido_user ?? null,
+    email: row.correo_user,
     telefono: row.telefono ?? null,
-    estado: row.estado,
-    rol: rol ? { codigo: rol.codigo, nombre: rol.nombre } : null,
+    rol: codigo ? { codigo, nombre: rolRow.nombre_rol } : null,
   };
 }
 
@@ -46,8 +40,7 @@ export async function getPerfilActual(usuarioId) {
   const { data, error } = await getSupabaseAdminClient()
     .from("usuarios")
     .select(PERFIL_COLUMNS)
-    .eq("id", usuarioId)
-    .eq("tipo_usuario", "interno")
+    .eq("id_user", usuarioId)
     .maybeSingle();
 
   if (error) {
@@ -65,12 +58,11 @@ export async function updatePerfilActual(usuarioId, input) {
   const { error } = await getSupabaseAdminClient()
     .from("usuarios")
     .update({
-      nombre: input.nombre,
-      apellido: input.apellido,
+      nombre_user: input.nombre,
+      apellido_user: input.apellido,
       telefono: input.telefono,
     })
-    .eq("id", usuarioId)
-    .eq("tipo_usuario", "interno");
+    .eq("id_user", usuarioId);
 
   if (error) {
     throw queryFailed(error);
@@ -79,16 +71,11 @@ export async function updatePerfilActual(usuarioId, input) {
   return getPerfilActual(usuarioId);
 }
 
-export async function changePasswordActual(usuarioId, input, tokenHashActual) {
-  if (!tokenHashActual) {
-    throw queryFailed({ code: "SESSION_UNKNOWN" });
-  }
-
+export async function changePasswordActual(usuarioId, input) {
   const { data, error } = await getSupabaseAdminClient()
     .from("usuarios")
-    .select("id,password_hash")
-    .eq("id", usuarioId)
-    .eq("tipo_usuario", "interno")
+    .select("id_user,password")
+    .eq("id_user", usuarioId)
     .maybeSingle();
 
   if (error) {
@@ -99,7 +86,7 @@ export async function changePasswordActual(usuarioId, input, tokenHashActual) {
     throw new UsuarioError("NOT_FOUND", "Usuario no encontrado.");
   }
 
-  const passwordOk = await verifyPassword(input.passwordActual, data.password_hash);
+  const passwordOk = await verifyPassword(input.passwordActual, data.password);
 
   if (!passwordOk) {
     throw new UsuarioError(
@@ -112,24 +99,12 @@ export async function changePasswordActual(usuarioId, input, tokenHashActual) {
 
   const { error: updateError } = await getSupabaseAdminClient()
     .from("usuarios")
-    .update({ password_hash: passwordHash })
-    .eq("id", usuarioId)
-    .eq("tipo_usuario", "interno");
+    .update({ password: passwordHash })
+    .eq("id_user", usuarioId);
 
   if (updateError) {
     throw queryFailed(updateError);
   }
 
-  await deleteOtrasSesiones(usuarioId, tokenHashActual);
-
-  return { ok: true };
-}
-
-export async function closeOtrasSesiones(usuarioId, tokenHashActual) {
-  if (!tokenHashActual) {
-    throw queryFailed({ code: "SESSION_UNKNOWN" });
-  }
-
-  await deleteOtrasSesiones(usuarioId, tokenHashActual);
-  return { ok: true };
+  return { ok: true, passwordHash };
 }

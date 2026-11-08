@@ -96,13 +96,18 @@ function documento(extraParagraph) {
   };
 }
 
-function payload(tipo, estado, titulo) {
+function catalogId(items, nombre) {
+  const needle = String(nombre ?? "").trim().toLowerCase();
+  return (items ?? []).find((item) => String(item.nombre ?? "").trim().toLowerCase() === needle)?.id ?? null;
+}
+
+function payload(tipo, estado, titulo, catalogs) {
   return {
     titulo,
     descripcion: "Descripción de la tarjeta de prueba.",
     resumen: "Resumen del popup de prueba.",
-    tipo,
-    estado,
+    id_tipo_contenido: catalogId(catalogs.tipo_contenido, tipo),
+    id_estado: catalogId(catalogs.estado_publicacion, estado),
     contenido: documento("Texto de prueba"),
   };
 }
@@ -112,9 +117,19 @@ async function main() {
     throw new Error("Faltan credenciales de auditoría");
   }
 
+  const catalogsResponse = await request("/api/catalogos?nombres=tipo_contenido,estado_publicacion");
+  const catalogs = catalogsResponse.json?.data ?? {};
+  record(
+    "cargar catálogos públicos",
+    catalogsResponse.status === 200 &&
+      catalogId(catalogs.tipo_contenido, "Noticia") != null &&
+      catalogId(catalogs.estado_publicacion, "Borrador") != null,
+    String(catalogsResponse.status),
+  );
+
   const anon = await request("/api/admin/contenidos", {
     method: "POST",
-    body: payload("noticia", "borrador", "Sin sesión"),
+    body: payload("Noticia", "Borrador", "Sin sesión", catalogs),
   });
   record("sin sesión no crea", anon.status === 401, String(anon.status));
 
@@ -125,13 +140,13 @@ async function main() {
   const draft = await request("/api/admin/contenidos", {
     method: "POST",
     cookie: adminCookie,
-    body: payload("noticia", "borrador", "Borrador de auditoría"),
+    body: payload("Noticia", "Borrador", "Borrador de auditoría", catalogs),
   });
   if (draft.json?.data?.id) createdIds.push(draft.json.data.id);
   record(
     "crear borrador",
     draft.status === 201 &&
-      draft.json?.data?.estado === "borrador" &&
+      draft.json?.data?.estado === "Borrador" &&
       draft.json?.data?.fecha_publicacion === null &&
       !draft.text.includes("password_hash"),
     String(draft.status),
@@ -149,13 +164,13 @@ async function main() {
   const published = await request("/api/admin/contenidos", {
     method: "POST",
     cookie: adminCookie,
-    body: payload("patrimonio", "publicada", "Publicado de auditoría"),
+    body: payload("Patrimonio", "Publicada", "Publicado de auditoría", catalogs),
   });
   if (published.json?.data?.id) createdIds.push(published.json.data.id);
   record(
     "crear publicado con fecha",
     published.status === 201 &&
-      published.json?.data?.estado === "publicada" &&
+      published.json?.data?.estado === "Publicada" &&
       Boolean(published.json?.data?.fecha_publicacion),
     String(published.status),
   );
@@ -163,19 +178,19 @@ async function main() {
   const capsula = await request("/api/admin/contenidos", {
     method: "POST",
     cookie: adminCookie,
-    body: payload("capsula_historica", "borrador", "Cápsula de auditoría"),
+    body: payload("Cápsula histórica", "Borrador", "Cápsula de auditoría", catalogs),
   });
   if (capsula.json?.data?.id) createdIds.push(capsula.json.data.id);
   record(
     "crear cápsula",
-    capsula.status === 201 && capsula.json?.data?.tipo === "capsula_historica",
+    capsula.status === 201 && capsula.json?.data?.tipo === "Cápsula histórica",
     String(capsula.status),
   );
 
   const invalid = await request("/api/admin/contenidos", {
     method: "POST",
     cookie: adminCookie,
-    body: { ...payload("noticia", "borrador", "Inválido"), contenido: { type: "html" } },
+    body: { ...payload("Noticia", "Borrador", "Inválido", catalogs), contenido: { type: "html" } },
   });
   record("contenido inválido rechazado", invalid.status === 400, String(invalid.status));
 
@@ -184,7 +199,7 @@ async function main() {
     method: "PATCH",
     cookie: adminCookie,
     body: {
-      ...payload("patrimonio", "borrador", "Título editado"),
+      ...payload("Patrimonio", "Borrador", "Título editado", catalogs),
       descripcion: "Descripción editada de la tarjeta.",
       resumen: "Resumen editado del popup.",
       contenido: documento("Texto con negrita"),
@@ -194,7 +209,7 @@ async function main() {
     "editar campos y jsonb",
     updated.status === 200 &&
       updated.json?.data?.titulo === "Título editado" &&
-      updated.json?.data?.tipo === "patrimonio" &&
+      updated.json?.data?.tipo === "Patrimonio" &&
       updated.json?.data?.contenido?.type === "doc",
     String(updated.status),
   );
@@ -213,24 +228,24 @@ async function main() {
   const toPublic = await request(`/api/admin/contenidos/${draftId}`, {
     method: "PATCH",
     cookie: adminCookie,
-    body: { estado: "publicada" },
+    body: { estado: "Publicada" },
   });
   const fecha = toPublic.json?.data?.fecha_publicacion;
   record(
     "borrador pasa a publicada con fecha",
-    toPublic.status === 200 && toPublic.json?.data?.estado === "publicada" && Boolean(fecha),
+    toPublic.status === 200 && toPublic.json?.data?.estado === "Publicada" && Boolean(fecha),
     String(toPublic.status),
   );
 
   const toDraft = await request(`/api/admin/contenidos/${draftId}`, {
     method: "PATCH",
     cookie: adminCookie,
-    body: { estado: "borrador" },
+    body: { estado: "Borrador" },
   });
   record(
     "volver a borrador conserva la fecha",
     toDraft.status === 200 &&
-      toDraft.json?.data?.estado === "borrador" &&
+      toDraft.json?.data?.estado === "Borrador" &&
       toDraft.json?.data?.fecha_publicacion === fecha,
     String(toDraft.status),
   );
@@ -270,7 +285,7 @@ async function main() {
   const editorCreate = await request("/api/admin/contenidos", {
     method: "POST",
     cookie: editorLogin.cookie,
-    body: payload("noticia", "borrador", "Borrador del editor"),
+    body: payload("Noticia", "Borrador", "Borrador del editor", catalogs),
   });
   if (editorCreate.json?.data?.id) createdIds.push(editorCreate.json.data.id);
   record("editor crea contenido", editorCreate.status === 201, String(editorCreate.status));
@@ -282,11 +297,6 @@ async function cleanup(adminCookie) {
   }
 
   if (editorId) {
-    await request(`/api/admin/usuarios/${editorId}/estado`, {
-      method: "PATCH",
-      cookie: adminCookie,
-      body: { estado: "inactivo" },
-    });
     await request(`/api/admin/usuarios/${editorId}`, {
       method: "DELETE",
       cookie: adminCookie,

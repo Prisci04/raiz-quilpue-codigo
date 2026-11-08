@@ -77,6 +77,7 @@ export default function PerfilForm({ perfil, onUpdated }) {
             value={form.apellido}
             onChange={(event) => updateField("apellido", event.target.value)}
             className={fieldClass}
+            required
           />
         </div>
         <div className="sm:col-span-2">
@@ -112,16 +113,10 @@ export default function PerfilForm({ perfil, onUpdated }) {
       </div>
 
       <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-sm bg-[#f6f1eb] px-4 py-3">
+        <div className="rounded-sm bg-[#f6f1eb] px-4 py-3 sm:col-span-2">
           <dt className="text-[12px] text-[#7c5c47]">Rol</dt>
           <dd className="mt-1 text-sm font-medium text-[#2c1810]">
             {perfil.rol?.nombre ?? "Sin rol"}
-          </dd>
-        </div>
-        <div className="rounded-sm bg-[#f6f1eb] px-4 py-3">
-          <dt className="text-[12px] text-[#7c5c47]">Estado</dt>
-          <dd className="mt-1 text-sm font-medium text-[#2c1810]">
-            {perfil.estado === "activo" ? "Activo" : "Inactivo"}
           </dd>
         </div>
       </dl>

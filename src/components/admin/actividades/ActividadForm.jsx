@@ -2,15 +2,25 @@
 
 import AdminDialog from "@/components/admin/AdminDialog";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImageIcon } from "lucide-react";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import ActividadUbicacionField from "@/components/admin/actividades/ActividadUbicacionField";
 import ContenidoEditor from "@/components/admin/contenidos/ContenidoEditor";
-import { PUBLICO_OBJETIVO_LABELS, PUBLICOS_OBJETIVO, todayISO } from "@/lib/actividades";
+import { esCostoPagada, todayISO } from "@/lib/actividades";
+import {
+  NOMBRE_COSTO_GRATUITA,
+  NOMBRE_ESTADO_BORRADOR,
+  NOMBRE_ESTADO_PUBLICADA,
+  NOMBRE_MODALIDAD_PRESENCIAL,
+  NOMBRE_PARTICIPACION_ABIERTA,
+} from "@/lib/catalogos.mjs";
+import { getCatalogos } from "@/lib/api/catalogos";
 import { deleteActividad, getActividadAdmin, saveActividad } from "@/lib/api/community";
 import { discardUploadedPortada, uploadPortada } from "@/lib/api/media";
+import LugarFields from "@/components/admin/actividades/LugarFields";
+import { coordenadasValidas } from "@/lib/actividad-ubicacion.mjs";
 
 const EMPTY_DOC = { type: "doc", content: [{ type: "paragraph" }] };
 const PORTADA_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
@@ -22,22 +32,33 @@ const EMPTY = {
   fecha: "",
   hora_inicio: "",
   hora_fin: "",
+  id_lugar: "",
+  id_comuna: "",
+  id_region: "",
+  id_publico: "",
+  id_modalidad: "",
+  id_tipo_participacion: "",
   lugar: "",
   direccion: "",
   google_place_id: null,
   latitud: null,
   longitud: null,
-  publico_objetivo: "",
-  modalidad: "presencial",
-  tipo_participacion: "abierta",
   cupos: "",
-  tipo_valor: "gratuito",
+  cupos_espera: "",
+  id_costo: "",
   valor_monto: "",
-  forma_pago: null,
   informacion_adicional: null,
   imagen_url: "",
-  estado: "borrador",
+  id_estado: "",
 };
+
+function catalogIdByNombre(items, nombre) {
+  return items.find((item) => item.nombre?.toLowerCase() === nombre.toLowerCase())?.id ?? "";
+}
+
+function catalogNombre(items, id) {
+  return items.find((item) => Number(item.id) === Number(id))?.nombre ?? "";
+}
 
 const inputClass = "mt-1.5 w-full rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] px-3 py-2.5 text-sm text-[#2c1810] outline-none focus:border-[#c4a484]";
 
@@ -67,31 +88,51 @@ function formFromActivity(activity) {
     fecha: activity.fecha ?? "",
     hora_inicio: clock(activity.hora_inicio),
     hora_fin: clock(activity.hora_fin),
+    id_lugar: activity.id_lugar ?? "",
+    id_comuna: activity.id_comuna ?? "",
+    id_region: activity.id_region ?? "",
+    id_publico: activity.id_publico ?? "",
+    id_modalidad: activity.id_modalidad ?? "",
+    id_tipo_participacion: activity.id_tipo_participacion ?? "",
     lugar: activity.lugar ?? "",
-    direccion: activity.direccion ?? "",
+    direccion: Object.hasOwn(activity, "direccion_evento")
+      ? activity.direccion_evento ?? ""
+      : activity.direccion ?? "",
     google_place_id: activity.google_place_id ?? null,
     latitud: activity.latitud ?? null,
     longitud: activity.longitud ?? null,
-    publico_objetivo: activity.publico_objetivo ?? "",
-    modalidad: activity.modalidad ?? "presencial",
-    tipo_participacion: activity.tipo_participacion ?? "abierta",
     cupos: activity.cupos ?? "",
-    tipo_valor: activity.tipo_valor ?? "gratuito",
+    cupos_espera: activity.cupos_espera ?? "",
+    id_costo: activity.id_costo ?? "",
     valor_monto: activity.valor_monto == null ? "" : String(activity.valor_monto),
-    forma_pago: activity.forma_pago ?? null,
     informacion_adicional: activity.informacion_adicional ?? null,
     imagen_url: activity.imagen_url ?? "",
-    estado: activity.estado ?? "borrador",
+    id_estado: activity.id_estado ?? "",
   };
 }
 
-function activityPayload(form, estado) {
+function activityPayload(form, idEstado) {
   return {
-    ...form,
-    cupos: form.cupos === "" ? null : Number(form.cupos),
+    titulo: form.titulo,
+    descripcion: form.descripcion,
+    fecha: form.fecha,
+    hora_inicio: form.hora_inicio,
+    hora_fin: form.hora_fin,
+    id_lugar: form.id_lugar,
+    id_publico: form.id_publico,
+    id_modalidad: form.id_modalidad,
+    id_tipo_participacion: form.id_tipo_participacion || null,
+    cupos_max: form.cupos === "" ? null : Number(form.cupos),
+    cupos_espera: form.cupos_espera === "" ? 0 : Number(form.cupos_espera),
+    id_costo: form.id_costo || null,
     valor_monto: form.valor_monto === "" ? null : form.valor_monto,
+    informacion_adicional: form.informacion_adicional,
     imagen_url: form.imagen_url || null,
-    estado,
+    id_estado: idEstado,
+    direccion: form.direccion || null,
+    google_place_id: form.google_place_id,
+    latitud: form.latitud,
+    longitud: form.longitud,
   };
 }
 
@@ -100,6 +141,7 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
   const router = useRouter();
   const fileRef = useRef(null);
   const [form, setForm] = useState(() => (initialActivity ? formFromActivity(initialActivity) : EMPTY));
+  const [catalogos, setCatalogos] = useState(null);
   const [loading, setLoading] = useState(editing && !initialActivity);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -113,6 +155,38 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
   useEffect(() => {
     router.prefetch("/admin/actividades");
   }, [router]);
+
+  useEffect(() => {
+    let active = true;
+
+    getCatalogos([
+      "modalidad",
+      "tipo_participacion",
+      "costo_actividad",
+      "publico_objetivo",
+      "estado_publicacion",
+    ])
+      .then((data) => {
+        if (!active) return;
+        setCatalogos(data);
+        setForm((current) => ({
+          ...current,
+          id_modalidad: current.id_modalidad || catalogIdByNombre(data.modalidad ?? [], NOMBRE_MODALIDAD_PRESENCIAL),
+          id_tipo_participacion:
+            current.id_tipo_participacion ||
+            catalogIdByNombre(data.tipo_participacion ?? [], NOMBRE_PARTICIPACION_ABIERTA),
+          id_costo: current.id_costo || catalogIdByNombre(data.costo_actividad ?? [], NOMBRE_COSTO_GRATUITA),
+          id_estado: current.id_estado || catalogIdByNombre(data.estado_publicacion ?? [], NOMBRE_ESTADO_BORRADOR),
+        }));
+      })
+      .catch((loadErrorCaught) => {
+        if (active) setError(loadErrorCaught.message);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!editing || initialActivity) return undefined;
@@ -149,6 +223,17 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
     setForm((current) => ({ ...current, [name]: value }));
   }
 
+  const handleLugarChange = useCallback((next) => {
+    setForm((current) => {
+      const changed = String(current.id_lugar) !== String(next.id_lugar);
+      const point = coordenadasValidas(next.latitud, next.longitud) ? { latitud: next.latitud, longitud: next.longitud } : { latitud: null, longitud: null };
+      return {
+        ...current, id_lugar: next.id_lugar, id_comuna: next.id_comuna, id_region: next.id_region,
+        ...(changed ? { lugar: next.nombre_lugar ?? "", ...point } : {}),
+      };
+    });
+  }, []);
+
   function choosePortada(event) {
     const next = event.target.files?.[0];
     event.target.value = "";
@@ -170,19 +255,17 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
   }
 
   function validateLocal() {
+    if (!form.fecha) return "La fecha es obligatoria.";
+    if (!form.id_lugar) return "Indica el lugar de la actividad.";
+    if (!form.id_publico) return "Indica el público de la actividad.";
+    if (!form.id_modalidad) return "Indica la modalidad de la actividad.";
     if (form.hora_inicio && form.hora_fin && form.hora_fin <= form.hora_inicio) {
       return "La hora de término debe ser posterior a la de inicio.";
     }
-    if (form.tipo_valor === "pagado") {
+    if (esCostoPagada(catalogNombre(catalogos?.costo_actividad ?? [], form.id_costo))) {
       const monto = String(form.valor_monto ?? "");
       if (!monto) return "Indica el monto cuando la actividad es pagada.";
       if (!/^\d+$/.test(monto)) return "El monto solo puede contener números.";
-    }
-    if (form.modalidad === "presencial" && !String(form.lugar ?? "").trim()) {
-      return "Indica el lugar cuando la actividad es presencial.";
-    }
-    if (!PUBLICOS_OBJETIVO.includes(form.publico_objetivo)) {
-      return "Indica el público de la actividad.";
     }
     return "";
   }
@@ -229,12 +312,22 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
       return;
     }
 
+    const idEstado =
+      typeof state === "number" || /^\d+$/.test(String(state ?? ""))
+        ? Number(state)
+        : catalogIdByNombre(catalogos?.estado_publicacion ?? [], state);
+
+    if (!idEstado) {
+      setError("No se pudo determinar el estado de publicación.");
+      return;
+    }
+
     setSaving(true);
     setError("");
     setSuccess("");
     let left = false;
     try {
-      left = await persist(state, activityPayload(form, state));
+      left = await persist(state, activityPayload(form, idEstado));
     } catch (saveError) {
       setError(saveError.message);
     } finally {
@@ -256,7 +349,7 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
     setSaving(true);
     setError("");
     try {
-      const saved = await saveActividad(activityPayload({ ...form, imagen_url: "" }, form.estado), activityId);
+      const saved = await saveActividad(activityPayload({ ...form, imagen_url: "" }, form.id_estado), activityId);
       setForm(formFromActivity(saved));
       setSuccess("La imagen se eliminó.");
     } catch (removeError) {
@@ -305,7 +398,7 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
           className="admin-form mt-6 space-y-5"
           onSubmit={(event) => {
             event.preventDefault();
-            save(editing ? form.estado : "publicada");
+            save(editing ? form.id_estado : NOMBRE_ESTADO_PUBLICADA);
           }}
         >
           <p className="text-xs leading-relaxed text-[#7c5c47]">Los campos con * son obligatorios. Los demás son opcionales.</p>
@@ -314,34 +407,37 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
             <Field label="Nombre de la actividad *" className="lg:col-span-2">
               <input required maxLength={180} value={form.titulo} onChange={(event) => update("titulo", event.target.value)} className={inputClass} />
             </Field>
-            <Field label="Tipo de participación *">
-              <select value={form.tipo_participacion} onChange={(event) => update("tipo_participacion", event.target.value)} className={inputClass}>
-                <option value="abierta">Participación abierta</option>
-                <option value="inscripcion">Inscripción previa</option>
-                <option value="pendiente">Por confirmar</option>
+            <Field label="Tipo de participación">
+              <select value={form.id_tipo_participacion} onChange={(event) => update("id_tipo_participacion", event.target.value)} className={inputClass}>
+                <option value="">Sin definir</option>
+                {(catalogos?.tipo_participacion ?? []).map((item) => (
+                  <option key={item.id} value={item.id}>{item.nombre}</option>
+                ))}
               </select>
             </Field>
             <Field label="Modalidad *">
-              <select value={form.modalidad} onChange={(event) => update("modalidad", event.target.value)} className={inputClass}>
-                <option value="presencial">Presencial</option>
-                <option value="virtual">Online</option>
-                <option value="hibrida">Híbrida</option>
+              <select required value={form.id_modalidad} onChange={(event) => update("id_modalidad", event.target.value)} className={inputClass}>
+                <option value="">Seleccionar modalidad</option>
+                {(catalogos?.modalidad ?? []).map((item) => (
+                  <option key={item.id} value={item.id}>{item.nombre === "Virtual" ? "Online" : item.nombre}</option>
+                ))}
               </select>
             </Field>
             {editing ? (
               <Field label="Estado de la actividad *">
-                <select value={form.estado} onChange={(event) => update("estado", event.target.value)} className={inputClass}>
-                  <option value="borrador">Borrador</option>
-                  <option value="publicada">Publicada</option>
-                  <option value="cancelada">Cancelada</option>
+                <select required value={form.id_estado} onChange={(event) => update("id_estado", event.target.value)} className={inputClass}>
+                  <option value="">Seleccionar estado</option>
+                  {(catalogos?.estado_publicacion ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>{item.nombre}</option>
+                  ))}
                 </select>
               </Field>
             ) : null}
             <Field label="Descripción *" className="lg:col-span-2">
               <textarea required rows={5} maxLength={10000} value={form.descripcion} onChange={(event) => update("descripcion", event.target.value)} className={inputClass} />
             </Field>
-            <Field label="Fecha">
-              <input type="date" value={form.fecha ?? ""} onChange={(event) => update("fecha", event.target.value)} className={inputClass} />
+            <Field label="Fecha *">
+              <input required type="date" value={form.fecha ?? ""} onChange={(event) => update("fecha", event.target.value)} className={inputClass} />
               {pastDate ? <span className="mt-1 block text-xs text-[#9a6708]">La fecha ya pasó: en el portal quedará como actividad finalizada y no aceptará inscripciones.</span> : null}
             </Field>
             <div className="grid grid-cols-2 gap-3">
@@ -352,38 +448,47 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
                 <input type="time" value={form.hora_fin ?? ""} onChange={(event) => update("hora_fin", event.target.value)} className={inputClass} />
               </Field>
             </div>
+            <LugarFields
+              value={form}
+              disabled={busy}
+              onChange={handleLugarChange}
+            />
             <Field label="Cupos">
-              <input type="number" min="0" step="1" value={form.cupos ?? ""} onChange={(event) => update("cupos", event.target.value)} className={inputClass} />
-              <span className="mt-1 block text-xs text-[#8d7b6d]">Déjalo vacío si no hay límite o aún no está confirmado.</span>
+              <input type="number" min="1" step="1" value={form.cupos ?? ""} onChange={(event) => update("cupos", event.target.value)} className={inputClass} />
+              <span className="mt-1 block text-xs text-[#8d7b6d]">Déjalo vacío si no hay límite. Obligatorio si publicas una actividad con inscripción.</span>
+            </Field>
+            <Field label="Cupos de espera">
+              <input type="number" min="0" step="1" value={form.cupos_espera ?? ""} onChange={(event) => update("cupos_espera", event.target.value)} className={inputClass} />
+              <span className="mt-1 block text-xs text-[#8d7b6d]">Cantidad extra que se acepta cuando los cupos están completos. Si lo dejas vacío, no hay lista de espera.</span>
             </Field>
             <Field label="Público *">
               <select
                 required
-                name="publico_objetivo"
-                value={form.publico_objetivo}
-                onChange={(event) => update("publico_objetivo", event.target.value)}
+                name="id_publico"
+                value={form.id_publico}
+                onChange={(event) => update("id_publico", event.target.value)}
                 className={inputClass}
               >
                 <option value="" disabled>
                   Seleccionar público
                 </option>
-                {PUBLICOS_OBJETIVO.map((value) => (
-                  <option key={value} value={value}>
-                    {PUBLICO_OBJETIVO_LABELS[value]}
+                {(catalogos?.publico_objetivo ?? []).map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.nombre}
                   </option>
                 ))}
               </select>
             </Field>
             <div className="grid gap-4">
               <Field label="Valor">
-                <select value={form.tipo_valor} onChange={(event) => update("tipo_valor", event.target.value)} className={inputClass}>
-                  <option value="gratuito">Gratuito</option>
-                  <option value="pagado">Pagado</option>
-                  <option value="voluntario">Aporte voluntario</option>
-                  <option value="pendiente">Por confirmar</option>
+                <select value={form.id_costo} onChange={(event) => update("id_costo", event.target.value)} className={inputClass}>
+                  <option value="">Sin definir</option>
+                  {(catalogos?.costo_actividad ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>{item.nombre}</option>
+                  ))}
                 </select>
               </Field>
-              {form.tipo_valor === "pagado" ? (
+              {esCostoPagada(catalogNombre(catalogos?.costo_actividad ?? [], form.id_costo)) ? (
                 <Field label="Monto ($) *">
                   <input
                     type="text"
@@ -399,14 +504,9 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
                 </Field>
               ) : null}
             </div>
-            {form.tipo_valor === "pagado" || form.tipo_valor === "voluntario" ? (
-              <Field label="Forma de pago" className="lg:col-span-2">
-                <input maxLength={250} placeholder="Transferencia, pago presencial..." value={form.forma_pago ?? ""} onChange={(event) => update("forma_pago", event.target.value)} className={inputClass} />
-              </Field>
-            ) : null}
           </div>
 
-          <ActividadUbicacionField value={form} disabled={busy}
+          <ActividadUbicacionField value={{ ...form, modalidad: catalogNombre(catalogos?.modalidad ?? [], form.id_modalidad) }} catalogLugar disabled={busy}
             onChange={(patch) => setForm((current) => ({ ...current, ...patch }))} />
 
           <div className="admin-card p-4 sm:p-6">
@@ -476,10 +576,10 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
             ) : (
               <Link href="/admin/actividades" className="inline-flex min-h-11 items-center rounded-sm px-4 text-sm text-[#7c5c47]">Cancelar</Link>
             )}
-            <button type="button" disabled={busy} onClick={() => save("borrador")} className="min-h-10 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50">
+            <button type="button" disabled={busy || !catalogos} onClick={() => save(NOMBRE_ESTADO_BORRADOR)} className="min-h-10 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50">
               Guardar borrador
             </button>
-            <button type="submit" disabled={busy} className="min-h-10 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50">
+            <button type="submit" disabled={busy || !catalogos} className="min-h-10 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50">
               {busy ? "Guardando…" : editing ? "Guardar cambios" : "Publicar actividad"}
             </button>
           </div>

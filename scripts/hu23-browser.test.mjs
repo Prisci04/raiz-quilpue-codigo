@@ -28,7 +28,7 @@ test("HU-23 Leaflet browser: manual search, selection, correction, persistence e
       'import Form from "@/components/admin/actividades/ActividadForm";',
       'import Public from "@/components/actividades/ActividadFicha";',
       'const activity={titulo:"Encuentro cultural",descripcion:"Actividad local de prueba",fecha:"2099-01-02",',
-      'lugar:"",direccion:"",google_place_id:"legacy-reference",latitud:null,longitud:null,modalidad:"presencial",',
+      'id_lugar:10,id_comuna:20,id_region:30,id_modalidad:1,id_publico:1,id_tipo_participacion:1,id_costo:1,id_estado:1,lugar:"Centro cultural propio",direccion:"",google_place_id:"legacy-reference",latitud:null,longitud:null,modalidad:"presencial",',
       'tipo_valor:"gratuito",tipo_participacion:"abierta",publico_objetivo:"todas_edades",estado:"borrador"};',
       'function Preview(){const [point,setPoint]=React.useState({});window.hu23PublicLocation=setPoint;return <div id="public"><Public activity={{...activity,lugar:"Centro cultural",direccion:"Dirección propia",...point}}/></div>}',
       'const root=createRoot(document.getElementById("app"));window.hu23RenderForm=(editing)=>root.render(<><main className="admin-shell"><Form key={String(editing)} activityId={editing?"1":null} initialActivity={activity}/></main><Preview/></>);window.hu23RenderForm(false);',
@@ -64,11 +64,23 @@ test("HU-23 Leaflet browser: manual search, selection, correction, persistence e
       + "\nbody{margin:0;font-family:sans-serif}.admin-shell{padding:24px;max-width:1100px;margin:auto}";
 
     const saves=[],external=[],searches=[];
+    const catalogs={
+      modalidad:[{id:1,nombre:"Presencial"},{id:2,nombre:"Virtual"},{id:3,nombre:"Híbrida"}],
+      tipo_participacion:[{id:1,nombre:"Abierta"}],costo_actividad:[{id:1,nombre:"Gratuita"}],
+      publico_objetivo:[{id:1,nombre:"Todas las edades"}],estado_publicacion:[{id:1,nombre:"Borrador"},{id:2,nombre:"Publicada"}],
+    };
     let unavailable=true;
     server=createServer(async(req,res)=>{
       if(/^\/[^/?]+\.js$/.test(req.url)){res.setHeader("Content-Type","text/javascript");res.end(await readFile(join(temporary,basename(req.url))));}
       else if(req.url==="/style.css"){res.setHeader("Content-Type","text/css");res.end(styles);}
-      else if(req.url==="/api/admin/actividades/ubicacion"){
+      else if(req.url.startsWith("/api/catalogos")){
+        res.setHeader("Content-Type","application/json");res.end(JSON.stringify({success:true,data:catalogs}));
+      }else if(req.url.startsWith("/api/ubicaciones")){
+        res.setHeader("Content-Type","application/json");res.end(JSON.stringify({success:true,data:{
+          regiones:[{id:30,nombre:"Valparaíso"}],comunas:[{id:20,nombre:"Quilpué"}],
+          lugares:[{id:10,nombre:"Centro cultural propio",latitud:null,longitud:null}],
+        }}));
+      }else if(req.url==="/api/admin/actividades/ubicacion"){
         let body="";for await(const chunk of req)body+=chunk;const data=JSON.parse(body);searches.push(data.query);
         res.setHeader("Content-Type","application/json");
         if(data.query.includes("error")){res.statusCode=502;res.end(JSON.stringify({success:false,error:{message:"El buscador no está disponible."}}));}
@@ -144,14 +156,13 @@ test("HU-23 Leaflet browser: manual search, selection, correction, persistence e
       throw new Error("Browser condition not met: "+expression);
     }
     const click = async(label) => {await evaluate("[...document.querySelectorAll('.admin-shell button')].find(e=>e.textContent==="+JSON.stringify(label)+").click()");await pause(50);};
-    await waitFor("Boolean(document.querySelector('input[name=lugar]'))");
+    await waitFor("[...document.querySelectorAll('.admin-shell select option')].some(e=>e.textContent==='Centro cultural propio') && Boolean(document.querySelector('input[id$=\"-query\"]'))");
     for(const [index,width] of [1440,1024,390].entries()){
-      if(index===1){await evaluate("window.hu23RenderForm(true)");await waitFor("Boolean(document.querySelector('input[name=lugar]'))");}
+      if(index===1){await evaluate("window.hu23RenderForm(true)");await waitFor("[...document.querySelectorAll('.admin-shell select option')].some(e=>e.textContent==='Centro cultural propio') && Boolean(document.querySelector('input[id$=\"-query\"]'))");}
       await send("Emulation.setDeviceMetricsOverride",{width,height:1000,deviceScaleFactor:1,mobile:width===390});
       if(index<2){
-        await evaluate("document.querySelector('input[name=lugar]').focus()");
-        await send("Input.insertText",{text:"Centro cultural propio"});
-        await key("Tab",9);await send("Input.insertText",{text:"Av. Los Carrera 100, Quilpué"});
+        await evaluate("document.querySelector('input[name=direccion]').focus()");
+        await send("Input.insertText",{text:"Av. Los Carrera 100, Quilpué"});
       }
       const beforeSearch=searches.length;
       await evaluate("document.querySelector('input[id$=\"-query\"]').focus()");
@@ -180,7 +191,7 @@ test("HU-23 Leaflet browser: manual search, selection, correction, persistence e
       await waitFor("Boolean(document.querySelector('#public .leaflet-marker-icon'))");
       assert.equal(await evaluate("[...document.querySelectorAll('#public a[href*=google]')].some(e=>e.href.includes('key='))"),false);
       await click("Quitar coordenadas");
-      assert.equal(await evaluate("document.querySelector('input[name=lugar]').value"),"Centro cultural propio");
+      assert.equal(await evaluate("[...document.querySelectorAll('.admin-shell select option:checked')].find(e=>e.value==='10')?.textContent"),"Centro cultural propio");
       assert.equal(await evaluate("document.querySelector('.admin-shell .leaflet-marker-icon')===null"),true);
     }
     await click("Buscar ubicación");await waitFor("Boolean(document.querySelector('[aria-label=\"Resultados de ubicación\"] button'))");
@@ -190,12 +201,12 @@ test("HU-23 Leaflet browser: manual search, selection, correction, persistence e
     await waitFor("document.body.textContent.includes('todavía no está habilitada')");
     assert.equal(saves.length,1);assert.equal(saves[0].latitud,-33.05);assert.equal(saves[0].direccion,"Av. Los Carrera 100, Quilpué");
     assert.equal(saves[0].google_place_id,"legacy-reference");
-    await evaluate("(()=>{const s=[...document.querySelectorAll('.admin-shell select')].find(e=>[...e.options].some(o=>o.value==='virtual'));s.value='virtual';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await evaluate("(()=>{const s=[...document.querySelectorAll('.admin-shell select')].find(e=>[...e.options].some(o=>o.textContent==='Online'));s.value='2';s.dispatchEvent(new Event('change',{bubbles:true}));})()");
     await pause(80);
     assert.equal(await evaluate("document.querySelectorAll('.admin-shell .leaflet-container,.admin-shell input[id$=\"-query\"],.admin-shell a[href*=google]').length"),0);
     await evaluate("window.hu23PublicLocation({modalidad:'virtual',latitud:-33,longitud:-71})");await pause(80);
     assert.equal(await evaluate("document.querySelectorAll('#public .leaflet-container,#public a[href*=google]').length"),0);
-    await evaluate("(()=>{const s=[...document.querySelectorAll('.admin-shell select')].find(e=>[...e.options].some(o=>o.value==='virtual'));s.value='hibrida';s.dispatchEvent(new Event('change',{bubbles:true}));})()");await pause(80);
+    await evaluate("(()=>{const s=[...document.querySelectorAll('.admin-shell select')].find(e=>[...e.options].some(o=>o.textContent==='Online'));s.value='3';s.dispatchEvent(new Event('change',{bubbles:true}));})()");await pause(80);
     await click("Quitar coordenadas");
     await evaluate("document.querySelector('input[id$=\"-query\"]').focus()");await send("Input.insertText",{text:"empty"});
     await click("Buscar ubicación");await waitFor("document.body.textContent.includes('No encontramos resultados')");

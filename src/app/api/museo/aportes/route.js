@@ -3,14 +3,14 @@ import { noStore } from "@/lib/contenidos/respond";
 import { parseAporteMuseoInput } from "@/lib/community-validation.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createAporteMuseo } from "@/services/admin-community.service";
-import { MEDIA_BUCKET, MEDIA_MAX_BYTES } from "@/lib/media/policy.mjs";
-import { inspectMuseoFile, MUSEO_FILE_TYPES } from "@/lib/media/museo-policy.mjs";
+import { listCatalogo } from "@/services/catalogos.service";
+import { MEDIA_BUCKET, MEDIA_MAX_BYTES, inspectImageFile } from "@/lib/media/policy.mjs";
 
 export const dynamic = "force-dynamic";
 
 const BUCKET = MEDIA_BUCKET;
 const MAX_FILE_SIZE = MEDIA_MAX_BYTES;
-const ALLOWED_TYPES = new Set(Object.keys(MUSEO_FILE_TYPES));
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 
 export async function POST(request) {
   let uploadedPath = null;
@@ -21,7 +21,7 @@ export async function POST(request) {
 
     if (!(file instanceof File) || file.size === 0) {
       return noStore(
-        jsonError(400, "VALIDATION", "Debes seleccionar un archivo."),
+        jsonError(400, "VALIDATION", "Debes seleccionar una imagen."),
       );
     }
 
@@ -30,7 +30,7 @@ export async function POST(request) {
         jsonError(
           400,
           "FILE_TOO_LARGE",
-          "El archivo no puede superar los 5 MB.",
+          "La imagen no puede superar los 5 MB.",
         ),
       );
     }
@@ -40,37 +40,20 @@ export async function POST(request) {
         jsonError(
           400,
           "INVALID_FILE_TYPE",
-          "Solo se permiten imágenes JPG, PNG, WEBP, AVIF o archivos PDF.",
-        ),
-      );
-    }
-
-    const input = parseAporteMuseoInput({
-      nombre: formData.get("nombre"),
-      correo: formData.get("correo"),
-      categoria: formData.get("categoria"),
-      titulo: formData.get("titulo"),
-      descripcion: formData.get("descripcion"),
-      fecha_aproximada: formData.get("fecha_aproximada"),
-      lugar: formData.get("lugar"),
-      archivo_nombre: file.name,
-      informacion_adicional: formData.get("informacion_adicional"),
-    });
-
-    if (!input) {
-      return noStore(
-        jsonError(
-          400,
-          "VALIDATION",
-          "Revisa los campos obligatorios del aporte.",
+          "Solo se permiten imágenes JPG, PNG, WEBP o AVIF.",
         ),
       );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const inspected = inspectMuseoFile({ bytes: buffer, type: file.type, name: file.name, size: file.size });
+    const inspected = inspectImageFile({
+      bytes: buffer,
+      type: file.type,
+      name: file.name,
+      size: file.size,
+    });
     if (!inspected.ok) {
-      return noStore(jsonError(400, inspected.code, inspected.message));
+      return noStore(jsonError(inspected.status, inspected.code, inspected.message));
     }
 
     const supabase = getSupabaseAdminClient();
@@ -80,7 +63,7 @@ export async function POST(request) {
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
       .upload(candidatePath, buffer, {
-        contentType: file.type,
+        contentType: inspected.mime,
         upsert: false,
       });
 
@@ -94,16 +77,34 @@ export async function POST(request) {
       data: { publicUrl },
     } = supabase.storage.from(BUCKET).getPublicUrl(uploadedPath);
 
-    await createAporteMuseo({
-      ...input,
-      archivo_url: publicUrl,
-    });
+    const catalogos = {
+      categoria_museo: await listCatalogo("categoria_museo"),
+    };
+    const parsed = parseAporteMuseoInput(
+      {
+        nombre: formData.get("nombre"),
+        correo: formData.get("correo"),
+        id_categoria_museo: formData.get("id_categoria_museo"),
+        titulo: formData.get("titulo"),
+        descripcion: formData.get("descripcion"),
+        fecha_aproximada: formData.get("fecha_aproximada"),
+        lugar: formData.get("lugar"),
+        imagen_url: publicUrl,
+      },
+      catalogos,
+    );
+
+    if (!parsed.ok) {
+      throw Object.assign(new Error(parsed.message), { validation: true });
+    }
+
+    await createAporteMuseo(parsed.value);
 
     return noStore(
       jsonSuccess(
         {
           recibido: true,
-          archivo_url: publicUrl,
+          imagen_url: publicUrl,
         },
         {},
         201,
@@ -120,6 +121,10 @@ export async function POST(request) {
       } catch {
         logInternalError("museo aporte upload cleanup pending");
       }
+    }
+
+    if (error?.validation) {
+      return noStore(jsonError(400, "VALIDATION", error.message));
     }
 
     logInternalError("POST /api/museo/aportes");

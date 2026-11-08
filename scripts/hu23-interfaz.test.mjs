@@ -51,14 +51,18 @@ const activity = { id: 1, titulo: "Encuentro cultural", descripcion: "Descripci�
 
 test("admin retains manual labels and explicit search without configuration or credentials", () => {
   const html = render(Form, { activityId: 1, initialActivity: { ...activity, direccion: "Calle propia 20" } });
-  assert.match(html, /Buscar ubicación/); assert.match(html, /Seleccionar en el mapa/);
+  // Catalogs load on the client; explicit search is exercised below and in browser.
   assert.match(html, /name="direccion"/); assert.match(html, /value="Calle propia 20"/);
   const inputs = html.match(/<input\b[^>]*>/g);
-  for (const name of ["lugar", "direccion"]) {
+  for (const name of ["direccion"]) {
     const field = inputs.find((input) => input.includes('name="' + name + '"'));
     const id = field.match(/id="([^"]+)"/)[1]; assert.ok(html.includes('for="' + id + '"'));
     if (name === "lugar") assert.match(field, /required/); else assert.doesNotMatch(field, /required/);
   }
+  assert.match(html, /Seleccionar lugar/);
+  const inherited = render(Form, { initialActivity: { ...activity, direccion: "Dirección compartida", direccion_evento: null } });
+  assert.doesNotMatch(inherited, /value="Dirección compartida"/);
+  const manual=render(Field,{value:activity,onChange(){}}); assert.match(manual,/name="lugar"/); assert.match(manual,/Buscar ubicación/); assert.match(manual,/Seleccionar en el mapa/);
   assert.doesNotMatch(html, /<iframe|maps\.googleapis|API key|PlaceAutocomplete/);
 });
 test("presencial and hibrida preview coordinates with an accessible Leaflet placeholder and external links", () => {

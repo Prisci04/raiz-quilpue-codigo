@@ -7,6 +7,11 @@ import {
   MUSEUM_CATEGORY_LABELS,
   buildCategorySlices,
 } from "@/lib/admin-dashboard";
+import {
+  NOMBRE_ESTADO_PUBLICADA,
+  NOMBRE_INSCRIPCION_CANCELADA,
+  NOMBRE_REVISION_APROBADO,
+} from "@/lib/catalogos.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const TIME_ZONE = "America/Santiago";
@@ -113,14 +118,17 @@ export async function getAdminDashboardData({ now = new Date() } = {}) {
     museumCategoryCounts,
   ] = await Promise.all([
     countRows(
-      admin.from("contenidos").select("id", { count: "exact", head: true }),
+      admin.from("contenidos").select("id_contenido", { count: "exact", head: true }),
       "Failed to count contenidos",
     ),
     countRows(
       admin
         .from("contenidos")
-        .select("id", { count: "exact", head: true })
-        .eq("estado", "publicada"),
+        .select("id_contenido,estado_publicacion!inner(nombre_estado)", {
+          count: "exact",
+          head: true,
+        })
+        .eq("estado_publicacion.nombre_estado", NOMBRE_ESTADO_PUBLICADA),
       "Failed to count published contenidos",
     ),
     Promise.all(
@@ -129,22 +137,29 @@ export async function getAdminDashboardData({ now = new Date() } = {}) {
         await countRows(
           admin
             .from("contenidos")
-            .select("id", { count: "exact", head: true })
-            .eq("estado", "publicada")
-            .eq("tipo", tipo),
+            .select(
+              "id_contenido,estado_publicacion!inner(nombre_estado),tipo_contenido!inner(nombre_tipo_contenido)",
+              { count: "exact", head: true },
+            )
+            .eq("estado_publicacion.nombre_estado", NOMBRE_ESTADO_PUBLICADA)
+            .eq("tipo_contenido.nombre_tipo_contenido", tipo),
           `Failed to count published contenidos of type ${tipo}`,
         ),
       ]),
     ),
     admin
       .from("actividades")
-      .select("id,titulo")
-      .eq("estado", "publicada")
-      .order("fecha_creacion", { ascending: false }),
+      .select("id_actividad,titulo,estado_publicacion!inner(nombre_estado)")
+      .eq("estado_publicacion.nombre_estado", NOMBRE_ESTADO_PUBLICADA)
+      .order("fec_creacion", { ascending: false }),
     countRows(
       admin
-        .from("actividad_inscripciones")
-        .select("id", { count: "exact", head: true }),
+        .from("inscripciones")
+        .select("id_inscripcion,estado_inscripcion!inner(nombre_estado_inscripcion)", {
+          count: "exact",
+          head: true,
+        })
+        .neq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CANCELADA),
       "Failed to count actividad inscripciones",
     ),
     Promise.all(
@@ -153,10 +168,14 @@ export async function getAdminDashboardData({ now = new Date() } = {}) {
         const end = chileMonthStart(year, monthIndex + 1);
         const value = await countRows(
           admin
-            .from("actividad_inscripciones")
-            .select("id", { count: "exact", head: true })
-            .gte("fecha_creacion", start)
-            .lt("fecha_creacion", end),
+            .from("inscripciones")
+            .select("id_inscripcion,estado_inscripcion!inner(nombre_estado_inscripcion)", {
+              count: "exact",
+              head: true,
+            })
+            .neq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CANCELADA)
+            .gte("fec_inscripcion", start)
+            .lt("fec_inscripcion", end),
           "Failed to count monthly actividad inscripciones",
         );
 
@@ -165,9 +184,12 @@ export async function getAdminDashboardData({ now = new Date() } = {}) {
     ),
     countRows(
       admin
-        .from("museo_piezas")
-        .select("id", { count: "exact", head: true })
-        .eq("estado", "publicada"),
+        .from("museo_aportes")
+        .select("id_aporte,estado_revision!inner(nombre_estado_revision)", {
+          count: "exact",
+          head: true,
+        })
+        .eq("estado_revision.nombre_estado_revision", NOMBRE_REVISION_APROBADO),
       "Failed to count published museo piezas",
     ),
     Promise.all(
@@ -175,10 +197,13 @@ export async function getAdminDashboardData({ now = new Date() } = {}) {
         categoria,
         await countRows(
           admin
-            .from("museo_piezas")
-            .select("id", { count: "exact", head: true })
-            .eq("estado", "publicada")
-            .eq("categoria", categoria),
+            .from("museo_aportes")
+            .select(
+              "id_aporte,estado_revision!inner(nombre_estado_revision),categoria_museo!inner(nombre_categoria)",
+              { count: "exact", head: true },
+            )
+            .eq("estado_revision.nombre_estado_revision", NOMBRE_REVISION_APROBADO)
+            .eq("categoria_museo.nombre_categoria", categoria),
           `Failed to count published museo piezas in ${categoria}`,
         ),
       ]),
@@ -194,10 +219,14 @@ export async function getAdminDashboardData({ now = new Date() } = {}) {
       label: activity.titulo,
       value: await countRows(
         admin
-          .from("actividad_inscripciones")
-          .select("id", { count: "exact", head: true })
-          .eq("actividad_id", activity.id),
-        `Failed to count inscripciones for actividad ${activity.id}`,
+          .from("inscripciones")
+          .select("id_inscripcion,estado_inscripcion!inner(nombre_estado_inscripcion)", {
+            count: "exact",
+            head: true,
+          })
+          .eq("id_actividad", activity.id_actividad)
+          .neq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CANCELADA),
+        `Failed to count inscripciones for actividad ${activity.id_actividad}`,
       ),
     })),
   );

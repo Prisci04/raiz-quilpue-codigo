@@ -86,7 +86,7 @@ function PhysicalLocation({ value, onChange, disabled, id }) {
   );
 }
 
-export default function ActividadUbicacionField({ value, onChange, disabled = false }) {
+export default function ActividadUbicacionField({ value, onChange, disabled = false, catalogLugar = false }) {
   const id = useId();
   const physical = actividadTieneUbicacionFisica(value);
   const inputClass = "mt-1.5 min-h-11 w-full rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] px-3 py-2.5 text-sm text-[#2c1810] disabled:opacity-60";
@@ -95,10 +95,15 @@ export default function ActividadUbicacionField({ value, onChange, disabled = fa
       <h2 id={id + "-title"} className="font-serif text-lg font-medium text-[#2c1810]">Ubicación</h2>
       <div className="grid gap-5 lg:grid-cols-2">
         <div>
-          <label htmlFor={id + "-lugar"} className="text-[13px] font-medium">Nombre del lugar o recinto{value.modalidad === "presencial" ? " *" : ""}</label>
-          <input id={id + "-lugar"} name="lugar" required={value.modalidad === "presencial"} maxLength={250}
-            value={value.lugar ?? ""} disabled={disabled} className={inputClass}
-            onChange={(event) => onChange({ lugar: event.target.value })} />
+          {catalogLugar ? <>
+            <p className="text-[13px] font-medium">Lugar seleccionado</p>
+            <p className="mt-1.5 text-sm wrap-anywhere">{value.lugar || "Selecciona un lugar en los datos de la actividad."}</p>
+          </> : <>
+            <label htmlFor={id + "-lugar"} className="text-[13px] font-medium">Nombre del lugar o recinto{value.modalidad === "presencial" ? " *" : ""}</label>
+            <input id={id + "-lugar"} name="lugar" required={value.modalidad === "presencial"} maxLength={250}
+              value={value.lugar ?? ""} disabled={disabled} className={inputClass}
+              onChange={(event) => onChange({ lugar: event.target.value })} />
+          </>}
         </div>
         <div>
           <label htmlFor={id + "-direccion"} className="text-[13px] font-medium">Dirección del evento</label>

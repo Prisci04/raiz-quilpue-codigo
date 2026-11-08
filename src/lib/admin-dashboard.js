@@ -1,35 +1,49 @@
+import {
+  NOMBRE_CATEGORIA_CULTURA_COMUNIDAD,
+  NOMBRE_CATEGORIA_DOCUMENTOS,
+  NOMBRE_CATEGORIA_FOTOGRAFIAS,
+  NOMBRE_CATEGORIA_LUGARES,
+  NOMBRE_CATEGORIA_MEMORIAS,
+  NOMBRE_CATEGORIA_OBJETOS,
+  NOMBRE_TIPO_CAPSULA,
+  NOMBRE_TIPO_COMUNIDAD,
+  NOMBRE_TIPO_CULTURA,
+  NOMBRE_TIPO_NOTICIA,
+  NOMBRE_TIPO_PATRIMONIO,
+} from "./catalogos.mjs";
+
 export const CONTENT_TYPE_LABELS = {
-  noticia: "Noticias",
-  patrimonio: "Patrimonio",
-  capsula_historica: "Cápsulas históricas",
-  cultura: "Cultura",
-  comunidad: "Comunidad",
+  [NOMBRE_TIPO_NOTICIA]: "Noticias",
+  [NOMBRE_TIPO_PATRIMONIO]: "Patrimonio",
+  [NOMBRE_TIPO_CAPSULA]: "Cápsulas históricas",
+  [NOMBRE_TIPO_CULTURA]: "Cultura",
+  [NOMBRE_TIPO_COMUNIDAD]: "Comunidad",
 };
 
 export const CONTENT_TYPE_COLORS = {
-  noticia: "#c4a04a",
-  patrimonio: "#6b3f28",
-  capsula_historica: "#d06a3a",
-  cultura: "#687a42",
-  comunidad: "#b08968",
+  [NOMBRE_TIPO_NOTICIA]: "#c4a04a",
+  [NOMBRE_TIPO_PATRIMONIO]: "#6b3f28",
+  [NOMBRE_TIPO_CAPSULA]: "#d06a3a",
+  [NOMBRE_TIPO_CULTURA]: "#687a42",
+  [NOMBRE_TIPO_COMUNIDAD]: "#b08968",
 };
 
 export const MUSEUM_CATEGORY_LABELS = {
-  fotografias: "Fotografías",
-  documentos: "Documentos",
-  objetos_piezas: "Objetos y piezas",
-  memorias_relatos: "Memorias y relatos",
-  lugares_memoria: "Lugares con memoria",
-  cultura_comunidad: "Cultura y comunidad",
+  [NOMBRE_CATEGORIA_FOTOGRAFIAS]: NOMBRE_CATEGORIA_FOTOGRAFIAS,
+  [NOMBRE_CATEGORIA_DOCUMENTOS]: NOMBRE_CATEGORIA_DOCUMENTOS,
+  [NOMBRE_CATEGORIA_OBJETOS]: NOMBRE_CATEGORIA_OBJETOS,
+  [NOMBRE_CATEGORIA_MEMORIAS]: NOMBRE_CATEGORIA_MEMORIAS,
+  [NOMBRE_CATEGORIA_LUGARES]: NOMBRE_CATEGORIA_LUGARES,
+  [NOMBRE_CATEGORIA_CULTURA_COMUNIDAD]: NOMBRE_CATEGORIA_CULTURA_COMUNIDAD,
 };
 
 export const MUSEUM_CATEGORY_COLORS = {
-  fotografias: "#c4a04a",
-  documentos: "#6b3f28",
-  objetos_piezas: "#d06a3a",
-  memorias_relatos: "#687a42",
-  lugares_memoria: "#b08968",
-  cultura_comunidad: "#946541",
+  [NOMBRE_CATEGORIA_FOTOGRAFIAS]: "#c4a04a",
+  [NOMBRE_CATEGORIA_DOCUMENTOS]: "#6b3f28",
+  [NOMBRE_CATEGORIA_OBJETOS]: "#d06a3a",
+  [NOMBRE_CATEGORIA_MEMORIAS]: "#687a42",
+  [NOMBRE_CATEGORIA_LUGARES]: "#b08968",
+  [NOMBRE_CATEGORIA_CULTURA_COMUNIDAD]: "#946541",
 };
 
 export function formatDashboardDate(date = new Date()) {
@@ -49,7 +63,7 @@ export function buildContentSlices(items = []) {
   const counts = new Map();
 
   for (const item of items) {
-    const key = item.tipo || "comunidad";
+    const key = item.tipo || NOMBRE_TIPO_COMUNIDAD;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
 

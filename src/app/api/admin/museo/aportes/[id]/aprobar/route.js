@@ -7,7 +7,7 @@ import {
 import { runAdminCommunity } from "@/lib/admin-community-http";
 
 import {
-  convertirAporteEnBorradorAdmin,
+  aprobarAporteMuseoAdmin,
 } from "@/services/admin-community.service";
 
 export const dynamic = "force-dynamic";
@@ -15,8 +15,8 @@ export const dynamic = "force-dynamic";
 export async function POST(request, { params }) {
   return runAdminCommunity(
     request,
-    "POST /api/admin/museo/aportes/[id]/convertir",
-    async () => {
+    "POST /api/admin/museo/aportes/[id]/aprobar",
+    async (user) => {
       const { id } = await params;
 
       const parsed = parsePositiveInteger(id, {
@@ -31,10 +31,7 @@ export async function POST(request, { params }) {
         );
       }
 
-      const result =
-        await convertirAporteEnBorradorAdmin(
-          parsed.value,
-        );
+      const result = await aprobarAporteMuseoAdmin(parsed.value, user.id);
 
       if (result.error === "NOT_FOUND") {
         return jsonError(
@@ -52,14 +49,10 @@ export async function POST(request, { params }) {
         );
       }
 
-      return jsonSuccess(
-        {
-          convertido: true,
-          pieza: result.pieza,
-        },
-        {},
-        201,
-      );
+      return jsonSuccess({
+        aprobado: true,
+        aporte: result.aporte,
+      });
     },
   );
 }

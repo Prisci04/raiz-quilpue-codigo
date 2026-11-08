@@ -1,22 +1,17 @@
 import { parseOptionalDocumento } from "./contenidos/documento.mjs";
-import { PUBLICOS_OBJETIVO } from "./actividades.js";
+import {
+  findCatalogoByNombre,
+  parseCatalogoId,
+  parseOptionalCatalogoId,
+} from "./catalogos.mjs";
+import {
+  NOMBRE_COSTO_PAGADA,
+  NOMBRE_ESTADO_PUBLICADA,
+  NOMBRE_PARTICIPACION_INSCRIPCION,
+} from "./catalogos.mjs";
 import { parseActividadUbicacion } from "./actividad-ubicacion.mjs";
 import { parseOwnedAporteImageUrl, parseOwnedPortadaUrl } from "./media/policy.mjs";
 
-export const MUSEO_CATEGORIES = [
-  { id: "fotografias", label: "Fotografías" },
-  { id: "documentos", label: "Documentos" },
-  { id: "objetos_piezas", label: "Objetos y piezas" },
-  { id: "memorias_relatos", label: "Memorias y relatos" },
-  { id: "lugares_memoria", label: "Lugares con memoria" },
-  { id: "cultura_comunidad", label: "Cultura y comunidad" },
-];
-
-const MODALIDADES = ["presencial", "virtual", "hibrida"];
-const PARTICIPACIONES = ["abierta", "inscripcion", "pendiente"];
-const ESTADOS_ACTIVIDAD = ["borrador", "publicada", "cancelada"];
-const ESTADOS_PIEZA = ["borrador", "publicada"];
-const VALORES = ["gratuito", "pagado", "voluntario", "pendiente"];
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
 const CHILE_MOBILE = /^9\d{8}$/;
 
@@ -29,10 +24,6 @@ function text(value, maxLength, { required = false } = {}) {
   const result = value.trim();
   if ((required && !result) || result.length > maxLength) return null;
   return result || null;
-}
-
-function oneOf(value, values) {
-  return typeof value === "string" && values.includes(value);
 }
 
 function nonNegativeInteger(value) {
@@ -73,8 +64,8 @@ function allowedActividadImageUrl(value) {
   return Boolean(owned?.contexto === "actividades");
 }
 
-function allowedPiezaImageUrl(value) {
-  if (!value) return true;
+function allowedMuseoImageUrl(value) {
+  if (!value) return false;
   const owned = parseOwnedPortadaUrl(value);
   if (owned?.contexto === "museo") return true;
   return Boolean(parseOwnedAporteImageUrl(value));
@@ -88,7 +79,7 @@ function parseInformacionAdicional(value) {
   return parsed;
 }
 
-export function parseActividadInput(input) {
+export function parseActividadInput(input, catalogos = {}) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     return fail("La solicitud no es válida.");
   }
@@ -96,35 +87,48 @@ export function parseActividadInput(input) {
   const titulo = text(input.titulo, 180, { required: true });
   if (!titulo) return fail("El nombre de la actividad es obligatorio.");
 
-  const descripcion = text(input.descripcion, 10000, { required: true });
-  if (!descripcion) return fail("La descripción es obligatoria.");
+  const descripcion = text(input.descripcion, 10000);
+  const modalidad = parseCatalogoId(input.id_modalidad, catalogos.modalidad, "La modalidad");
+  if (!modalidad.ok) return modalidad;
 
-  const cupos = nonNegativeInteger(input.cupos);
+  const publico = parseCatalogoId(input.id_publico, catalogos.publico_objetivo, "El público objetivo");
+  if (!publico.ok) return publico;
+
+  const lugar = parseCatalogoId(input.id_lugar, catalogos.lugares, "El lugar");
+  if (!lugar.ok) return fail("Indica el lugar de la actividad.");
+
+  const participacion = parseOptionalCatalogoId(
+    input.id_tipo_participacion,
+    catalogos.tipo_participacion,
+    "El tipo de participación",
+  );
+  if (!participacion.ok) return participacion;
+
+  const costo = parseOptionalCatalogoId(input.id_costo, catalogos.costo_actividad, "El valor");
+  if (!costo.ok) return costo;
+
+  const estado = parseCatalogoId(input.id_estado, catalogos.estado_publicacion, "El estado");
+  if (!estado.ok) return estado;
+
+  const cupos = nonNegativeInteger(input.cupos_max ?? input.cupos);
   if (cupos === undefined) return fail("Los cupos deben ser un número entero mayor o igual a 0.");
+  if (cupos === 0) return fail("Los cupos máximos deben ser mayores a 0.");
+
+  const cuposEspera = nonNegativeInteger(input.cupos_espera ?? 0);
+  if (cuposEspera === undefined) {
+    return fail("Los cupos de lista de espera deben ser un número entero mayor o igual a 0.");
+  }
 
   const valorMonto = parseMontoSoloDigitos(input.valor_monto);
   if (valorMonto === undefined) return fail("El monto solo puede contener números.");
 
-  const modalidad = input.modalidad || "presencial";
-  if (!oneOf(modalidad, MODALIDADES)) return fail("La modalidad no es válida.");
-
-  const participacion = input.tipo_participacion || "abierta";
-  if (!oneOf(participacion, PARTICIPACIONES)) {
-    return fail("El tipo de participación no es válido.");
-  }
-
-  const tipoValor = input.tipo_valor || "gratuito";
-  if (!oneOf(tipoValor, VALORES)) return fail("El tipo de valor no es válido.");
-
-  if (tipoValor === "pagado" && valorMonto === null) {
+  const costoItem = findCatalogoByNombre(catalogos.costo_actividad ?? [], NOMBRE_COSTO_PAGADA);
+  if (costoItem && costo.value === costoItem.id && valorMonto === null) {
     return fail("Indica el monto cuando la actividad es pagada.");
   }
 
-  const estado = input.estado || "borrador";
-  if (!oneOf(estado, ESTADOS_ACTIVIDAD)) return fail("El estado de la actividad no es válido.");
-
   const fecha = text(input.fecha, 10);
-  if (!validDate(fecha)) return fail("La fecha no es válida.");
+  if (!fecha || !validDate(fecha)) return fail("La fecha no es válida.");
 
   const horaInicio = normalizeTime(input.hora_inicio);
   const horaFin = normalizeTime(input.hora_fin);
@@ -143,16 +147,17 @@ export function parseActividadInput(input) {
   const informacion = parseInformacionAdicional(input.informacion_adicional);
   if (!informacion.ok) return informacion;
 
-  const lugar = text(input.lugar, 250);
-  if (input.lugar && typeof input.lugar === "string" && input.lugar.trim() && !lugar) {
-    return fail("El lugar supera el máximo de 250 caracteres.");
-  }
-  if (modalidad === "presencial" && !lugar) {
-    return fail("Indica el lugar cuando la actividad es presencial.");
-  }
+  const publicada = findCatalogoByNombre(catalogos.estado_publicacion ?? [], NOMBRE_ESTADO_PUBLICADA);
+  const inscripcion = findCatalogoByNombre(
+    catalogos.tipo_participacion ?? [],
+    NOMBRE_PARTICIPACION_INSCRIPCION,
+  );
 
-  if (!oneOf(input.publico_objetivo, PUBLICOS_OBJETIVO)) {
-    return fail("El público objetivo no es válido.");
+  if (publicada && estado.value === publicada.id) {
+    if (!descripcion) return fail("La descripción es obligatoria.");
+    if (inscripcion && participacion.value === inscripcion.id && !Number.isInteger(cupos)) {
+      return fail("Indica los cupos máximos cuando la actividad requiere inscripción.");
+    }
   }
   const ubicacion = parseActividadUbicacion(input);
   if (!ubicacion.ok) return ubicacion;
@@ -165,35 +170,41 @@ export function parseActividadInput(input) {
       fecha,
       hora_inicio: horaInicio,
       hora_fin: horaFin,
-      lugar,
+      id_lugar: lugar.value,
+      id_publico: publico.value,
+      id_modalidad: modalidad.value,
+      id_tipo_participacion: participacion.value,
+      cupos_max: cupos,
+      cupos_espera: cuposEspera ?? 0,
+      id_costo: costo.value,
+      valor_monto: costoItem && costo.value === costoItem.id ? valorMonto : null,
       ...ubicacion.value,
-      publico_objetivo: input.publico_objetivo,
-      modalidad,
-      tipo_participacion: participacion,
-      cupos,
-      tipo_valor: tipoValor,
-      valor_monto: tipoValor === "pagado" ? valorMonto : null,
-      forma_pago: text(input.forma_pago, 250),
       informacion_adicional: informacion.value,
       imagen_url: imagenUrl,
-      estado,
+      id_estado: estado.value,
     },
   };
 }
 
-export function parseActividadEstado(input) {
+export function parseActividadEstado(input, estados = []) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     return fail("La solicitud no es válida.");
   }
 
-  if (!oneOf(input.estado, ESTADOS_ACTIVIDAD)) {
+  if (input.id_estado != null) {
+    const parsed = parseCatalogoId(input.id_estado, estados, "El estado");
+    return parsed.ok ? { ok: true, value: { id_estado: parsed.value } } : parsed;
+  }
+
+  const item = findCatalogoByNombre(estados, input.estado);
+  if (!item) {
     return fail("El estado de la actividad no es válido.");
   }
 
-  return { ok: true, value: { estado: input.estado } };
+  return { ok: true, value: { id_estado: item.id } };
 }
 
-export function parsePiezaMuseoInput(input) {
+export function parsePiezaMuseoInput(input, catalogos = {}) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
     return fail("La solicitud no es válida.");
   }
@@ -204,17 +215,17 @@ export function parsePiezaMuseoInput(input) {
   const descripcion = text(input.descripcion, 10000, { required: true });
   if (!descripcion) return fail("La descripción es obligatoria.");
 
-  if (!MUSEO_CATEGORIES.some((category) => category.id === input.categoria)) {
-    return fail("La categoría no es válida.");
-  }
-
-  const estado = input.estado || "borrador";
-  if (!oneOf(estado, ESTADOS_PIEZA)) return fail("El estado de la pieza no es válido.");
+  const categoria = parseCatalogoId(
+    input.id_categoria_museo,
+    catalogos.categoria_museo,
+    "La categoría",
+  );
+  if (!categoria.ok) return categoria;
 
   const imagenRaw = input.imagen_url === null || input.imagen_url === undefined ? "" : input.imagen_url;
   const imagenUrl = typeof imagenRaw === "string" ? text(imagenRaw, 2000) : null;
-  if (imagenRaw && (!imagenUrl || !allowedPiezaImageUrl(imagenUrl))) {
-    return fail("La imagen de la pieza debe subirse desde el administrador.");
+  if (!imagenUrl || !allowedMuseoImageUrl(imagenUrl)) {
+    return fail("La imagen de la pieza es obligatoria y debe subirse desde el administrador.");
   }
 
   return {
@@ -222,11 +233,10 @@ export function parsePiezaMuseoInput(input) {
     value: {
       titulo,
       descripcion,
-      categoria: input.categoria,
+      id_categoria_museo: categoria.value,
       fecha_aproximada: text(input.fecha_aproximada, 120),
-      lugar: text(input.lugar, 250),
+      lugar_referencia: text(input.lugar_referencia ?? input.lugar, 250),
       imagen_url: imagenUrl,
-      estado,
     },
   };
 }
@@ -271,33 +281,49 @@ export function parseInscripcionInput(input) {
   };
 }
 
-export function parseAporteMuseoInput(input) {
-  if (!input || typeof input !== "object" || Array.isArray(input)) return null;
-  const nombre = text(input.nombre, 160, { required: true });
-  const correo = text(input.correo, 254, { required: true });
-  const titulo = text(input.titulo, 200, { required: true });
-  const descripcion = text(input.descripcion, 10000, { required: true });
-  const archivoNombre = text(input.archivo_nombre, 255, { required: true });
-  if (
-    !nombre ||
-    !correo ||
-    !EMAIL_PATTERN.test(correo.toLowerCase()) ||
-    !titulo ||
-    !descripcion ||
-    !archivoNombre ||
-    !MUSEO_CATEGORIES.some((category) => category.id === input.categoria)
-  ) {
-    return null;
+export function parseAporteMuseoInput(input, catalogos = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return fail("La solicitud no es válida.");
   }
+
+  const nombre = text(input.nombre ?? input.nombre_aportante, 160, { required: true });
+  if (!nombre) return fail("El nombre es obligatorio.");
+
+  const correo = text(input.correo ?? input.correo_aportante, 254, { required: true });
+  if (!correo || !EMAIL_PATTERN.test(correo.toLowerCase())) {
+    return fail("Usa un correo con @ y un dominio como .cl o .com.");
+  }
+
+  const titulo = text(input.titulo, 200, { required: true });
+  if (!titulo) return fail("El título es obligatorio.");
+
+  const descripcion = text(input.descripcion, 10000, { required: true });
+  if (!descripcion) return fail("La descripción es obligatoria.");
+
+  const categoria = parseCatalogoId(
+    input.id_categoria_museo,
+    catalogos.categoria_museo,
+    "La categoría",
+  );
+  if (!categoria.ok) return categoria;
+
+  const imagenRaw = input.imagen_url === null || input.imagen_url === undefined ? "" : input.imagen_url;
+  const imagenUrl = typeof imagenRaw === "string" ? text(imagenRaw, 2000) : null;
+  if (!imagenUrl || !parseOwnedAporteImageUrl(imagenUrl)) {
+    return fail("Debes adjuntar una imagen válida.");
+  }
+
   return {
-    nombre,
-    correo: correo.toLowerCase(),
-    categoria: input.categoria,
-    titulo,
-    descripcion,
-    fecha_aproximada: text(input.fecha_aproximada, 120),
-    lugar: text(input.lugar, 250),
-    archivo_nombre: archivoNombre,
-    informacion_adicional: text(input.informacion_adicional, 3000),
+    ok: true,
+    value: {
+      nombre_aportante: nombre,
+      correo_aportante: correo.toLowerCase(),
+      titulo,
+      descripcion,
+      id_categoria_museo: categoria.value,
+      fecha_aproximada: text(input.fecha_aproximada, 120),
+      lugar_referencia: text(input.lugar_referencia ?? input.lugar, 250),
+      imagen_url: imagenUrl,
+    },
   };
 }

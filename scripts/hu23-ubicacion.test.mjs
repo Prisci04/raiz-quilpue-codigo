@@ -3,7 +3,9 @@ import test from "node:test";
 import { parseActividadUbicacion, coordinatePatch, coordenadasValidas, buildActividadMapsLinks, puedeMostrarMapa } from "../src/lib/actividad-ubicacion.mjs";
 import { parseActividadInput } from "../src/lib/community-validation.mjs";
 
-const base = { titulo: "Actividad", descripcion: "Descripción", publico_objetivo: "todas_edades", lugar: "Centro cultural" };
+const catalogs={modalidad:[{id:1,nombre:"Presencial"},{id:2,nombre:"Virtual"},{id:3,nombre:"Híbrida"}],
+  publico_objetivo:[{id:1,nombre:"Todas las edades"}],lugares:[{id:10,nombre:"Centro cultural"}],estado_publicacion:[{id:1,nombre:"Borrador"}]};
+const base = { titulo: "Actividad", descripcion: "Descripción", fecha:"2099-01-01",id_modalidad:1,id_publico:1,id_lugar:10,id_estado:1 };
 test("location: omission, editorial text and legacy reference retain their semantics", () => {
   assert.deepEqual(parseActividadUbicacion({}).value, {});
   assert.deepEqual(parseActividadUbicacion({ direccion: null, google_place_id: " " }).value, { direccion: null, google_place_id: null });
@@ -22,7 +24,7 @@ test("coordinates accept finite numeric ranges, null pairs and zero without coer
   assert.deepEqual(coordinatePatch({latitud:2}),{latitud:2});
 });
 test("presencial/hibrida use coordinates; virtual and unknown never expose physical maps or links", () => {
-  for(const modalidad of ["presencial","hibrida"]) {
+  for(const modalidad of ["presencial","hibrida","Presencial","Híbrida"]) {
     const value={modalidad,latitud:-33,longitud:-71};
     assert.equal(puedeMostrarMapa(value),true);assert.ok(buildActividadMapsLinks(value).map);
   }
@@ -31,8 +33,8 @@ test("presencial/hibrida use coordinates; virtual and unknown never expose physi
     assert.equal(puedeMostrarMapa(value),false);
     assert.deepEqual(buildActividadMapsLinks(value),{directions:null,map:null});
   }
-  assert.equal(parseActividadInput({...base,modalidad:"presencial",lugar:null}).ok,false);
-  for(const modalidad of ["presencial","hibrida","virtual"]) assert.equal(parseActividadInput({...base,modalidad,latitud:0,longitud:0}).ok,true);
+  assert.equal(parseActividadInput({...base,id_lugar:null},catalogs).ok,false);
+  for(const id_modalidad of [1,3,2]) assert.equal(parseActividadInput({...base,id_modalidad,latitud:0,longitud:0},catalogs).ok,true);
 });
 test("Google is external navigation only: coordinates win, text is safely encoded, no key or legacy ID required", () => {
   const activity={modalidad:"presencial",direccion:"A & B #12, Quilpué",google_place_id:"legacy",latitud:-33.05,longitud:-71.45};

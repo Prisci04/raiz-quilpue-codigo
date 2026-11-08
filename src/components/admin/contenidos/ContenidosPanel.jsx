@@ -26,7 +26,17 @@ import {
 import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import DeleteContenidoDialog from "@/components/admin/contenidos/DeleteContenidoDialog";
+import { esEstadoBorrador, esEstadoPublicada } from "@/lib/actividades";
 import { deleteContenido, setEstadoContenido } from "@/lib/api/contenidos";
+import {
+  NOMBRE_ESTADO_BORRADOR,
+  NOMBRE_ESTADO_PUBLICADA,
+  NOMBRE_TIPO_CAPSULA,
+  NOMBRE_TIPO_COMUNIDAD,
+  NOMBRE_TIPO_CULTURA,
+  NOMBRE_TIPO_NOTICIA,
+  NOMBRE_TIPO_PATRIMONIO,
+} from "@/lib/catalogos.mjs";
 import { TIPO_LABELS_ADMIN } from "@/lib/contenidos/documento.mjs";
 
 const PAGE_SIZE = 8;
@@ -34,25 +44,26 @@ const PAGE_SIZE = 8;
 const TIPO_LABELS = TIPO_LABELS_ADMIN;
 
 const TIPO_ICONS = {
-  noticia: Newspaper,
-  patrimonio: Landmark,
-  capsula_historica: ScrollText,
-  cultura: Palette,
-  comunidad: Users,
+  [NOMBRE_TIPO_NOTICIA]: Newspaper,
+  [NOMBRE_TIPO_PATRIMONIO]: Landmark,
+  [NOMBRE_TIPO_CAPSULA]: ScrollText,
+  [NOMBRE_TIPO_CULTURA]: Palette,
+  [NOMBRE_TIPO_COMUNIDAD]: Users,
 };
 
 const FILTERS = [
   { id: "todos", label: "Todos" },
-  { id: "noticia", label: "Noticias" },
-  { id: "patrimonio", label: "Patrimonio" },
-  { id: "capsula_historica", label: "Cápsulas" },
-  { id: "cultura", label: "Cultura" },
-  { id: "comunidad", label: "Comunidad" },
+  { id: NOMBRE_TIPO_NOTICIA, label: "Noticias" },
+  { id: NOMBRE_TIPO_PATRIMONIO, label: "Patrimonio" },
+  { id: NOMBRE_TIPO_CAPSULA, label: "Cápsulas" },
+  { id: NOMBRE_TIPO_CULTURA, label: "Cultura" },
+  { id: NOMBRE_TIPO_COMUNIDAD, label: "Comunidad" },
 ];
 
 function matchesFilter(contenido, filterId) {
   if (filterId === "todos") return true;
-  if (filterId === "publicada" || filterId === "borrador") return contenido.estado === filterId;
+  if (filterId === "publicada") return esEstadoPublicada(contenido.estado);
+  if (filterId === "borrador") return esEstadoBorrador(contenido.estado);
   return contenido.tipo === filterId;
 }
 
@@ -74,7 +85,7 @@ function TipoCell({ tipo }) {
 }
 
 function EstadoBadge({ estado }) {
-  const published = estado === "publicada";
+  const published = esEstadoPublicada(estado);
 
   return <AdminBadge tone={published ? "success" : "warning"}>{published ? "Publicado" : "Borrador"}</AdminBadge>;
 }
@@ -154,7 +165,7 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
       >
         <Pencil size={15} strokeWidth={1.8} aria-hidden="true" />
       </Link>
-      {contenido.estado === "publicada" ? (
+      {esEstadoPublicada(contenido.estado) ? (
         <Link
           href={`/contenido/${contenido.id}`}
           aria-label={`Ver ${contenido.titulo} en el portal`}
@@ -202,7 +213,7 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
                 onEstado(contenido);
               }}
             >
-              {contenido.estado === "publicada" ? "Pasar a borrador" : "Publicar"}
+              {esEstadoPublicada(contenido.estado) ? "Pasar a borrador" : "Publicar"}
             </button>
             <button
               type="button"
@@ -245,10 +256,12 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
     setActionError("");
 
     try {
-      const next = contenido.estado === "publicada" ? "borrador" : "publicada";
+      const next = esEstadoPublicada(contenido.estado)
+        ? NOMBRE_ESTADO_BORRADOR
+        : NOMBRE_ESTADO_PUBLICADA;
       await setEstadoContenido(contenido.id, next);
       setBanner(
-        next === "publicada"
+        esEstadoPublicada(next)
           ? "Contenido publicado correctamente."
           : "El contenido volvió a borrador.",
       );
@@ -288,8 +301,8 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
 
     return {
       total: contenidos.length,
-      publicados: contenidos.filter((item) => item.estado === "publicada").length,
-      borradores: contenidos.filter((item) => item.estado === "borrador").length,
+      publicados: contenidos.filter((item) => esEstadoPublicada(item.estado)).length,
+      borradores: contenidos.filter((item) => esEstadoBorrador(item.estado)).length,
       ultima: latest?.item?.fecha_texto && latest.item.fecha_texto !== "Sin fecha"
         ? latest.item.fecha_texto
         : "Sin fecha",

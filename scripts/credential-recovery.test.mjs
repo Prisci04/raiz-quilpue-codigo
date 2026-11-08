@@ -23,8 +23,9 @@ function runRecovery(email, password) {
             const s = globalThis.__recoveryTest;
             s.clients++;
             const chain = {
-              update(row) { s.updates++; s.rounds = Number(row.password_hash.split('$')[2]); return chain; },
+              update(row) { s.updates++; s.rounds = Number(row.password.split('$')[2]); return chain; },
               eq() { return chain; },
+              ilike() { return chain; },
               select() { return Promise.resolve({ data: [{ id: 1 }], error: null }); }
             };
             return { from(table) { if (table !== 'usuarios') throw new Error('Unexpected resource'); return chain; } };
