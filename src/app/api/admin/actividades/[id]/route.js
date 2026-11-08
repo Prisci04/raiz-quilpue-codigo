@@ -2,6 +2,7 @@ import { jsonError, jsonSuccess, parsePositiveInteger } from "@/lib/http";
 import { runAdminCommunity, readJsonBody } from "@/lib/admin-community-http";
 import { parseActividadEstado, parseActividadInput } from "@/lib/community-validation.mjs";
 import { parseOwnedPortadaUrl } from "@/lib/media/policy.mjs";
+import { coordinatePatch } from "@/lib/actividad-ubicacion.mjs";
 import {
   deleteActividadAdmin,
   getActividadAdmin,
@@ -47,7 +48,7 @@ export async function PATCH(request, { params }) {
     const current = await getActividadAdmin(parsed.value);
     if (!current) return jsonError(404, "NOT_FOUND", "Actividad no encontrada.");
 
-    const merged = { ...current, ...body };
+    const merged = { ...current, ...coordinatePatch(body) };
     const sameImage = merged.imagen_url === current.imagen_url;
     const input = parseActividadInput(sameImage ? { ...merged, imagen_url: null } : merged);
     if (!input.ok) return jsonError(400, "VALIDATION", input.message);

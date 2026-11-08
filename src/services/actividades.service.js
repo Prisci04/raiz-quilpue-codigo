@@ -1,4 +1,4 @@
-import { ACTIVIDAD_UBICACION_COLUMNS, readActividadUbicacion } from "@/services/actividad-ubicacion.service";
+import { actividadUbicacionColumns, readActividadUbicacion } from "@/services/actividad-ubicacion.service";
 import { compareActividades, cuposDisponibles } from "@/lib/actividades";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -36,6 +36,8 @@ function mapActividadPublica(row, { includeDetail = false, inscritos = 0 } = {})
   if (includeDetail) {
     actividad.direccion = row.direccion ?? null;
     actividad.google_place_id = row.google_place_id ?? null;
+    actividad.latitud = row.latitud ?? null;
+    actividad.longitud = row.longitud ?? null;
     actividad.forma_pago = row.forma_pago ?? null;
     actividad.informacion_adicional = row.informacion_adicional ?? null;
   }
@@ -114,7 +116,7 @@ export async function getActividades({ page, limit, orderBy = "fecha" }) {
 
 export async function getActividadById(id) {
   const { data, error } = await readActividadUbicacion((withLocation) =>
-    publicadasQuery(ACTIVIDAD_DETALLE_COLUMNS + (withLocation ? ACTIVIDAD_UBICACION_COLUMNS : ""))
+    publicadasQuery(ACTIVIDAD_DETALLE_COLUMNS + actividadUbicacionColumns(withLocation))
       .eq("id", id).maybeSingle());
 
   if (error) {

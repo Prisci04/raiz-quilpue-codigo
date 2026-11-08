@@ -1,5 +1,5 @@
-import GoogleMapsLocation from "@/components/maps/GoogleMapsLocation";
-import { actividadTieneUbicacionFisica, buildActividadMapsLinks } from "@/lib/actividad-ubicacion.mjs";
+import OpenStreetMapMap from "@/components/maps/OpenStreetMapMap";
+import { actividadTieneUbicacionFisica, buildActividadMapsLinks, puedeMostrarMapa } from "@/lib/actividad-ubicacion.mjs";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, MapPin, Ticket, Users, Wallet } from "lucide-react";
@@ -162,7 +162,7 @@ export default function ActividadFicha({ activity, backHref, backLabel, children
           <section aria-label="Ubicación del evento" className="mt-6 space-y-4 border-t border-[#bb9c82]/70 pt-5">
             <h2 className="font-serif text-xl font-medium text-[#5c331c]">Ubicación</h2>
             {activity.direccion ? <p className="text-sm leading-7 wrap-anywhere text-[#704a31]">{activity.direccion}</p> : null}
-            <GoogleMapsLocation activity={activity} />
+            {puedeMostrarMapa(activity) ? <OpenStreetMapMap latitud={activity.latitud} longitud={activity.longitud} /> : null}
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               {links.directions ? <a href={links.directions} target="_blank" rel="noopener noreferrer"
                 className="inline-flex min-h-11 items-center justify-center bg-[#704a31] px-4 text-sm text-[#f4ece4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#704a31]">Cómo llegar</a> : null}

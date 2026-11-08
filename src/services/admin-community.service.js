@@ -1,6 +1,6 @@
 import "server-only";
 
-import { ACTIVIDAD_UBICACION_COLUMNS, readActividadUbicacion, writeActividadUbicacion } from "@/services/actividad-ubicacion.service";
+import { actividadUbicacionColumns, readActividadUbicacion, writeActividadUbicacion } from "@/services/actividad-ubicacion.service";
 
 import { MuseoIntegrityError } from "@/lib/museo/errors.mjs";
 import { parseOwnedAporteFileUrl, parseOwnedPortadaUrl } from "@/lib/media/policy.mjs";
@@ -52,11 +52,12 @@ export async function listActividadesAdmin() {
 export async function getActividadAdmin(id) {
   const row = assertQuery(
     await readActividadUbicacion((withLocation) => admin().from("actividades")
-      .select(ACTIVIDAD_COLUMNS + (withLocation ? ACTIVIDAD_UBICACION_COLUMNS : ""))
+      .select(ACTIVIDAD_COLUMNS + actividadUbicacionColumns(withLocation))
       .eq("id", id).maybeSingle()),
     "Failed to get actividad",
   );
-  return row ? { ...row, direccion: row.direccion ?? null, google_place_id: row.google_place_id ?? null } : null;
+  return row ? { ...row, direccion: row.direccion ?? null, google_place_id: row.google_place_id ?? null,
+    latitud: row.latitud ?? null, longitud: row.longitud ?? null } : null;
 }
 
 export async function countParticipantesAdmin(actividadId) {
@@ -78,7 +79,7 @@ export async function saveActividadAdmin(id, input) {
   const result = await writeActividadUbicacion((withLocation, payload) => {
     const query = admin().from("actividades");
     const mutation = id ? query.update(payload).eq("id", id) : query.insert(payload);
-    const selected = mutation.select(ACTIVIDAD_COLUMNS + (withLocation ? ACTIVIDAD_UBICACION_COLUMNS : ""));
+    const selected = mutation.select(ACTIVIDAD_COLUMNS + actividadUbicacionColumns(withLocation));
     return id ? selected.maybeSingle() : selected.single();
   }, input);
   const data = assertQuery(result, "Failed to save actividad");
@@ -95,7 +96,7 @@ export async function saveActividadEstadoAdmin(id, estado) {
   const data = assertQuery(
     await readActividadUbicacion((withLocation) => admin().from("actividades")
       .update({ estado }).eq("id", id)
-      .select(ACTIVIDAD_COLUMNS + (withLocation ? ACTIVIDAD_UBICACION_COLUMNS : "")).maybeSingle()),
+      .select(ACTIVIDAD_COLUMNS + actividadUbicacionColumns(withLocation)).maybeSingle()),
     "Failed to save actividad estado",
   );
   return data ? { ...data, direccion: data.direccion ?? null, google_place_id: data.google_place_id ?? null } : null;

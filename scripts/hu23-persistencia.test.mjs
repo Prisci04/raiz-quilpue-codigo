@@ -12,12 +12,13 @@ const fixture = {
   id: 1, titulo: "Encuentro", descripcion: "Actividad cultural", fecha: "2099-01-02",
   hora_inicio: "12:00", hora_fin: "13:00", lugar: "Centro cultural",
   direccion: "Av. Los Carrera 100, Quilpué", google_place_id: "place-test",
+  latitud: null, longitud: null,
   publico_objetivo: "todas_edades", modalidad: "presencial", tipo_participacion: "inscripcion",
   cupos: 20, tipo_valor: "gratuito", valor_monto: null, forma_pago: null,
   informacion_adicional: null, imagen_url: null, estado: "publicada",
 };
 const state = globalThis.__hu23Persistencia = {};
-function reset(extra = {}) { Object.assign(state, { rows: [{ ...fixture }], writes: [], selects: [], reads: 0, missing: false, dbError: null, ...extra }); }
+function reset(extra = {}) { Object.assign(state, { rows: [{ ...fixture }], writes: [], selects: [], reads: 0, missing: false, missingCoordinates: false, missingLegacyId: false, dbError: null, ...extra }); }
 state.client = {
   from(table) {
     let columns = "", operation, payload, single = false;
@@ -35,10 +36,10 @@ state.client = {
         state.selects.push({ table, columns });
         // A PostgREST statement failing on a missing column commits no mutation.
         let error = state.dbError;
-        if (!error && state.missing && (/\b(direccion|google_place_id)\b/.test(columns)
-          || ["direccion", "google_place_id"].some((key) => Object.hasOwn(payload ?? {}, key)))) {
-          error = { code: "42703", message: 'column actividades.direccion does not exist' };
-        }
+        const absent = state.missing ? ["direccion", "google_place_id", "latitud", "longitud"]
+          : state.missingCoordinates ? ["latitud", "longitud"] : state.missingLegacyId ? ["google_place_id"] : [];
+        const missing = absent.find((key) => columns.split(",").includes(key) || Object.hasOwn(payload ?? {}, key));
+        if (!error && missing) error = { code: "42703", message: `column actividades.${missing} does not exist` };
         if (error) return Promise.resolve({ data: null, error }).then(done, fail);
         let rows = table === "actividades" ? state.rows.filter((row) => filters.every((filter) => filter(row))) : [];
         if (operation === "insert") {
@@ -189,5 +190,38 @@ test("schema fallback does not hide unrelated database errors or retry writes", 
   await assert.rejects(() => admin.saveActividadAdmin(null, fixture), /Failed to save actividad/);
   assert.equal(state.reads, 1);
   assert.deepEqual(state.writes, []);
+});
+test("coordinates survive create/read/public mappers and partial updates; explicit null clears only the pair", async () => {
+  reset();
+  assert.equal((await patch({ latitud: -33.05, longitud: -71.45 })).status, 200);
+  assert.equal((await (await route.GET(request("GET"), context)).json()).data.latitud, -33.05);
+  assert.equal(mapActividadVista(await publicService.getActividadById(1)).longitud, -71.45);
+  assert.equal((await patch({ titulo: "Nuevo" })).status, 200);
+  assert.equal(state.rows[0].latitud, -33.05);
+  assert.equal((await patch({ latitud: -33.06 })).status, 200);
+  assert.equal(state.rows[0].longitud, -71.45);
+  assert.equal((await patch({ latitud: null })).status, 200);
+  assert.equal(state.rows[0].latitud, null); assert.equal(state.rows[0].longitud, null);
+  assert.equal(state.rows[0].direccion, fixture.direccion); assert.equal(state.rows[0].google_place_id, fixture.google_place_id);
+  assert.equal((await collection.POST(request("POST", { ...fixture, latitud: 0, longitud: 0 }))).status, 201);
+  assert.equal(state.rows.at(-1).latitud, 0);
+});
+test("invalid coordinates do not mutate; missing schema reports 503 for a selected point", async () => {
+  for (const point of [{ latitud: 100, longitud: 0 }, { latitud: 0, longitud: 200 }, { latitud: "1", longitud: 2 }, { latitud: null, longitud: 2 }]) {
+    reset(); assert.equal((await patch(point)).status, 400); assert.deepEqual(state.writes, []);
+  }
+  reset({ missing: true }); delete state.rows[0].direccion; delete state.rows[0].google_place_id;
+  assert.equal((await patch({ latitud: -33, longitud: -71 })).status, 503);
+  assert.deepEqual(state.writes, []);
+});
+test("partial schemas retain available editorial data and do not require the legacy Google column", async () => {
+  reset({ missingCoordinates: true });
+  assert.equal((await admin.getActividadAdmin(1)).direccion, fixture.direccion);
+  assert.equal((await patch({ titulo: "Editada sin mapa" })).status, 200);
+  assert.equal(state.rows[0].direccion, fixture.direccion);
+  assert.equal((await patch({ latitud: -33, longitud: -71 })).status, 503);
+  reset({ missingLegacyId: true }); delete state.rows[0].google_place_id;
+  assert.equal((await patch({ latitud: -33, longitud: -71 })).status, 200);
+  assert.equal((await admin.getActividadAdmin(1)).latitud, -33);
 });
 test.after(() => hooks.deregister());

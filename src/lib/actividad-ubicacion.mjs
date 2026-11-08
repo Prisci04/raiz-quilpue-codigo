@@ -1,5 +1,5 @@
 export const DIRECCION_MAX_LENGTH = 500;
-export const CAMPOS_UBICACION = ["direccion", "google_place_id"];
+export const CAMPOS_UBICACION = ["direccion", "google_place_id", "latitud", "longitud"];
 const CONTROL = /[\u0000-\u001f\u007f]/;
 const MAPS_URL_MAX_LENGTH = 2048;
 
@@ -11,7 +11,7 @@ export function normalizeLocationText(value) {
 export function parseActividadUbicacion(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return { ok: false, message: "La ubicación no es válida." };
   const value = {};
-  for (const field of CAMPOS_UBICACION) {
+  for (const field of ["direccion", "google_place_id"]) {
     if (!Object.hasOwn(input, field)) continue;
     const raw = input[field];
     if (raw !== null && typeof raw !== "string") {
@@ -23,28 +23,38 @@ export function parseActividadUbicacion(input) {
     }
     value[field] = normalized;
   }
+  const hasCoordinates = Object.hasOwn(input, "latitud") || Object.hasOwn(input, "longitud");
+  if (hasCoordinates) {
+    const latitud = input.latitud ?? null;
+    const longitud = input.longitud ?? null;
+    if (latitud === null && longitud === null) Object.assign(value, { latitud: null, longitud: null });
+    else if (coordenadasValidas(latitud, longitud)) Object.assign(value, { latitud, longitud });
+    else return { ok: false, message: "Indica ambas coordenadas válidas: latitud entre -90 y 90, longitud entre -180 y 180." };
+  }
   return { ok: true, value };
 }
 
-export function googleMapsKey(value) {
-  const key = normalizeLocationText(value);
-  return key && !/^(YOUR_|TU_|REPLACE_|PLACEHOLDER)/i.test(key) ? key : null;
+export function coordenadasValidas(latitud, longitud) {
+  return typeof latitud === "number" && Number.isFinite(latitud) && latitud >= -90 && latitud <= 90
+    && typeof longitud === "number" && Number.isFinite(longitud) && longitud >= -180 && longitud <= 180;
+}
+
+// A single explicit null clears the pair; a partial numeric PATCH preserves its partner.
+export function coordinatePatch(input) {
+  if ((input.latitud === null && !Object.hasOwn(input, "longitud"))
+    || (input.longitud === null && !Object.hasOwn(input, "latitud"))) {
+    return { ...input, latitud: null, longitud: null };
+  }
+  return input;
 }
 
 export function actividadTieneUbicacionFisica(activity) {
   return activity?.modalidad === "presencial" || activity?.modalidad === "hibrida";
 }
 
-export function puedeMostrarMapa(activity, apiKey) {
+export function puedeMostrarMapa(activity) {
   return Boolean(actividadTieneUbicacionFisica(activity)
-    && normalizeLocationText(activity.google_place_id) && googleMapsKey(apiKey));
-}
-
-// Shared by administrative preview and public details. Credentials do not alter the model.
-export function googleMapsRenderer(activity, { mapsKey, embedKey } = {}) {
-  if (!actividadTieneUbicacionFisica(activity) || !normalizeLocationText(activity.google_place_id)) return null;
-  if (buildGoogleMapsEmbedUrl(activity.google_place_id, embedKey)) return "embed";
-  return googleMapsKey(mapsKey) ? "javascript" : null;
+    && coordenadasValidas(activity.latitud, activity.longitud));
 }
 
 function mapsUrl(path, params) {
@@ -53,23 +63,14 @@ function mapsUrl(path, params) {
   return url.href.length <= MAPS_URL_MAX_LENGTH ? url.href : null;
 }
 
-export function buildGoogleMapsEmbedUrl(placeId, apiKey) {
-  const id = normalizeLocationText(placeId);
-  const key = googleMapsKey(apiKey);
-  if (!id || !key) return null;
-  return mapsUrl("/maps/embed/v1/place", { key, q: "place_id:" + id, language: "es", region: "CL" });
-}
-
 export function buildActividadMapsLinks(activity) {
   if (!actividadTieneUbicacionFisica(activity)) return { directions: null, map: null };
-  const id = normalizeLocationText(activity.google_place_id);
   const label = normalizeLocationText(activity.direccion) || normalizeLocationText(activity.lugar);
-  // Maps URLs requires a textual destination/query even when supplying a Place ID.
-  const destination = label || (id ? "Ubicación de la actividad" : null);
+  const destination = coordenadasValidas(activity.latitud, activity.longitud)
+    ? `${activity.latitud},${activity.longitud}` : label;
   if (!destination) return { directions: null, map: null };
-  const directions = mapsUrl("/maps/dir/", { api: "1", destination, destination_place_id: id });
-  const map = mapsUrl("/maps/search/", { api: "1", query: destination, query_place_id: id });
-  // A long opaque identifier must not create an invalid URL or be truncated.
+  const directions = mapsUrl("/maps/dir/", { api: "1", destination });
+  const map = mapsUrl("/maps/search/", { api: "1", query: destination });
   return {
     directions: directions || (label ? mapsUrl("/maps/dir/", { api: "1", destination: label }) : null),
     map: map || (label ? mapsUrl("/maps/search/", { api: "1", query: label }) : null),

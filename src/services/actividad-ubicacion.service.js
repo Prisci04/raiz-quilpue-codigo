@@ -1,22 +1,37 @@
 import "server-only";
 import { ActividadUbicacionSchemaError, CAMPOS_UBICACION } from "@/lib/actividad-ubicacion.mjs";
 
-export const ACTIVIDAD_UBICACION_COLUMNS = ",direccion,google_place_id";
+export const ACTIVIDAD_UBICACION_COLUMNS = "," + CAMPOS_UBICACION.join(",");
+export function actividadUbicacionColumns(fields) {
+  return Array.isArray(fields) ? fields.length ? "," + fields.join(",") : "" : fields ? ACTIVIDAD_UBICACION_COLUMNS : "";
+}
 
-function missingLocationColumn(error) {
-  return ["42703", "PGRST204"].includes(error?.code)
-    && /\b(direccion|google_place_id)\b/i.test(error.message ?? "");
+function missingFields(error, fields) {
+  if (!["42703", "PGRST204"].includes(error?.code)) return [];
+  const field = (error.message ?? "").match(/\b(direccion|google_place_id|latitud|longitud)\b/i)?.[1]?.toLowerCase();
+  if (!fields.includes(field)) return [];
+  return field === "latitud" || field === "longitud" ? ["latitud", "longitud"] : [field];
 }
 
 export async function readActividadUbicacion(query) {
-  const result = await query(true);
-  return missingLocationColumn(result.error) ? query(false) : result;
+  let fields = [...CAMPOS_UBICACION];
+  for (;;) {
+    const result = await query(fields);
+    const missing = missingFields(result.error, fields);
+    if (!missing.length) return result;
+    fields = fields.filter((field) => !missing.includes(field));
+  }
 }
 
 export async function writeActividadUbicacion(query, input) {
-  const result = await query(true, input);
-  if (!missingLocationColumn(result.error)) return result;
-  if (CAMPOS_UBICACION.some((field) => input[field] != null)) throw new ActividadUbicacionSchemaError();
-  const legacy = Object.fromEntries(Object.entries(input).filter(([key]) => !CAMPOS_UBICACION.includes(key)));
-  return query(false, legacy);
+  let fields = [...CAMPOS_UBICACION], payload = { ...input };
+  for (;;) {
+    const result = await query(fields, payload);
+    const missing = missingFields(result.error, fields);
+    if (!missing.length) return result;
+    // A failed statement wrote nothing. Never silently discard new nonnull data.
+    if (missing.some((field) => payload[field] != null)) throw new ActividadUbicacionSchemaError();
+    fields = fields.filter((field) => !missing.includes(field));
+    payload = Object.fromEntries(Object.entries(payload).filter(([field]) => !missing.includes(field)));
+  }
 }

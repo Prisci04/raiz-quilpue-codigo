@@ -70,6 +70,8 @@ export function mapActividadVista(row) {
     lugar: row.lugar ?? null,
     direccion: row.direccion ?? null,
     google_place_id: row.google_place_id ?? null,
+    latitud: row.latitud ?? null,
+    longitud: row.longitud ?? null,
     publico_objetivo: row.publico_objetivo ?? null,
     modalidad: row.modalidad ?? null,
     tipo_participacion: row.tipo_participacion ?? null,

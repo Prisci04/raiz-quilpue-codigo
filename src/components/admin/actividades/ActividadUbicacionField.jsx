@@ -1,88 +1,95 @@
 "use client";
 
-import { useEffect, useEffectEvent, useId, useRef, useState } from "react";
-import GoogleMapsLocation from "@/components/maps/GoogleMapsLocation";
-import { actividadTieneUbicacionFisica, buildActividadMapsLinks, DIRECCION_MAX_LENGTH, googleMapsKey } from "@/lib/actividad-ubicacion.mjs";
-import { loadGooglePlaces, mountGooglePlaceAutocomplete } from "@/lib/google-maps-client";
+import { useEffect, useId, useRef, useState } from "react";
+import OpenStreetMapMap from "@/components/maps/OpenStreetMapMap";
+import { actividadTieneUbicacionFisica, buildActividadMapsLinks, coordenadasValidas, DIRECCION_MAX_LENGTH } from "@/lib/actividad-ubicacion.mjs";
+import { buscarUbicacion } from "@/lib/api/ubicacion";
 
-function PlacesSearch({ disabled, onChange, onGoogleSelection }) {
-  const container = useRef(null);
-  const mounted = useRef(null);
-  const [status, setStatus] = useState("Cargando búsqueda de Google Maps…");
+function PhysicalLocation({ value, onChange, disabled, id }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState(null);
   const [error, setError] = useState("");
-  const [retry, setRetry] = useState(0);
-  const initialize = useEffectEvent((controller) => { controller.widget.disabled = disabled; });
-  const select = useEffectEvent((selected) => {
-    if (disabled) return;
-    onChange({ google_place_id: selected.google_place_id });
-    onGoogleSelection(selected);
-    setError("");
-    setStatus("Ubicación seleccionada.");
-  });
-  const input = useEffectEvent(() => {
-    if (disabled) return;
-    onChange({ google_place_id: null });
-    onGoogleSelection(null);
-    setError("");
-    setStatus("Selecciona una sugerencia para confirmar el mapa.");
-  });
-  useEffect(() => {
-    let active = true;
-    loadGooglePlaces().then((places) => {
-      if (!active) return;
-      if (!places) throw new Error("Google Maps no está configurado. Puedes escribir la ubicación manualmente.");
-      mounted.current = mountGooglePlaceAutocomplete(container.current, places, {
-        onSelect: select, onInput: input,
-        onError: (message) => { if (active) { setError(message); setStatus(""); } },
-        onPending: (pending) => { if (active && pending) setStatus("Comprobando selección…"); },
-      });
-      initialize(mounted.current);
-      setStatus("Busca y selecciona una sugerencia.");
-    }).catch((loadError) => { if (active) { setError(loadError.message); setStatus(""); } });
-    return () => {
-      active = false;
-      mounted.current?.destroy();
-      mounted.current = null;
-    };
-  }, [retry]);
-  useEffect(() => {
-    if (mounted.current) mounted.current.widget.disabled = disabled;
-  }, [disabled]);
+  const [busy, setBusy] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const pending = useRef(null);
+  const sequence = useRef(0);
+  const searchInput = useRef(null);
+  const selected = coordenadasValidas(value.latitud, value.longitud);
+  const links = buildActividadMapsLinks(value);
+  useEffect(() => () => { sequence.current++; pending.current?.abort(); }, []);
 
+  async function search() {
+    if (disabled || pending.current) return;
+    const current = ++sequence.current;
+    const controller = new AbortController();
+    pending.current = controller;
+    setBusy(true); setError(""); setResults(null);
+    try {
+      const found = await buscarUbicacion(query || value.direccion || value.lugar, { signal: controller.signal });
+      if (current === sequence.current && !controller.signal.aborted) setResults(found);
+    } catch (failure) {
+      if (current === sequence.current && failure.name !== "AbortError") setError(failure.message);
+    } finally {
+      if (current === sequence.current) { pending.current = null; setBusy(false); }
+    }
+  }
+  function cancel() {
+    sequence.current++; pending.current?.abort(); pending.current = null; setBusy(false);
+  }
+  function select(point) {
+    if (disabled) return;
+    onChange({ latitud: point.latitud, longitud: point.longitud });
+    setMapOpen(true); setResults(null);
+  }
   return (
-    <div className="space-y-2">
-      <div ref={container} className="min-h-11" onKeyDown={(event) => {
-        // Keep Google's Enter/default selection behavior inside its shadow DOM.
-        // Its internal input does not belong to the outer activity form.
-        if (event.key === "Enter") event.stopPropagation();
-      }} />
-      {status ? <p role="status" className="text-xs leading-relaxed text-[#7c5c47]">{status}</p> : null}
-      {error ? <div role="status" className="text-sm text-[#8d3b28]">
-        <p>{error}</p>
-        <button type="button" disabled={disabled} className="mt-2 min-h-10 rounded-sm border border-[#e6ddd4] px-3 text-sm"
-          onClick={() => { setError(""); setStatus("Cargando búsqueda…"); setRetry((value) => value + 1); }}>Reintentar búsqueda</button>
+    <div className="space-y-4 border-t border-[#e6ddd4] pt-4">
+      <label htmlFor={id + "-query"} className="block text-sm font-medium">Buscar una dirección o recinto</label>
+      <input ref={searchInput} id={id + "-query"} value={query} maxLength={300} disabled={disabled}
+        placeholder={value.direccion || value.lugar || "Dirección, comuna, país"}
+        aria-describedby={id + "-query-help"}
+        className="min-h-11 w-full min-w-0 rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] px-3 text-sm"
+        onChange={(event) => { cancel(); setQuery(event.target.value); setResults(null); setError(""); }}
+        onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void search(); } }} />
+      <p id={id + "-query-help"} className="text-xs leading-relaxed text-[#7c5c47]">La búsqueda solo se envía al presionar el botón o Enter. Se prioriza el entorno de Quilpué sin limitar otras ubicaciones. El resultado no reemplaza tu dirección editorial.</p>
+      <div className="flex flex-wrap gap-2">
+        <button type="button" disabled={disabled || busy} onClick={search} className="min-h-11 rounded-sm border border-[#bb9c82] bg-white px-4 text-sm disabled:opacity-60">{busy ? "Buscando ubicación…" : "Buscar ubicación"}</button>
+        {busy ? <button type="button" onClick={cancel} className="min-h-11 px-4 text-sm">Cancelar búsqueda</button> : null}
+        <button type="button" disabled={disabled} className="min-h-11 rounded-sm border border-[#bb9c82] px-4 text-sm"
+          onClick={() => setMapOpen(true)}>Seleccionar en el mapa</button>
+      </div>
+      {busy ? <p role="status" className="text-sm text-[#7c5c47]">Buscando ubicaciones…</p> : null}
+      {error ? <p role="alert" className="text-sm text-[#8d3b28]">{error}</p> : null}
+      {results?.length === 0 ? <p role="status" className="text-sm text-[#7c5c47]">No encontramos resultados. Prueba con otra dirección o selecciona el punto en el mapa.</p> : null}
+      {results?.length ? <ul aria-label="Resultados de ubicación" className="space-y-2">
+        {results.map((result) => <li key={result.id}>
+          <button type="button" disabled={disabled} className="min-h-11 w-full rounded-sm border border-[#e6ddd4] bg-white p-3 text-left text-sm wrap-anywhere"
+            onClick={() => select(result)}>{result.label}</button>
+        </li>)}
+      </ul> : null}
+      <p className="text-xs text-[#7c5c47]">Búsqueda: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">© OpenStreetMap contributors</a> · Nominatim.</p>
+      {selected ? <div role="status" className="space-y-1 text-sm text-[#5c4636]">
+        <p>Ubicación seleccionada.</p>
+        <p>Latitud: {value.latitud.toFixed(6)} · Longitud: {value.longitud.toFixed(6)}</p>
       </div> : null}
+      {selected || mapOpen ? <OpenStreetMapMap editable disabled={disabled} latitud={value.latitud} longitud={value.longitud} onSelect={select} /> : null}
+      {selected ? <div className="flex flex-wrap items-center gap-3 text-sm">
+        <button type="button" disabled={disabled} className="min-h-11 rounded-sm border border-[#bb9c82] px-4"
+          onClick={() => { searchInput.current?.focus(); searchInput.current?.scrollIntoView({ block: "nearest" }); }}>Cambiar ubicación</button>
+        <button type="button" disabled={disabled} className="min-h-11 rounded-sm border border-[#bb9c82] px-4"
+          onClick={() => { cancel(); onChange({ latitud: null, longitud: null }); setMapOpen(false); setResults(null); }}>Quitar coordenadas</button>
+      </div> : null}
+      <div className="flex flex-wrap gap-3 text-sm text-[#704a31]">
+        {links.directions ? <a href={links.directions} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">Cómo llegar</a> : null}
+        {links.map ? <a href={links.map} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">Abrir en Google Maps</a> : null}
+      </div>
     </div>
   );
 }
 
 export default function ActividadUbicacionField({ value, onChange, disabled = false }) {
   const id = useId();
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [googleSelection, setGoogleSelection] = useState(null);
   const physical = actividadTieneUbicacionFisica(value);
-  const configured = Boolean(googleMapsKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY));
-  const reference = value.google_place_id;
-  const selection = googleSelection?.google_place_id === reference ? googleSelection : null;
-  const links = buildActividadMapsLinks(value);
   const inputClass = "mt-1.5 min-h-11 w-full rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] px-3 py-2.5 text-sm text-[#2c1810] disabled:opacity-60";
-
-  function removeReference() {
-    onChange({ google_place_id: null });
-    setGoogleSelection(null);
-    setSearchOpen(false);
-  }
-
   return (
     <section className="admin-card space-y-5 p-4 sm:p-6" aria-labelledby={id + "-title"}>
       <h2 id={id + "-title"} className="font-serif text-lg font-medium text-[#2c1810]">Ubicación</h2>
@@ -91,54 +98,18 @@ export default function ActividadUbicacionField({ value, onChange, disabled = fa
           <label htmlFor={id + "-lugar"} className="text-[13px] font-medium">Nombre del lugar o recinto{value.modalidad === "presencial" ? " *" : ""}</label>
           <input id={id + "-lugar"} name="lugar" required={value.modalidad === "presencial"} maxLength={250}
             value={value.lugar ?? ""} disabled={disabled} className={inputClass}
-            aria-describedby={id + "-lugar-help"} onChange={(event) => onChange({ lugar: event.target.value })} />
-          <p id={id + "-lugar-help"} className="mt-1 text-xs text-[#7c5c47]">Obligatorio para actividades presenciales. Puedes conservar las indicaciones existentes.</p>
+            onChange={(event) => onChange({ lugar: event.target.value })} />
         </div>
         <div>
           <label htmlFor={id + "-direccion"} className="text-[13px] font-medium">Dirección del evento</label>
           <input id={id + "-direccion"} name="direccion" maxLength={DIRECCION_MAX_LENGTH} value={value.direccion ?? ""}
             disabled={disabled} className={inputClass} aria-describedby={id + "-direccion-help"}
             onChange={(event) => onChange({ direccion: event.target.value })} />
-          <p id={id + "-direccion-help"} className="mt-1 text-xs leading-relaxed text-[#7c5c47]">Opcional. Escribe la dirección propia del evento, incluyendo comuna y referencias útiles. Google no reemplaza este texto.</p>
+          <p id={id + "-direccion-help"} className="mt-1 text-xs leading-relaxed text-[#7c5c47]">Opcional. Conserva tus indicaciones propias. Seleccionar o mover el punto no cambia este texto.</p>
         </div>
       </div>
-      <div className="space-y-3 border-t border-[#e6ddd4] pt-4">
-        <h3 className="text-sm font-medium">Buscar ubicación en Google Maps</h3>
-        {!physical ? (
-          <p className="text-sm leading-relaxed text-[#7c5c47]">Las actividades virtuales no muestran mapas ni enlaces de ubicación física.{reference ? " La referencia guardada se conserva hasta que la quites explícitamente." : ""}</p>
-        ) : !configured ? (
-          <p className="text-sm leading-relaxed text-[#7c5c47]">Google Maps todavía no está configurado. Puedes guardar la ubicación manualmente.</p>
-        ) : (
-          <>
-            <button type="button" disabled={disabled} aria-expanded={searchOpen} aria-controls={id + "-search"}
-              className="min-h-11 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm"
-              onClick={() => setSearchOpen((current) => !current)}>
-              {searchOpen ? "Cerrar búsqueda" : reference ? "Cambiar ubicación" : "Buscar en Google Maps"}
-            </button>
-            {searchOpen ? <div id={id + "-search"}>
-              <PlacesSearch disabled={disabled} onChange={onChange} onGoogleSelection={setGoogleSelection} />
-            </div> : null}
-          </>
-        )}
-        {reference ? (
-          <div className="space-y-3">
-            <p className="text-sm text-[#5c4636]">Referencia Google seleccionada{physical ? "." : " (sin uso en esta modalidad)."}</p>
-            {selection?.googleAddress && physical ? <p className="text-sm wrap-anywhere text-[#7c5c47]">
-              Dirección de Google Maps, temporal: {selection.googleAddress}
-              <span className="mt-1 block text-xs">Solo para esta selección; no se copia automáticamente a la dirección del evento.</span>
-            </p> : null}
-            {physical ? <>
-              <GoogleMapsLocation activity={value} location={selection?.location ?? null} />
-              <div className="flex flex-wrap gap-3 text-sm text-[#704a31]">
-                {links.directions ? <a href={links.directions} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline underline-offset-2">Cómo llegar</a> : null}
-                {links.map ? <a href={links.map} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline underline-offset-2">Abrir en Google Maps</a> : null}
-              </div>
-            </> : null}
-            <button type="button" disabled={disabled} className="min-h-11 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm"
-              onClick={removeReference}>Quitar referencia Google</button>
-          </div>
-        ) : null}
-      </div>
+      {physical ? <PhysicalLocation value={value} onChange={onChange} disabled={disabled} id={id} />
+        : <p className="text-sm text-[#7c5c47]">Las actividades virtuales no muestran búsqueda, mapa ni enlaces físicos. Los datos históricos se conservan.</p>}
     </section>
   );
 }
