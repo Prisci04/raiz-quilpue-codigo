@@ -14,9 +14,11 @@ function PhysicalLocation({ value, onChange, disabled, id }) {
   const pending = useRef(null);
   const sequence = useRef(0);
   const searchInput = useRef(null);
+  const mapArea = useRef(null);
+  const focusFrame = useRef(null);
   const selected = coordenadasValidas(value.latitud, value.longitud);
   const links = buildActividadMapsLinks(value);
-  useEffect(() => () => { sequence.current++; pending.current?.abort(); }, []);
+  useEffect(() => () => { sequence.current++; pending.current?.abort(); cancelAnimationFrame(focusFrame.current); }, []);
 
   async function search() {
     if (disabled || pending.current) return;
@@ -41,6 +43,12 @@ function PhysicalLocation({ value, onChange, disabled, id }) {
     onChange({ latitud: point.latitud, longitud: point.longitud });
     setMapOpen(true); setResults(null);
   }
+  function selectResult(point) {
+    select(point);
+    // Result buttons unmount after selection; keep keyboard focus on the map.
+    cancelAnimationFrame(focusFrame.current);
+    focusFrame.current = requestAnimationFrame(() => mapArea.current?.querySelector(".rq-location-map")?.focus({ preventScroll: true }));
+  }
   return (
     <div className="space-y-4 border-t border-[#e6ddd4] pt-4">
       <label htmlFor={id + "-query"} className="block text-sm font-medium">Buscar una dirección o recinto</label>
@@ -60,28 +68,31 @@ function PhysicalLocation({ value, onChange, disabled, id }) {
       {busy ? <p role="status" className="text-sm text-[#7c5c47]">Buscando ubicaciones…</p> : null}
       {error ? <p role="alert" className="text-sm text-[#8d3b28]">{error}</p> : null}
       {results?.length === 0 ? <p role="status" className="text-sm text-[#7c5c47]">No encontramos resultados. Prueba con otra dirección o selecciona el punto en el mapa.</p> : null}
-      {results?.length ? <ul aria-label="Resultados de ubicación" className="space-y-2">
+      {results?.length ? <ul aria-label="Resultados de ubicación" className="space-y-2 rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] p-2">
         {results.map((result) => <li key={result.id}>
           <button type="button" disabled={disabled} className="min-h-11 w-full rounded-sm border border-[#e6ddd4] bg-white p-3 text-left text-sm wrap-anywhere"
-            onClick={() => select(result)}>{result.label}</button>
+            onClick={() => selectResult(result)}>{result.label}</button>
         </li>)}
       </ul> : null}
       <p className="text-xs text-[#7c5c47]">Búsqueda: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">© OpenStreetMap contributors</a> · Nominatim.</p>
-      {selected ? <div role="status" className="space-y-1 text-sm text-[#5c4636]">
+      {selected ? <div role="status" className="space-y-1 rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] p-3 text-sm wrap-anywhere text-[#5c4636]">
         <p>Ubicación seleccionada.</p>
         <p>Latitud: {value.latitud.toFixed(6)} · Longitud: {value.longitud.toFixed(6)}</p>
       </div> : null}
-      {selected || mapOpen ? <OpenStreetMapMap editable disabled={disabled} latitud={value.latitud} longitud={value.longitud} onSelect={select} /> : null}
+      <div ref={mapArea}>
+        {selected || mapOpen ? <OpenStreetMapMap editable disabled={disabled} latitud={value.latitud} longitud={value.longitud} onSelect={select} /> : null}
+      </div>
       {selected ? <div className="flex flex-wrap items-center gap-3 text-sm">
         <button type="button" disabled={disabled} className="min-h-11 rounded-sm border border-[#bb9c82] px-4"
           onClick={() => { searchInput.current?.focus(); searchInput.current?.scrollIntoView({ block: "nearest" }); }}>Cambiar ubicación</button>
         <button type="button" disabled={disabled} className="min-h-11 rounded-sm border border-[#bb9c82] px-4"
-          onClick={() => { cancel(); onChange({ latitud: null, longitud: null }); setMapOpen(false); setResults(null); }}>Quitar coordenadas</button>
+          onClick={() => { cancel(); onChange({ latitud: null, longitud: null }); setMapOpen(false); setResults(null); searchInput.current?.focus(); }}>Quitar coordenadas</button>
       </div> : null}
       <div className="flex flex-wrap gap-3 text-sm text-[#704a31]">
         {links.directions ? <a href={links.directions} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">Cómo llegar</a> : null}
         {links.map ? <a href={links.map} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">Abrir en Google Maps</a> : null}
       </div>
+      {links.map ? <p className="text-xs leading-relaxed text-[#7c5c47]">Cómo llegar abre una ruta; Abrir en Google Maps muestra el punto. Se abren en otra pestaña.</p> : null}
     </div>
   );
 }

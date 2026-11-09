@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { Pause, Play, Search } from "lucide-react";
+import AnimatedContent from "@/components/motion/AnimatedContent";
 import ActivityCard from "@/components/actividades/ActivityCard";
 import AccessSection from "@/components/home/AccessSection";
 
@@ -41,14 +42,21 @@ export default function HomeView({ contents = [], activities = [] }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [slide, setSlide] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    const timer = setInterval(
-      () => setSlide((current) => (current + 1) % heroSlides.length),
-      5000,
-    );
-    return () => clearInterval(timer);
-  }, []);
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let timer;
+    function schedule() {
+      clearInterval(timer);
+      if (!paused && !preference.matches) {
+        timer = setInterval(() => setSlide((current) => (current + 1) % heroSlides.length), 5000);
+      }
+    }
+    schedule();
+    preference.addEventListener("change", schedule);
+    return () => { clearInterval(timer); preference.removeEventListener("change", schedule); };
+  }, [paused]);
 
   function handleSearch(event) {
     event.preventDefault();
@@ -103,13 +111,18 @@ export default function HomeView({ contents = [], activities = [] }) {
               key={item.caption}
               type="button"
               aria-label={`Ver imagen ${index + 1}`}
+              aria-pressed={slide === index}
               onClick={() => setSlide(index)}
-              className="h-px w-5 transition-all duration-300"
-              style={{
-                background: slide === index ? "var(--accent)" : "rgba(231,220,210,0.35)",
-              }}
-            />
+              className="flex min-h-11 w-8 items-center justify-center text-[#ffdf90]"
+            >
+              <span className="h-px w-5" style={{ background: slide === index ? "var(--accent)" : "rgba(231,220,210,0.35)" }} />
+            </button>
           ))}
+          <button type="button" aria-label={paused ? "Reanudar imágenes" : "Pausar imágenes"}
+            aria-pressed={paused} onClick={() => setPaused((value) => !value)}
+            className="flex min-h-11 w-11 items-center justify-center text-[#ffdf90] motion-reduce:hidden">
+            {paused ? <Play size={15} aria-hidden="true" /> : <Pause size={15} aria-hidden="true" />}
+          </button>
         </div>
 
         <div className="relative mx-auto w-full max-w-7xl px-6">
@@ -131,7 +144,8 @@ export default function HomeView({ contents = [], activities = [] }) {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar en el patrimonio de Quilpué..."
-                className="flex-1 px-4 py-3 text-sm outline-none"
+                aria-label="Buscar en el patrimonio de Quilpué"
+                className="min-w-0 flex-1 px-4 py-3 text-sm"
                 style={{ background: "rgba(231,220,210,0.94)", color: "var(--foreground)" }}
               />
               <button type="submit" className="btn-primary px-5" aria-label="Buscar">
@@ -150,7 +164,7 @@ export default function HomeView({ contents = [], activities = [] }) {
         </div>
       </section>
 
-      <section className="bg-[#bb9c82]/25 px-6 py-16">
+      <AnimatedContent as="section" className="bg-[#bb9c82]/25 px-6 py-16">
         <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div>
             <div className="section-label mb-3">¿Qué es Raíz Quilpué?</div>
@@ -171,11 +185,11 @@ export default function HomeView({ contents = [], activities = [] }) {
             <Image src={"/images/inicio/imgini8.jpg"} alt="Paisaje de Quilpué" width={1200} height={450} className="col-span-2 aspect-[16/6] w-full object-cover" unoptimized />
           </div>
         </div>
-      </section>
+      </AnimatedContent>
 
       <AccessSection contents={contents} activities={activities} />
 
-      <section className="bg-[#bb9c82]/25 px-6 py-16">
+      <AnimatedContent as="section" className="bg-[#bb9c82]/25 px-6 py-16">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 flex items-center justify-between">
             <div>
@@ -198,9 +212,9 @@ export default function HomeView({ contents = [], activities = [] }) {
             <p className="text-[#946541]">Aún no hay contenidos publicados.</p>
           )}
         </div>
-      </section>
+      </AnimatedContent>
 
-      <section className="mx-auto max-w-7xl px-6 py-16">
+      <AnimatedContent as="section" className="mx-auto max-w-7xl px-6 py-16">
         <div className="mb-8 flex items-center justify-between">
           <div>
             <div className="section-label mb-1">Encuentros y experiencias</div>
@@ -221,7 +235,7 @@ export default function HomeView({ contents = [], activities = [] }) {
         ) : (
           <p className="text-[#946541]">Aún no hay actividades publicadas.</p>
         )}
-      </section>
+      </AnimatedContent>
 
     </div>
   );

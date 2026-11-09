@@ -500,10 +500,10 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
               <table className="admin-table w-full min-w-[720px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-[#e6dcd0] text-[13px] text-[#8a7968]">
-                    <th className="px-2 py-3 font-medium">Título</th>
-                    <th className="hidden w-44 px-2 py-3 font-medium lg:table-cell">Tipo</th>
-                    <th className="w-32 px-2 py-3 font-medium">Estado</th>
-                    <th className="hidden w-40 px-2 py-3 font-medium lg:table-cell">
+                    <th className="min-w-72 px-2 py-3 font-medium">Título</th>
+                    <th className="hidden w-44 min-w-44 px-2 py-3 font-medium lg:table-cell">Tipo</th>
+                    <th className="w-32 min-w-32 px-2 py-3 font-medium">Estado</th>
+                    <th className="hidden w-40 min-w-40 px-2 py-3 font-medium lg:table-cell">
                       <button
                         type="button"
                         className="inline-flex items-center gap-1"
@@ -521,7 +521,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
                         />
                       </button>
                     </th>
-                    <th className="w-40 px-2 py-3 text-right font-medium">Acciones</th>
+                    <th className="w-40 min-w-40 px-2 py-3 text-right font-medium">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>

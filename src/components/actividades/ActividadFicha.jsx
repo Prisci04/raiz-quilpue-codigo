@@ -2,7 +2,7 @@ import OpenStreetMapMap from "@/components/maps/OpenStreetMapMap";
 import { actividadTieneUbicacionFisica, buildActividadMapsLinks, puedeMostrarMapa } from "@/lib/actividad-ubicacion.mjs";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Clock, MapPin, Ticket, Users, Wallet } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Calendar, Clock, MapPin, Navigation, Ticket, Users, Wallet } from "lucide-react";
 import ContenidoDocumento from "@/components/contenido/ContenidoDocumento";
 import {
   esParticipacionInscripcion,
@@ -130,16 +130,23 @@ export default function ActividadFicha({ activity, backHref, backLabel, children
         </dl>
 
         {physical && (activity.direccion || links.map) ? (
-          <section aria-label="Ubicación del evento" className="mt-6 space-y-4 border-t border-[#bb9c82]/70 pt-5">
-            <h2 className="font-serif text-xl font-medium text-[#5c331c]">Ubicación</h2>
+          <section aria-label="Ubicación del evento" className="location-panel mt-8 space-y-4">
+            <div className="flex items-center gap-3">
+              <MapPin size={22} strokeWidth={1.6} className="shrink-0 text-[#db700f]" aria-hidden="true" />
+              <div>
+                <h2 className="font-serif text-xl font-medium text-[#5c331c]">Ubicación</h2>
+                <p className="mt-1 text-xs text-[#704a31]">Planifica tu visita a {lugar}.</p>
+              </div>
+            </div>
             {activity.direccion ? <p className="text-sm leading-7 wrap-anywhere text-[#704a31]">{activity.direccion}</p> : null}
             {puedeMostrarMapa(activity) ? <OpenStreetMapMap latitud={activity.latitud} longitud={activity.longitud} /> : null}
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               {links.directions ? <a href={links.directions} target="_blank" rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center justify-center bg-[#704a31] px-4 text-sm text-[#f4ece4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#704a31]">Cómo llegar</a> : null}
+                className="location-action inline-flex min-h-11 items-center justify-center gap-2 bg-[#704a31] px-4 text-sm text-[#f4ece4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#704a31]"><Navigation size={16} aria-hidden="true" />Cómo llegar</a> : null}
               {links.map ? <a href={links.map} target="_blank" rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center justify-center border border-[#bb9c82] px-4 text-sm text-[#704a31] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#704a31]">Abrir en Google Maps</a> : null}
+                className="location-action inline-flex min-h-11 items-center justify-center gap-2 border border-[#bb9c82] px-4 text-sm text-[#704a31] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#704a31]">Abrir en Google Maps<ArrowUpRight size={16} aria-hidden="true" /></a> : null}
             </div>
+            <p className="text-xs leading-relaxed text-[#704a31]">Cómo llegar abre las indicaciones de ruta. Abrir en Google Maps muestra el punto. Ambos se abren en una nueva pestaña.</p>
           </section>
         ) : null}
 

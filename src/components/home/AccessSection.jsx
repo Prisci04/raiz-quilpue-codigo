@@ -1,4 +1,5 @@
 import Image from "next/image";
+import AnimatedContent from "@/components/motion/AnimatedContent";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Landmark, Library, Newspaper } from "lucide-react";
 
@@ -63,7 +64,7 @@ export default function AccessSection({ contents = [], activities = [] }) {
   };
 
   return (
-    <section aria-labelledby="accesos-heading" className="mx-auto max-w-7xl scroll-mt-24 px-6 py-16">
+    <AnimatedContent as="section" aria-labelledby="accesos-heading" className="mx-auto max-w-7xl scroll-mt-24 px-6 py-16">
       <div className="mb-10 max-w-2xl">
         <div className="section-label mb-2">Accesos principales</div>
         <h2 id="accesos-heading" className="font-serif text-3xl font-semibold text-[#704a31] md:text-4xl">
@@ -83,7 +84,7 @@ export default function AccessSection({ contents = [], activities = [] }) {
             <li key={item.href}>
               <Link
                 href={item.href}
-                className="group flex h-full flex-col overflow-hidden border border-[#bb9c82] bg-[#e7dcd2] text-[#946541] shadow-[0_10px_24px_rgba(112,74,49,0.08)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-[#946541] hover:shadow-[0_18px_36px_rgba(112,74,49,0.16)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#704a31]"
+                className="interactive-card group flex h-full flex-col overflow-hidden border border-[#bb9c82] bg-[#e7dcd2] text-[#946541] shadow-[0_10px_24px_rgba(112,74,49,0.08)] hover:border-[#946541] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#704a31]"
               >
                 <div className="relative h-44 overflow-hidden bg-[#bb9c82]/30">
                   <Image
@@ -128,6 +129,6 @@ export default function AccessSection({ contents = [], activities = [] }) {
           );
         })}
       </ul>
-    </section>
+    </AnimatedContent>
   );
 }

@@ -54,7 +54,7 @@ export default function ActivityCard({ activity }) {
   return (
     <Link
       href={`/actividades/${activity.id}`}
-      className="flex h-full flex-col bg-[#f4ece4] text-[#5c331c]"
+      className="interactive-card group flex h-full flex-col bg-[#f4ece4] text-[#5c331c]"
     >
       <div className="relative h-40 w-full overflow-hidden bg-[#bb9c82]/40 sm:h-44">
         {activity.imagen_url ? (
@@ -63,7 +63,7 @@ export default function ActivityCard({ activity }) {
             alt=""
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover"
+            className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-[1.025]"
           />
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center font-mono text-[10px] tracking-wide text-[#946541] uppercase">

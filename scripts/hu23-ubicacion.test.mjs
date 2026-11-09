@@ -39,6 +39,9 @@ test("presencial/hibrida use coordinates; virtual and unknown never expose physi
 test("Google is external navigation only: coordinates win, text is safely encoded, no key or legacy ID required", () => {
   const activity={modalidad:"presencial",direccion:"A & B #12, Quilpué",google_place_id:"legacy",latitud:-33.05,longitud:-71.45};
   const links=buildActividadMapsLinks(activity);
+  assert.notEqual(links.directions, links.map);
+  assert.equal(new URL(links.directions).pathname, "/maps/dir/");
+  assert.equal(new URL(links.map).pathname, "/maps/search/");
   assert.equal(new URL(links.directions).searchParams.get("destination"),"-33.05,-71.45");
   assert.equal(new URL(links.map).searchParams.get("query"),"-33.05,-71.45");
   for(const link of Object.values(links)){
@@ -46,6 +49,9 @@ test("Google is external navigation only: coordinates win, text is safely encode
     assert.equal(url.searchParams.has("key"),false);assert.equal(link.includes("legacy"),false);
   }
   const text=buildActividadMapsLinks({...activity,latitud:null,longitud:null});
+  assert.equal(new URL(text.directions).pathname, "/maps/dir/");
+  assert.equal(new URL(text.directions).searchParams.get("destination"), activity.direccion);
+  assert.equal(new URL(text.map).pathname, "/maps/search/");
   assert.equal(new URL(text.map).searchParams.get("query"),activity.direccion);
 });
 test("historical/manual activities work without maps, coordinates or Google configuration", () => {

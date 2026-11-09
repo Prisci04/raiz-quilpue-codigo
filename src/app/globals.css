@@ -140,6 +140,72 @@ textarea {
   animation: fade-in 0.2s ease;
 }
 
+/* Shared interaction cues preserve the client's existing palette. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
+:where(input, select, textarea):focus-visible {
+  outline-color: var(--primary);
+  outline-offset: 2px;
+}
+
+.interactive-card,
+.museum-card {
+  min-width: 0;
+  transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
+}
+
+.interactive-card:focus-visible,
+.museum-card:focus-within {
+  box-shadow: 0 8px 24px rgb(112 74 49 / 12%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .interactive-card:hover,
+  .museum-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgb(112 74 49 / 12%);
+  }
+}
+
+.btn-primary,
+.location-action {
+  transition: box-shadow 180ms ease, filter 180ms ease;
+}
+
+.btn-primary:hover,
+.location-action:hover {
+  box-shadow: 0 3px 10px rgb(112 74 49 / 15%);
+  filter: brightness(0.96);
+}
+
+.location-panel {
+  min-width: 0;
+  border: 1px solid var(--border);
+  background: #f4ece4;
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+
+/* Disable existing hover transforms and carousel fades as well as new motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+
+  .interactive-card,
+  .museum-card,
+  .group:hover img,
+  .group:hover svg {
+    transform: none !important;
+  }
+}
+
 .admin-shell {
   --admin-bg: #f1ebe4;
   --admin-card: #fffdf9;

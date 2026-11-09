@@ -33,7 +33,7 @@ export default function OpenStreetMapMap({ latitud = null, longitud = null, edit
   if (!editable && !selected) return null;
   return (
     <div className="min-w-0 space-y-2">
-      <div ref={container} role="region" aria-label={editable ? "Seleccionar ubicación en OpenStreetMap" : "Ubicación de la actividad en OpenStreetMap"}
+      <div ref={container} role="region" tabIndex={0} aria-label={editable ? "Seleccionar ubicación en OpenStreetMap" : "Ubicación de la actividad en OpenStreetMap"}
         className="rq-location-map h-72 min-w-0 w-full rounded-sm" />
       {status === "loading" ? <p role="status" className="text-sm text-[#7c5c47]">Cargando mapa…</p> : null}
       {status === "error" || status === "tiles-error" ? <div role="status" className="text-sm text-[#7c5c47]">

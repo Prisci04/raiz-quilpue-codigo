@@ -1,4 +1,5 @@
 import Image from "next/image";
+import AnimatedContent from "@/components/motion/AnimatedContent";
 import { BookOpen, Handshake, MapPinned, Users } from "lucide-react";
 
 const content = {
@@ -131,7 +132,7 @@ const images = {
 export default function QuienesSomosPage() {
   return (
     <main className="bg-[#e7dcd2] text-[#946541]">
-      <section className="bg-[#bb9c82]/25 px-6 pt-16 pb-14 sm:pt-20 sm:pb-16">
+      <AnimatedContent as="section" className="bg-[#bb9c82]/25 px-6 pt-16 pb-14 sm:pt-20 sm:pb-16">
         <div className="mx-auto max-w-7xl text-center">
           <div className="mb-4 text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">
             {content.eyebrow}
@@ -141,7 +142,7 @@ export default function QuienesSomosPage() {
           </h1>
           <div className="mx-auto mt-6 h-px w-32 bg-[#704a31]" />
         </div>
-      </section>
+      </AnimatedContent>
 
       <section className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-20">

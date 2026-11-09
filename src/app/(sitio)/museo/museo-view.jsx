@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import AnimatedContent from "@/components/motion/AnimatedContent";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Inbox, Search, X } from "lucide-react";
 import { MUSEO_CATEGORIES } from "@/lib/museo";
@@ -279,7 +280,7 @@ export default function MuseoView({ items = [], categorias = [], error = "" }) {
         </p>
       </section>
 
-      <section className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
+      <AnimatedContent as="section" className="mx-auto max-w-7xl px-6 py-16 sm:py-20">
         <div className="border-b border-[#bb9c82] pb-8">
           <p className="mb-3 text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">
             Un territorio · muchas historias
@@ -299,9 +300,9 @@ export default function MuseoView({ items = [], categorias = [], error = "" }) {
               type="button"
               onClick={() => {
                 setActiveTipo(collection.id);
-                document.getElementById("coleccion")?.scrollIntoView({ behavior: "smooth" });
+                document.getElementById("coleccion")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
               }}
-              className="group overflow-hidden rounded-xl border border-[#bb9c82]/60 bg-[#f8f3ed] text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-[#db700f]/70 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#db700f]"
+              className="interactive-card group overflow-hidden rounded-xl border border-[#bb9c82]/60 bg-[#f8f3ed] text-left shadow-sm hover:border-[#db700f]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#db700f]"
             >
               <div className="relative h-52 overflow-hidden bg-[#bb9c82]/30">
                 <Image
@@ -333,7 +334,7 @@ export default function MuseoView({ items = [], categorias = [], error = "" }) {
         <p className="mt-6 text-sm text-[#946541]">
           {items.length} {items.length === 1 ? "registro publicado" : "registros publicados"} en el archivo.
         </p>
-      </section>
+      </AnimatedContent>
 
       <section
         id="coleccion"

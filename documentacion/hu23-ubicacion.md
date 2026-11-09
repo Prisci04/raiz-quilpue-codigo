@@ -299,6 +299,19 @@ remoto. Se conserva la prueba optativa de tiles reales descrita arriba.
 
 No se ejecutó SQL remoto ni se modificaron Supabase, Google Cloud o `.env.local`.
 
+## Cierre visual y validación local del 8 de noviembre de 2026
+
+Se mejora la jerarquía del bloque público, el foco al seleccionar/quitar un punto
+y la presentación administrativa. Las pruebas de navegador comprueban además
+guardado, nueva lectura y reapertura con coordenadas conservadas, y distinguen
+explícitamente `/maps/dir/` de `/maps/search/`. La persistencia se verifica con
+dobles locales, sin escribir en Supabase. Se validaron también teselas OSM reales
+a 1440, 1024 y 390 px. Las 37 pruebas HU-23 y las 406 de la suite completa pasan.
+
+El detalle de la auditoría, React Bits, accesibilidad y evidencias está en
+[Mejora visual y cierre local de HU-23](mejora-visual-hu23.md).
+Los requisitos del entorno real siguientes no se ejecutan como parte del cierre local.
+
 ## Pendientes antes de producción
 
 - Coordinar/aplicar SQL 019 manualmente, con verificación del esquema real.

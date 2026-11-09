@@ -6,6 +6,7 @@ import ActivityCard from "@/components/actividades/ActivityCard";
 import ActividadesCalendar from "@/components/actividades/ActividadesCalendar";
 import ViewTabs from "@/components/actividades/ViewTabs";
 import Pagination from "@/components/Pagination";
+import AnimatedContent from "@/components/motion/AnimatedContent";
 
 const PAGE_SIZE = 12;
 
@@ -35,7 +36,7 @@ export default function ActividadesView({ activities = [], error = "", initialVi
     const nextIndex = Math.min(Math.max(page - 1, 0), totalPages - 1);
     setPageIndex(nextIndex);
     document.getElementById("actividades-list")?.scrollIntoView({
-      behavior: "smooth",
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
       block: "start",
     });
   }
@@ -58,7 +59,7 @@ export default function ActividadesView({ activities = [], error = "", initialVi
 
   return (
     <main className="bg-[#e7dcd2] text-[#946541]">
-      <section className="bg-[#bb9c82]/25">
+      <AnimatedContent as="section" className="bg-[#bb9c82]/25">
         <div className="mx-auto max-w-[1200px] px-4 pt-8 pb-5 sm:px-8 sm:pt-16 sm:pb-8 lg:flex lg:items-end lg:justify-between lg:gap-12">
           <div className="max-w-2xl">
           <p className="text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">
@@ -83,7 +84,7 @@ export default function ActividadesView({ activities = [], error = "", initialVi
             />
           </label>
         </div>
-      </section>
+      </AnimatedContent>
 
       <ViewTabs
         value={view}

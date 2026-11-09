@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
+import AnimatedContent from "@/components/motion/AnimatedContent";
 import { ArrowRight, Inbox } from "lucide-react";
 import ContenidoPreviewModal from "@/components/contenido/ContenidoPreviewModal";
 import {
@@ -70,7 +71,7 @@ export default function ContenidoView({
 
   return (
     <main className="bg-[#e7dcd2] text-[#946541]">
-      <section className="bg-[#bb9c82]/25 px-6 pt-16 pb-12 sm:pt-20">
+      <AnimatedContent as="section" className="bg-[#bb9c82]/25 px-6 pt-16 pb-12 sm:pt-20">
         <div className="mx-auto max-w-7xl">
           <div className="mb-4 text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">Patrimonio · Noticias · Historias · Cultura · Comunidad</div>
           <h1 className="font-serif text-[clamp(2.5rem,5vw,3.8rem)] leading-tight font-semibold text-[#704a31]">
@@ -80,12 +81,12 @@ export default function ContenidoView({
             Todo lo que queremos compartir sobre Quilpué, reunido en un solo espacio. Explora nuestras noticias, contenidos patrimoniales, cápsulas históricas, expresiones culturales y relatos de la comunidad.
           </p>
         </div>
-      </section>
+      </AnimatedContent>
 
       <div
         className="sticky top-16 z-40 border-b border-[#bb9c82] bg-[#e7dcd2]/95 px-6 py-3 backdrop-blur-md"
       >
-        <div className="mx-auto flex w-full max-w-7xl flex-nowrap items-center gap-1 overflow-x-auto">
+        <div className="mx-auto flex w-full max-w-7xl flex-nowrap items-center gap-1 overflow-x-auto py-1" role="group" aria-label="Filtrar contenidos">
           {FILTERS.map((filter) => {
             const active = tipo === filter.id;
 
@@ -93,10 +94,9 @@ export default function ContenidoView({
               <button
                 key={filter.id}
                 type="button"
-                role="tab"
-                aria-selected={active}
+                aria-pressed={active}
                 onClick={() => setTipo(filter.id)}
-                className={`shrink-0 whitespace-nowrap px-2 py-1 font-sans text-[9px] font-medium tracking-normal uppercase transition-colors sm:px-2.5 ${
+                className={`min-h-11 shrink-0 whitespace-nowrap px-2 py-1 font-sans text-[11px] font-medium tracking-normal uppercase transition-colors sm:px-2.5 ${
                   active
                     ? "bg-[#704a31] text-[#e7dcd2]"
                     : "border border-[#bb9c82] bg-transparent text-[#946541] hover:border-[#db700f] hover:text-[#db700f]"
@@ -208,12 +208,12 @@ function SectionHeading({ eyebrow, title, count, countLabel }) {
 function ContentCard({ item, index, featured = false, onOpen }) {
   const imageClassName = featured
     ? "aspect-[4/3]"
-    : "h-40 w-40 shrink-0 sm:h-32 sm:w-48";
+    : "h-44 w-full shrink-0 sm:h-auto sm:min-h-40 sm:w-48";
 
   return (
     <article
       className={`museum-card animate-fade-up overflow-hidden border border-[#bb9c82] bg-[#e7dcd2] ${
-        featured ? "" : "flex"
+        featured ? "" : "flex flex-col sm:flex-row"
       }`}
       style={{ animationDelay: `${index * 0.06}s` }}
     >
@@ -252,7 +252,7 @@ function ContentCard({ item, index, featured = false, onOpen }) {
         <button
           type="button"
           onClick={() => onOpen(item.id)}
-          className="inline-flex min-h-7 items-center gap-1 font-sans text-[8px] font-medium tracking-normal text-[#db700f] uppercase"
+          className="inline-flex min-h-11 items-center gap-2 self-start font-sans text-[11px] font-medium tracking-normal text-[#db700f] uppercase"
         >
           Ver detalle
           <ArrowRight size={10} strokeWidth={1.8} aria-hidden="true" />

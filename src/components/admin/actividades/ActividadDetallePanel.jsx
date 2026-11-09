@@ -203,11 +203,13 @@ export default function ActividadDetallePanel({ activity }) {
       </div>
 
       {physical ? <div className="admin-card mt-5 space-y-3 p-4">
+        <h2 className="font-serif text-lg font-medium text-[#2c1810]">Ubicación del evento</h2>
         {puedeMostrarMapa(activity) ? <OpenStreetMapMap latitud={activity.latitud} longitud={activity.longitud} /> : null}
         <div className="flex flex-wrap gap-4 text-sm text-[#704a31]">
           {links.directions ? <a href={links.directions} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">Cómo llegar</a> : null}
           {links.map ? <a href={links.map} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">Abrir en Google Maps</a> : null}
         </div>
+        {links.map ? <p className="text-xs leading-relaxed text-[#7c5c47]">Cómo llegar abre las indicaciones de ruta; Abrir en Google Maps muestra el punto. Se abren en otra pestaña.</p> : null}
       </div> : null}
 
       {activity.informacion_adicional ? (

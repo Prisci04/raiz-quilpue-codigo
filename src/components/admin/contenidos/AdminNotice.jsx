@@ -34,7 +34,7 @@ function AdminNoticeInner({ tone, children, onDismiss, sticky }) {
   }, [onDismiss]);
 
   useEffect(() => {
-    ref.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    ref.current?.scrollIntoView({ block: "nearest", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
 
     const fadeTimer = window.setTimeout(() => {
       setFading(true);
