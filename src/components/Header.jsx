@@ -12,6 +12,7 @@ const navItems = [
   { href: "/contenido", label: "Contenidos" },
   { href: "/actividades", label: "Actividades" },
   { href: "/museo", label: "Museo Digital" },
+  { href: "/asistente", label: "Asistente" },
 ];
 
 function isActive(pathname, item) {
