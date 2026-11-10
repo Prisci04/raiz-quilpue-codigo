@@ -101,6 +101,8 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
       } finally { hold.release(); chatHold = null; }
     }
     async function capture(name, width) {
+      // Inspect the final surface rather than a frame during the reveal animation.
+      await pause(500);
       assert.equal(await evaluate("document.documentElement.scrollWidth<=innerWidth"), true, name + " overflow " + width);
       const shot = await send("Page.captureScreenshot", { format: "png" });
       await writeFile(join(tmpdir(), `rq-hu22-${name}-${width}.png`), Buffer.from(shot.data, "base64"));
@@ -130,6 +132,13 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
       await capture("chat", width);
       await click('main [aria-label="Nueva conversación"]');
       assert.equal(await evaluate("document.querySelectorAll('main .ai-message-user').length"), 0);
+      await capture("welcome", width);
+      await click("main .ai-suggestions button");
+      assert.equal(await evaluate("document.activeElement.tagName"), "TEXTAREA");
+      assert.equal(await evaluate("document.querySelector('main textarea').value"), "¿Qué actividades hay disponibles?");
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", text: "\n", modifiers: 8, windowsVirtualKeyCode: 13 });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", modifiers: 8, windowsVirtualKeyCode: 13 });
+      assert.equal(await evaluate("document.querySelectorAll('main .ai-message-user').length"), 0, "Shift+Enter must not submit");
       failNext = true;
       await ask("main .ai-chat", "visitas");
       assert.match(await evaluate("document.querySelector('main [role=alert]').textContent"), /conexión/);
@@ -138,17 +147,32 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
       assert.equal(await evaluate("document.querySelectorAll('main .ai-message-user').length"), 1);
       await evaluate("window.qaNavigate('/admin/ia');window.scrollTo(0,0)");
       await waitFor("Boolean(document.querySelector('input[name=nombre]')) && !document.querySelector('input[name=nombre]').disabled");
-      await click('[aria-label="Ayuda sobre Administrar IA"]');
+      await evaluate("document.querySelector('[aria-label=\"Ayuda sobre Administrar IA\"]').focus()");
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", text: "\r", windowsVirtualKeyCode: 13 });
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", windowsVirtualKeyCode: 13 });
       await waitFor("document.querySelector('dialog')?.open");
       assert.match(await evaluate("document.querySelector('dialog').textContent"), /agregar, editar y organizar/);
       assert.doesNotMatch(await evaluate("document.querySelector('dialog').textContent"), /embeddings|tokens|prompts/i);
+      await capture("help", width);
       await click("dialog button");
+      assert.equal(await evaluate("document.activeElement.getAttribute('aria-label')"), "Ayuda sobre Administrar IA");
       await fill("input[name=nombre]", "Asistente Memoria");
       await click("form button[type=submit]");
       await waitFor("document.body.textContent.includes('Configuración guardada')");
       await ask(".admin-page .ai-chat", "visitas");
       assert.match(await evaluate("document.querySelector('.admin-page [role=log]').textContent"), /se coordinan/);
       await evaluate("window.scrollTo(0,0)"); await capture("admin", width);
+      await evaluate("document.querySelector('.ai-knowledge').scrollIntoView({block:'start'})");
+      await capture("knowledge", width);
+      await fill('.ai-search input', 'sin coincidencias');
+      await waitFor("document.querySelector('.ai-knowledge').textContent.includes('No hay secciones que coincidan')");
+      await fill('.ai-search input', 'archivo');
+      await waitFor("document.querySelectorAll('.ai-knowledge-item').length===1");
+      await fill('.ai-search input', '');
+      await evaluate("(()=>{const e=document.querySelector('.ai-knowledge-filters select');e.value='inactive';e.dispatchEvent(new Event('change',{bubbles:true}));})()");
+      await waitFor("document.querySelector('.ai-knowledge').textContent.includes('No hay secciones que coincidan')");
+      await evaluate("(()=>{const e=document.querySelector('.ai-knowledge-filters select');e.value='all';e.dispatchEvent(new Event('change',{bubbles:true}));})()");
+      await waitFor("document.querySelectorAll('.ai-knowledge-item').length===1");
       // Return to public view without remounting the conversation provider.
       await evaluate("window.qaNavigate('/asistente')"); await pause(80);
       await click('main [aria-label="Nueva conversación"]');
@@ -186,6 +210,8 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
     await waitFor("document.querySelector('main textarea').disabled");
     assert.match(await evaluate("document.querySelector('main [role=log]').textContent"), /no está disponible/);
     await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+    // matchMedia change callbacks (AnimatedContent cancellation) arrive asynchronously.
+    await waitFor("document.getAnimations().length===0");
     assert.equal(await evaluate("document.getAnimations().length"), 0);
     assert.deepEqual(qa.errors, []); assert.deepEqual(qa.external, []);
     assert.equal((await state.store.listKnowledge()).length, 1);
