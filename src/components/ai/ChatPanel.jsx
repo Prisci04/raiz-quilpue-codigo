@@ -6,6 +6,7 @@ import { ArrowUpRight, LoaderCircle, Send, RotateCcw, Sparkles } from "lucide-re
 import AnimatedContent from "@/components/motion/AnimatedContent";
 import AssistantIdentity, { AssistantMark } from "./AssistantIdentity";
 import { useAssistant } from "./AssistantProvider";
+import { assistantDisplayName } from "./presentation.mjs";
 
 const suggestions = ["¿Qué actividades hay disponibles?", "Cuéntame sobre Raíz Quilpué", "¿Qué puedo visitar?", "Muéstrame contenido cultural"];
 export default function ChatPanel({ compact = false, autoFocus = false }) {
@@ -15,6 +16,7 @@ export default function ChatPanel({ compact = false, autoFocus = false }) {
   const list = useRef(null);
   const field = useRef(null);
   const disabled = !config?.activo || unavailable;
+  const name = assistantDisplayName(config?.nombre);
   useEffect(() => { if (autoFocus) field.current?.focus(); }, [autoFocus]);
   useEffect(() => {
     const element = list.current;
@@ -39,16 +41,16 @@ export default function ChatPanel({ compact = false, autoFocus = false }) {
         {!messages.length ? <div className="ai-welcome">
           <AssistantMark />
           <p className="ai-eyebrow">Cultura · Memoria · Territorio</p>
-          <h2>Tu próximo encuentro con Quilpué</h2>
+          <h2>¿Qué te gustaría descubrir?</h2>
           <p>Hay historias, lugares y actividades por descubrir. ¿Por dónde comenzamos?</p>
         </div> : null}
         <div className={`ai-message ai-message-assistant${!messages.length ? " ai-greeting" : ""}`}>
-          <p className="ai-message-author">{config?.nombre || "Asistente Raíz"}</p>
+          <p className="ai-message-author">{name}</p>
           <p>{config ? config.activo ? config.mensaje_inicial : "El asistente no está disponible por ahora. Puedes seguir explorando el sitio." : "Preparando el asistente…"}</p>
         </div>
         {messages.map((item) => (
-          <AnimatedContent key={item.id} className={`ai-message ai-message-${item.role}`}>
-            <p className="ai-message-author">{item.role === "user" ? "Tú" : config?.nombre}</p>
+          <AnimatedContent key={item.id} duration={240} distance={8} className={`ai-message ai-message-${item.role}`}>
+            <p className="ai-message-author">{item.role === "user" ? "Tú" : name}</p>
             <p className="whitespace-pre-wrap">{item.content}</p>
             {item.sources?.length ? <ul className="ai-sources" aria-label="Información relacionada">{item.sources.map((source) => (
               /^\/(actividades|contenido|museo|quienes-somos)(\/\d+)?$/.test(source.href) ? <li key={source.href}><Link href={source.href}>{source.title}<ArrowUpRight size={14} aria-hidden="true" /></Link></li> : null
@@ -58,7 +60,7 @@ export default function ChatPanel({ compact = false, autoFocus = false }) {
         {busy ? <p className="ai-thinking" role="status"><LoaderCircle className="motion-safe:animate-spin" size={17} aria-hidden="true" />Buscando información para ti…</p> : null}
       {!messages.length && config?.activo && !unavailable ? <div className="ai-suggestions" aria-label="Ideas para comenzar">
         <p><Sparkles size={14} aria-hidden="true" /> Algunas ideas para ti</p>
-        {suggestions.map((question) => <button key={question} type="button" disabled={busy} onClick={() => { setInput(question); field.current?.focus(); }}>{question}</button>)}
+        {suggestions.map((question, index) => <AnimatedContent as="button" key={question} delay={index * 65} distance={14} duration={360} type="button" disabled={busy} onClick={() => { setInput(question); field.current?.focus(); }}><span className="ai-suggestion-number" aria-hidden="true">0{index + 1}</span><span>{question}</span><ArrowUpRight size={15} aria-hidden="true" /></AnimatedContent>)}
       </div> : null}
       </div>
       {error ? <div className="ai-chat-error"><p role="alert">{error}</p>{unavailable ? <button type="button" onClick={() => refresh()}>Reintentar conexión</button> : null}</div> : null}

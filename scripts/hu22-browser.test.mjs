@@ -111,8 +111,11 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
     for (const width of [1440, 1024, 390]) {
       await send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width === 390 });
       await evaluate("window.qaNavigate('/');window.scrollTo(0,0)"); await pause(100);
+      await capture("launcher", width);
       await click('[aria-label="Abrir asistente"]');
       await waitFor("document.activeElement.tagName==='TEXTAREA' && !document.activeElement.disabled");
+      assert.equal(await evaluate("document.querySelector('.ai-widget .ai-identity-name').textContent"), "Raíz Quilpué IA");
+      if (width === 1440) assert.equal(await evaluate("document.querySelector('.ai-widget .ai-message-author').textContent"), "Raíz Quilpué IA");
       await ask(".ai-widget", "visitas", true);
       await waitFor("document.querySelector('.ai-widget [role=log]').textContent.includes('se coordinan')");
       const geometry = await evaluate("(()=>{const r=document.querySelector('.ai-widget-panel').getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}})()");
@@ -147,6 +150,10 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
       assert.equal(await evaluate("document.querySelectorAll('main .ai-message-user').length"), 1);
       await evaluate("window.qaNavigate('/admin/ia');window.scrollTo(0,0)");
       await waitFor("Boolean(document.querySelector('input[name=nombre]')) && !document.querySelector('input[name=nombre]').disabled");
+      if (width === 1440) {
+        assert.equal(await evaluate("document.querySelector('input[name=nombre]').value"), DEFAULT_AI_CONFIG.nombre, "Visual branding must preserve the editable stored name");
+        assert.equal((await state.store.getConfig()).nombre, DEFAULT_AI_CONFIG.nombre);
+      }
       await evaluate("document.querySelector('[aria-label=\"Ayuda sobre Administrar IA\"]').focus()");
       await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", text: "\r", windowsVirtualKeyCode: 13 });
       await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", windowsVirtualKeyCode: 13 });
@@ -161,6 +168,8 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
       await waitFor("document.body.textContent.includes('Configuración guardada')");
       await ask(".admin-page .ai-chat", "visitas");
       assert.match(await evaluate("document.querySelector('.admin-page [role=log]').textContent"), /se coordinan/);
+      assert.equal(await evaluate("document.querySelector('.admin-page .ai-identity-name').textContent"), "Raíz Quilpué IA");
+      assert.equal(await evaluate("document.querySelector('.admin-page .ai-custom-name').textContent"), "Asistente Memoria");
       await evaluate("window.scrollTo(0,0)"); await capture("admin", width);
       await evaluate("document.querySelector('.ai-knowledge').scrollIntoView({block:'start'})");
       await capture("knowledge", width);

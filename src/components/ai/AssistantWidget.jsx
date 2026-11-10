@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, MessageCircle, X } from "lucide-react";
+import { ArrowUpRight, X } from "lucide-react";
 import { useAssistant } from "./AssistantProvider";
 import ChatPanel from "./ChatPanel";
-import AssistantIdentity from "./AssistantIdentity";
+import AssistantIdentity, { AssistantMark } from "./AssistantIdentity";
+import { AI_IDENTITY } from "./presentation.mjs";
 
 export default function AssistantWidget() {
   const pathname = usePathname();
@@ -20,7 +21,7 @@ export default function AssistantWidget() {
     if (closing.current) return;
     closing.current = true;
     if (panel.current?.animate && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      await panel.current.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(8px) scale(.98)" }], { duration: 140, easing: "ease-in" }).finished.catch(() => {});
+      await panel.current.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(12px) scale(.94)" }], { duration: 180, easing: "ease-in" }).finished.catch(() => {});
     }
     setOpen(false); closing.current = false; opener.current?.focus();
   }
@@ -37,7 +38,7 @@ export default function AssistantWidget() {
   if (fullPage || config?.activo === false) return null;
   return (
     <aside className={`ai-widget${open ? " is-open" : ""}`} aria-label="Asistente de Raíz Quilpué">
-      {open ? <section ref={panel} id="assistant-widget-panel" className="ai-widget-panel" role="dialog" aria-label={config?.nombre || "Asistente Raíz"}>
+      {open ? <section ref={panel} id="assistant-widget-panel" className="ai-widget-panel" role="dialog" aria-label={AI_IDENTITY}>
         <header className="ai-widget-header">
           <AssistantIdentity />
           <button type="button" className="ai-icon-button" aria-label="Cerrar asistente" onClick={closePanel}><X size={20} aria-hidden="true" /></button>
@@ -48,7 +49,7 @@ export default function AssistantWidget() {
       <button ref={opener} type="button" className="ai-widget-toggle" aria-expanded={open} aria-controls={open ? "assistant-widget-panel" : undefined}
         title={open ? "Minimizar conversación" : "Conversa con el asistente de Raíz Quilpué"}
         aria-label={open ? "Ocultar asistente" : "Abrir asistente"} onClick={() => { if (open) void closePanel(); else { setOpen(true); void refresh(); } }}>
-        {open ? <X size={22} aria-hidden="true" /> : <MessageCircle size={23} aria-hidden="true" />}<span className="ai-widget-label">¿Te ayudamos?</span>
+        {open ? <X size={22} aria-hidden="true" /> : <AssistantMark />}<span className="ai-widget-label">{open ? "Minimizar" : <><strong>{AI_IDENTITY}</strong><small>Descubre nuestro territorio</small></>}</span>
       </button>
     </aside>
   );

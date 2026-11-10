@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 // Lightweight adaptation of React Bits' Animated Content scroll reveal.
 // https://reactbits.dev/animations/animated-content
 // Native animation/observer replace GSAP for this single, restrained effect.
-export default function AnimatedContent({ as: Tag = "div", children, className = "", ...props }) {
+export default function AnimatedContent({ as: Tag = "div", children, className = "", delay = 0, distance = 12, duration = 420, ...props }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -25,8 +25,8 @@ export default function AnimatedContent({ as: Tag = "div", children, className =
       observer.disconnect();
       if (preference.matches || element.contains(document.activeElement)) return;
       animation = element.animate(
-        [{ opacity: 0.35, transform: "translateY(12px)" }, { opacity: 1, transform: "none" }],
-        { duration: 420, easing: "cubic-bezier(0.2, 0.65, 0.3, 1)" },
+        [{ opacity: 0.35, transform: `translateY(${distance}px)` }, { opacity: 1, transform: "none" }],
+        { duration, delay, fill: "backwards", easing: "cubic-bezier(0.2, 0.65, 0.3, 1)" },
       );
     }, { threshold: 0.08 });
     // Content remains visible in SSR, without JS, and when reduced motion is set.
@@ -39,7 +39,7 @@ export default function AnimatedContent({ as: Tag = "div", children, className =
       element.removeEventListener("focusin", finish);
       preference.removeEventListener("change", finish);
     };
-  }, []);
+  }, [delay, distance, duration]);
 
   return <Tag ref={ref} className={className} data-animated-content="" {...props}>{children}</Tag>;
 }

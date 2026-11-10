@@ -15,7 +15,7 @@ const Page = (await import("../src/app/(sitio)/asistente/page.jsx")).default;
 const Widget = (await import("../src/components/ai/AssistantWidget.jsx")).default;
 test("HU22 full chat prerenders named log, labeled composer and safe loading state without browser APIs", () => {
   const html = renderToStaticMarkup(React.createElement(AssistantProvider, null, React.createElement(Page)));
-  assert.match(html, /Conversemos sobre Quilpué/); assert.match(html, /role="log"/); assert.match(html, /Tu pregunta/);
+  assert.match(html, /Descubre Quilpué/); assert.match(html, /Raíz Quilpué IA/); assert.match(html, /role="log"/); assert.match(html, /Tu pregunta/);
   assert.match(html, /maxlength="1200"/i); assert.match(html, /disabled/); assert.match(html, /No compartas datos personales/);
   assert.doesNotMatch(html, /QWEN|API_KEY|NEXT_PUBLIC|instrucciones|dangerouslySetInnerHTML/);
 });

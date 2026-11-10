@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { HelpCircle, Plus, Pencil, Trash2, Save, MessageCircle, BookOpen, Search, Settings2, CheckCircle2, LoaderCircle } from "lucide-react";
+import { HelpCircle, Plus, Pencil, Trash2, Save, MessageCircle, BookOpen, Search, Settings2, CheckCircle2, LoaderCircle, FlaskConical, ArrowUpRight } from "lucide-react";
+import { AssistantMark } from "@/components/ai/AssistantIdentity";
 import AnimatedContent from "@/components/motion/AnimatedContent";
 import AdminDialog from "@/components/admin/AdminDialog";
 import { AssistantProvider, aiRequest } from "@/components/ai/AssistantProvider";
@@ -74,46 +75,46 @@ export default function AIAdminPanel() {
     `${row.titulo} ${row.categoria} ${row.contenido}`.toLocaleLowerCase("es").includes(query.trim().toLocaleLowerCase("es")));
   return <section className="admin-page ai-admin min-w-0">
     <AnimatedContent as="header" className="ai-admin-header">
-      <div><p className="section-label mb-2">Información y comunidad</p><h1>Administrar IA</h1><p className="mt-3 max-w-2xl text-sm leading-7 text-[#7c5c47]">Dale una voz a Raíz Quilpué y organiza lo que el asistente comparte con los visitantes.</p></div>
-      <button type="button" className={buttonClass} onClick={() => setHelpOpen(true)} aria-haspopup="dialog" aria-label="Ayuda sobre Administrar IA"><HelpCircle size={18} aria-hidden="true" />Ayuda (?)</button>
+      <div><p className="ai-eyebrow"><AssistantMark /> Raíz Quilpué IA <span className="ai-experience-badge">Experiencia IA</span></p><h1>Administrar IA</h1><p className="ai-admin-intro">Una voz para el territorio. Configura la experiencia y enriquece lo que compartimos.</p></div>
+      <div className="ai-admin-header-actions">{config ? <span className={`ai-state${config.activo ? " is-active" : ""}`}>{config.activo ? "Activo" : "Inactivo"} · Formulario</span> : null}<button type="button" className={buttonClass} onClick={() => setHelpOpen(true)} aria-haspopup="dialog" aria-label="Ayuda sobre Administrar IA"><HelpCircle size={18} aria-hidden="true" />Ayuda (?)</button></div>
     </AnimatedContent>
     {error ? <p role="alert" className="mb-4 border border-[#bb9c82] p-4 text-sm text-[#8d3b28]">{error}</p> : null}
     {notice ? <p role="status" className="ai-admin-notice"><CheckCircle2 size={18} aria-hidden="true" />{notice}</p> : null}
     {loading ? <p role="status" className="ai-admin-loading"><LoaderCircle size={20} className="motion-safe:animate-spin" aria-hidden="true" />Cargando información del asistente…</p> : !config ? <p className="admin-empty">No se pudo cargar la administración. Recarga la página para intentarlo de nuevo.</p> : <>
-      <AnimatedContent className="ai-admin-overview">
-        <div><span className="ai-eyebrow">Estado del asistente</span><strong className={`ai-state${config.activo ? " is-active" : ""}`}>{config.activo ? "Activo" : "Inactivo"}</strong><small>Configuración del formulario · Guarda para aplicar</small></div>
-        <div><span className="ai-eyebrow">Conocimiento disponible</span><strong>{knowledge.filter((row) => row.activo).length}<small> / {knowledge.length} secciones activas</small></strong><small>Información que orienta las respuestas</small></div>
-        <div><span className="ai-eyebrow">Un espacio para explorar</span><strong className="ai-overview-title">La voz de nuestra comunidad</strong><small>Configura, comparte y prueba en un solo lugar</small></div>
-      </AnimatedContent>
+      <div className="ai-admin-overview">
+        <AnimatedContent className="ai-metric ai-metric-dark" distance={18}><span className="ai-metric-label"><MessageCircle size={17} aria-hidden="true" /> Estado del asistente</span><strong>{config.activo ? "Activo" : "Inactivo"}<span className="ai-metric-dot" aria-hidden="true" /></strong><small>Configuración del formulario · Guarda para aplicar</small></AnimatedContent>
+        <AnimatedContent className="ai-metric" delay={80} distance={18}><span className="ai-metric-label"><BookOpen size={17} aria-hidden="true" /> Biblioteca cultural</span><strong>{knowledge.length}<span>secciones</span></strong><small>{knowledge.filter((row) => row.activo).length} activas para orientar las respuestas</small></AnimatedContent>
+        <AnimatedContent className="ai-metric" delay={160} distance={18}><span className="ai-metric-label"><FlaskConical size={17} aria-hidden="true" /> Modo de esta versión</span><strong>Mock<span>demostración</span></strong><small>Proveedor de prueba · Sin IA externa conectada</small></AnimatedContent>
+      </div>
       <div className="ai-admin-workspace">
         <AnimatedContent as="form" className="ai-admin-card admin-form ai-config-form" onSubmit={saveConfig} aria-busy={busy}>
           <div className="ai-card-heading"><span className="ai-card-icon"><Settings2 size={20} aria-hidden="true" /></span><div><h2>Configuración</h2><p>Define cómo recibe y acompaña a los visitantes.</p></div></div>
           <label className="ai-activation"><input type="checkbox" checked={config.activo} disabled={busy} onChange={(event) => changeConfig("activo", event.target.checked)} /><span>Asistente activo<small>Permite conversar desde el portal</small></span></label>
-          {[{ key: "nombre", label: "Nombre del asistente", max: 80 }, { key: "mensaje_inicial", label: "Mensaje inicial", max: 600, multiline: true },
-            { key: "mensaje_desconocido", label: "Respuesta cuando no tiene información", max: 600, multiline: true },
-            { key: "instrucciones", label: "Comportamiento e indicaciones", max: 2000, multiline: true }].map((item) => <label key={item.key} className="block text-sm font-medium">{item.label}
+          {[{ title: "01 · Identidad y bienvenida", fields: [{ key: "nombre", label: "Nombre del asistente", max: 80 }, { key: "mensaje_inicial", label: "Mensaje inicial", max: 600, multiline: true }] },
+            { title: "02 · Respuestas y orientación", fields: [{ key: "mensaje_desconocido", label: "Respuesta cuando no tiene información", max: 600, multiline: true },
+              { key: "instrucciones", label: "Comportamiento e indicaciones", max: 2000, multiline: true }] }].map((group) => <fieldset key={group.title} className="ai-config-group"><legend>{group.title}</legend>{group.fields.map((item) => <label key={item.key} className="block text-sm font-medium">{item.label}
               {item.multiline ? <textarea className={fieldClass} name={item.key} rows={3} maxLength={item.max} required disabled={busy} value={config[item.key]} onChange={(event) => changeConfig(item.key, event.target.value)} />
                 : <input className={fieldClass} name={item.key} maxLength={item.max} required disabled={busy} value={config[item.key]} onChange={(event) => changeConfig(item.key, event.target.value)} />}
-            </label>)}
+            </label>)}</fieldset>)}
           <p className="text-xs leading-6 text-[#7c5c47]">Las respuestas actuales muestran la información disponible. Las indicaciones de comportamiento se conservarán para el asistente conectado.</p>
           <button type="submit" disabled={busy} className={buttonClass + " ai-primary"}><Save size={16} aria-hidden="true" />{busy ? "Guardando…" : "Guardar configuración"}</button>
         </AnimatedContent>
         <AnimatedContent as="section" className="ai-admin-preview" aria-labelledby={prefix + "-preview"}>
-          <h2 id={prefix + "-preview"} className="mb-2 flex items-center gap-2 font-serif text-xl"><MessageCircle size={20} aria-hidden="true" />Probar asistente</h2>
+          <div className="ai-preview-heading"><h2 id={prefix + "-preview"} className="flex items-center gap-2 font-serif text-xl"><MessageCircle size={20} aria-hidden="true" />Probar asistente</h2><span className="ai-experience-badge">Vista previa</span></div>
           <p className="mb-4 text-xs leading-6 text-[#7c5c47]">Prueba las respuestas con la configuración y las secciones guardadas. La conversación es temporal.</p>
           <AssistantProvider preview key={revision}><ChatPanel /></AssistantProvider>
         </AnimatedContent>
       </div>
       <AnimatedContent as="section" className="ai-admin-card ai-knowledge" aria-labelledby={prefix + "-knowledge"}>
         <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-          <div className="ai-card-heading"><span className="ai-card-icon"><BookOpen size={22} aria-hidden="true" /></span><div><h2 id={prefix + "-knowledge"}>Base de conocimiento</h2><p>Información pública y verificada para dar mejores respuestas. {knowledge.length}/200 secciones.</p></div></div>
+          <div className="ai-card-heading"><span className="ai-card-icon"><BookOpen size={22} aria-hidden="true" /></span><div><p className="ai-eyebrow">La memoria que compartimos</p><h2 id={prefix + "-knowledge"}>Base de conocimiento</h2><p>Una biblioteca viva de información pública y verificada. {knowledge.length}/200 secciones.</p></div></div>
           <button ref={addButton} type="button" disabled={busy || knowledge.length >= 200} className={buttonClass + " shrink-0"} onClick={() => edit({ ...empty, orden: Math.min(9999, knowledge.length ? Math.max(...knowledge.map((row) => row.orden)) + 1 : 0) })}><Plus size={17} aria-hidden="true" />Agregar sección</button>
         </div>
         {knowledge.length ? <div className="ai-knowledge-filters"><label className="ai-search"><Search size={18} aria-hidden="true" /><span className="sr-only">Buscar en la base de conocimiento</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por título, categoría o contenido…" /></label><label><span className="sr-only">Filtrar por estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className={fieldClass}><option value="all">Todos los estados</option><option value="active">Activas</option><option value="inactive">Inactivas</option></select></label><span aria-live="polite">{visibleKnowledge.length} secciones</span></div> : null}
         {!knowledge.length ? <div className="ai-knowledge-empty"><BookOpen size={30} aria-hidden="true" /><h3>El conocimiento comienza aquí</h3><p>Todavía no hay secciones. Agrega información sobre la corporación, visitas o preguntas frecuentes.</p></div> : !visibleKnowledge.length ? <p className="ai-knowledge-empty">No hay secciones que coincidan. Prueba otra búsqueda o cambia el estado.</p> : <ol className="ai-knowledge-list">
-          {visibleKnowledge.map((row) => <AnimatedContent as="li" key={row.id} className="ai-knowledge-item">
+          {visibleKnowledge.map((row, index) => <AnimatedContent as="li" key={row.id} delay={Math.min(index, 4) * 65} distance={16} className="ai-knowledge-item">
             <div className="min-w-0"><div className="ai-knowledge-meta"><span className="ai-category">{row.categoria}</span><span className={`ai-state${row.activo ? " is-active" : ""}`}>{row.activo ? "Activa" : "Inactiva"}</span><span>Orden {row.orden}</span></div><h3 className="mt-3 text-lg wrap-anywhere">{row.titulo}</h3><p className="mt-2 line-clamp-2 text-sm leading-6 wrap-anywhere text-[#7c5c47]">{row.contenido}</p></div>
-            <div className="flex shrink-0 items-start gap-2"><button type="button" className={buttonClass} disabled={busy} onClick={() => edit(row)} aria-label={`Editar ${row.titulo}`}><Pencil size={15} aria-hidden="true" />Editar</button><button type="button" className={buttonClass} disabled={busy} onClick={() => { setDialogError(""); setDeleting(row); }} aria-label={`Eliminar ${row.titulo}`}><Trash2 size={15} aria-hidden="true" />Eliminar</button></div>
+            <div className="ai-knowledge-actions"><button type="button" className={buttonClass} disabled={busy} onClick={() => edit(row)} aria-label={`Editar ${row.titulo}`}><Pencil size={15} aria-hidden="true" />Editar<ArrowUpRight size={14} aria-hidden="true" /></button><button type="button" className={buttonClass} disabled={busy} onClick={() => { setDialogError(""); setDeleting(row); }} aria-label={`Eliminar ${row.titulo}`}><Trash2 size={15} aria-hidden="true" />Eliminar</button></div>
           </AnimatedContent>)}
         </ol>}
       </AnimatedContent>
