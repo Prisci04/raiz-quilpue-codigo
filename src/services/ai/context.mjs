@@ -36,7 +36,7 @@ export function selectContext(message, documents, { limit = 5, budget = 3000 } =
 export async function retrieveContext(message, { knowledge, searchPublic }) {
   const terms = searchTerms(message);
   if (!terms.length) return { documents: [], partial: false };
-  const [editorial, publicResults] = await Promise.allSettled([knowledge(), searchPublic(terms)]);
+  const [editorial, publicResults] = await Promise.allSettled([knowledge(terms), searchPublic(terms)]);
   // An unavailable editorial repository must never silently bypass deactivation/config.
   if (editorial.status === "rejected") throw editorial.reason;
   return { documents: selectContext(message, [...editorial.value, ...(publicResults.status === "fulfilled" ? publicResults.value : [])]),

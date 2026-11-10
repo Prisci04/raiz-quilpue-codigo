@@ -21,7 +21,7 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
   try {
     hooks = await hu22Modules({
       "@/lib/auth/guard": "export async function requireGestorContenido(){return {user:{id:1},response:null}}",
-      "@/services/ai/repository": "export function getAIRepository(){return globalThis.__hu22Browser.store}export async function getAIConfig(){return getAIRepository().getConfig()}",
+      "@/services/ai/repository": "export function getAIRepository(){return globalThis.__hu22Browser.store}export async function getAIConfig(){return getAIRepository().getConfig()}export function getAIStorageMode(){return 'local'}",
       "@/services/ai/public-context": 'export async function searchPublicContext(){return [{titulo:"Visitas culturales",contenido:"Explora las actividades culturales del territorio.",href:"/actividades/1"}]}',
     });
     const { createLocalAIStore } = await import("../src/services/ai/local-store.mjs");
@@ -32,6 +32,7 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
       "/api/ia/chat": await import("../src/app/api/ia/chat/route.js"),
       "/api/ia/configuracion": await import("../src/app/api/ia/configuracion/route.js"),
       "/api/admin/ia/configuracion": await import("../src/app/api/admin/ia/configuracion/route.js"),
+      "/api/admin/ia/estado": await import("../src/app/api/admin/ia/estado/route.js"),
       "/api/admin/ia/conocimiento": await import("../src/app/api/admin/ia/conocimiento/route.js"),
       "/api/admin/ia/probar": await import("../src/app/api/admin/ia/probar/route.js"),
     };
@@ -50,6 +51,7 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
       .process(await readFile(join(root, "src/app/globals.css"), "utf8"), { from: join(root, "src/app/globals.css") });
     const styles = css.css + await readFile(join(root, "src/components/ai/assistant.css"), "utf8")
       + await readFile(join(root, "src/components/admin/admin-ui.css"), "utf8")
+      + await readFile(join(root, "src/components/footer/footer.css"), "utf8")
       + '@font-face{font-family:Raiz;src:url(/raiz.otf)}:root{--font-raiz-local:Raiz;--font-poppins:Arial}body{margin:0}';
     let failNext = false, apiSequence = 0, chatHold = null;
     server = createServer(async (req, res) => {
@@ -70,7 +72,11 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
         } else if (path === "/bundle.js") { res.setHeader("content-type", "text/javascript"); res.end(await readFile(join(temporary, "bundle.js"))); }
         else if (path === "/style.css") { res.setHeader("content-type", "text/css"); res.end(styles); }
         else if (path === "/raiz.otf") res.end(await readFile(join(root, "src/app/fonts/TipografiaRaiz-Regular.otf")));
-        else if (path.startsWith("/images/")) { res.statusCode = 404; res.end(); }
+        else if (path.startsWith("/images/")) {
+          const asset = resolve(root, "public", "." + decodeURIComponent(path));
+          assert.ok(asset.startsWith(resolve(root, "public") + "/") || asset.startsWith(resolve(root, "public") + "\\"));
+          res.setHeader("content-type", /\.png$/i.test(asset) ? "image/png" : "image/jpeg"); res.end(await readFile(asset));
+        }
         else { res.setHeader("content-type", "text/html; charset=utf-8"); res.end('<!doctype html><html lang="es"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><div id="app"></div><script defer src="/bundle.js"></script></html>'); }
       } catch { res.statusCode = 500; res.end("Fixture failure"); }
     });
@@ -112,6 +118,20 @@ test("HU22 Chromium: actual Admin CRUD, preview, public chat, shared widget, key
       await send("Emulation.setDeviceMetricsOverride", { width, height: 900, deviceScaleFactor: 1, mobile: width === 390 });
       await evaluate("window.qaNavigate('/');window.scrollTo(0,0)"); await pause(100);
       await capture("launcher", width);
+      await evaluate("document.querySelector('footer').scrollIntoView({block:'start'})");
+      await capture("footer", width);
+      assert.deepEqual(await evaluate("[...document.querySelectorAll('footer nav a')].map(a=>a.getAttribute('href'))"), ["/", "/quienes-somos", "/contenido", "/actividades", "/museo", "/asistente"]);
+      const overlaps = await evaluate("(()=>{const w=document.querySelector('.ai-widget-toggle').getBoundingClientRect();return [...document.querySelectorAll('footer a,footer button')].filter(e=>{const r=e.getBoundingClientRect();return !(r.bottom<=w.top||r.top>=w.bottom||r.right<=w.left||r.left>=w.right)}).map(e=>e.textContent)})()");
+      assert.deepEqual(overlaps, [], "Closed widget must not cover footer controls at " + width);
+      await evaluate("document.querySelector('footer nav a').focus({preventScroll:true})");
+      assert.ok(await evaluate("parseFloat(getComputedStyle(document.querySelector('footer nav a')).outlineWidth)>=2"));
+      await click('[aria-label="Abrir asistente"]');
+      await waitFor("Boolean(document.querySelector('.ai-widget-panel'))");
+      await capture("footer-widget", width);
+      await click('[aria-label="Cerrar asistente"]');
+      await waitFor("!document.querySelector('.ai-widget-panel')");
+      await evaluate("document.querySelector('.rev1-footer-top').click()");
+      await waitFor("scrollY<2");
       await click('[aria-label="Abrir asistente"]');
       await waitFor("document.activeElement.tagName==='TEXTAREA' && !document.activeElement.disabled");
       assert.equal(await evaluate("document.querySelector('.ai-widget .ai-identity-name').textContent"), "Raíz Quilpué IA");

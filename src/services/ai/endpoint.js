@@ -13,7 +13,7 @@ export async function handleChatRequest(request) {
   try {
     const result = await answerChat(await readAIBody(request, 20000), {
       getConfig: getAIConfig,
-      knowledge: () => getAIRepository().listKnowledge(),
+      knowledge: (terms) => { const repository = getAIRepository(); return repository.searchKnowledge ? repository.searchKnowledge(terms) : repository.listKnowledge(); },
       searchPublic: searchPublicContext,
       signal: request.signal,
     });

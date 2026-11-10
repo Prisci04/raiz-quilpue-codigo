@@ -11,17 +11,18 @@ export async function searchPublicContext(terms, client) {
   // Explicit public projections only. Museo uses the existing server-side approval filter.
   const specs = [
     { table: "actividades", columns: "id_actividad,titulo,descripcion,fecha,hora_inicio,estado_publicacion!inner(nombre_estado)", fields: ["titulo", "descripcion"],
-      generic: terms.some((term) => ["actividades", "eventos", "talleres"].includes(term)),
+      generic: terms.some((term) => ["actividad", "actividades", "evento", "eventos", "taller", "talleres"].includes(term)),
       filter: ["estado_publicacion.nombre_estado", "Publicada"], map: (row) => ({ titulo: row.titulo, categoria: "Actividades eventos talleres", contenido: `${row.descripcion || ""} Fecha: ${row.fecha}${row.hora_inicio ? " · " + row.hora_inicio : ""}. Consulta su ficha para confirmar los detalles.`, href: `/actividades/${row.id_actividad}`, tipo: "actividad" }) },
     { table: "contenidos", columns: "id_contenido,titulo,descripcion,resumen,estado_publicacion!inner(nombre_estado)", fields: ["titulo", "descripcion", "resumen"],
       filter: ["estado_publicacion.nombre_estado", "Publicada"], map: (row) => ({ titulo: row.titulo, contenido: row.resumen || row.descripcion || "", href: `/contenido/${row.id_contenido}`, tipo: "contenido" }) },
     // Mirror the existing public museo service; no contributor identity is selected.
     { table: "museo_aportes", columns: "id_aporte,titulo,descripcion,estado_revision!inner(nombre_estado_revision)", fields: ["titulo", "descripcion"],
       filter: ["estado_revision.nombre_estado_revision", "Aprobado"],
-      generic: terms.some((term) => ["museo", "colecciones", "piezas"].includes(term)),
-      map: (row) => ({ titulo: row.titulo, categoria: "Museo colecciones piezas", contenido: row.descripcion || "", href: "/museo", tipo: "museo" }) },
+      generic: terms.some((term) => ["museo", "colecciones", "piezas", "visitar", "visitas"].includes(term)),
+      map: (row) => ({ titulo: row.titulo, categoria: "Museo colecciones piezas visitas visitar", contenido: row.descripcion || "", href: "/museo", tipo: "museo" }) },
     { table: "lugar", columns: "id_lugar,nombre_lugar,direccion", fields: ["nombre_lugar", "direccion"],
-      map: (row) => ({ titulo: row.nombre_lugar, contenido: row.direccion || "", href: "/actividades", tipo: "lugar" }) },
+      generic: terms.some((term) => ["lugar", "lugares", "visitar", "visitas"].includes(term)),
+      map: (row) => ({ titulo: row.nombre_lugar, categoria: "Lugares visitas visitar", contenido: row.direccion || "", href: "/actividades", tipo: "lugar" }) },
   ];
   const results = await Promise.allSettled(specs.map(async (spec) => {
     // Terms contain alphanumerics only; no PostgREST operators can be injected.

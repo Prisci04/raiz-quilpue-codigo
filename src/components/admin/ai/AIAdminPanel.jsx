@@ -16,6 +16,7 @@ const help = "En esta sección puedes agregar, editar y organizar información q
 
 export default function AIAdminPanel() {
   const [config, setConfig] = useState(null);
+  const [runtime, setRuntime] = useState(null);
   const [knowledge, setKnowledge] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -32,8 +33,8 @@ export default function AIAdminPanel() {
   const addButton = useRef(null);
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all([aiRequest("/api/admin/ia/configuracion", { signal: controller.signal }), aiRequest("/api/admin/ia/conocimiento", { signal: controller.signal })])
-      .then(([value, sections]) => { setConfig(value); setKnowledge(sections); })
+    Promise.all([aiRequest("/api/admin/ia/configuracion", { signal: controller.signal }), aiRequest("/api/admin/ia/conocimiento", { signal: controller.signal }), aiRequest("/api/admin/ia/estado", { signal: controller.signal })])
+      .then(([value, sections, status]) => { setConfig(value); setKnowledge(sections); setRuntime(status); })
       .catch((failure) => { if (failure.name !== "AbortError") setError(failure.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
@@ -84,7 +85,7 @@ export default function AIAdminPanel() {
       <div className="ai-admin-overview">
         <AnimatedContent className="ai-metric ai-metric-dark" distance={18}><span className="ai-metric-label"><MessageCircle size={17} aria-hidden="true" /> Estado del asistente</span><strong>{config.activo ? "Activo" : "Inactivo"}<span className="ai-metric-dot" aria-hidden="true" /></strong><small>Configuración del formulario · Guarda para aplicar</small></AnimatedContent>
         <AnimatedContent className="ai-metric" delay={80} distance={18}><span className="ai-metric-label"><BookOpen size={17} aria-hidden="true" /> Biblioteca cultural</span><strong>{knowledge.length}<span>secciones</span></strong><small>{knowledge.filter((row) => row.activo).length} activas para orientar las respuestas</small></AnimatedContent>
-        <AnimatedContent className="ai-metric" delay={160} distance={18}><span className="ai-metric-label"><FlaskConical size={17} aria-hidden="true" /> Modo de esta versión</span><strong>Mock<span>demostración</span></strong><small>Proveedor de prueba · Sin IA externa conectada</small></AnimatedContent>
+        <AnimatedContent className="ai-metric" delay={160} distance={18}><span className="ai-metric-label"><FlaskConical size={17} aria-hidden="true" /> Proveedor</span><strong>{runtime?.provider === "qwen" ? "Qwen" : runtime?.provider === "mock" ? "Mock" : "Sin configurar"}<span>{runtime?.configured ? runtime.provider === "mock" ? "demostración" : "configurado" : "pendiente"}</span></strong><small>{runtime?.storage === "supabase" ? "Persistencia Supabase" : "Almacenamiento local de desarrollo"} · {runtime?.configured ? "Configuración disponible" : "Revisa las variables del servidor"}</small></AnimatedContent>
       </div>
       <div className="ai-admin-workspace">
         <AnimatedContent as="form" className="ai-admin-card admin-form ai-config-form" onSubmit={saveConfig} aria-busy={busy}>
@@ -96,7 +97,7 @@ export default function AIAdminPanel() {
               {item.multiline ? <textarea className={fieldClass} name={item.key} rows={3} maxLength={item.max} required disabled={busy} value={config[item.key]} onChange={(event) => changeConfig(item.key, event.target.value)} />
                 : <input className={fieldClass} name={item.key} maxLength={item.max} required disabled={busy} value={config[item.key]} onChange={(event) => changeConfig(item.key, event.target.value)} />}
             </label>)}</fieldset>)}
-          <p className="text-xs leading-6 text-[#7c5c47]">Las respuestas actuales muestran la información disponible. Las indicaciones de comportamiento se conservarán para el asistente conectado.</p>
+          <p className="text-xs leading-6 text-[#7c5c47]">{runtime?.provider === "qwen" ? "La IA usará las indicaciones guardadas junto al contexto público del portal." : "El modo Mock muestra fragmentos de la información disponible; las indicaciones se aplicarán al usar Qwen."} Los cambios se aplican al guardar.</p>
           <button type="submit" disabled={busy} className={buttonClass + " ai-primary"}><Save size={16} aria-hidden="true" />{busy ? "Guardando…" : "Guardar configuración"}</button>
         </AnimatedContent>
         <AnimatedContent as="section" className="ai-admin-preview" aria-labelledby={prefix + "-preview"}>

@@ -9,13 +9,14 @@ import { DEFAULT_AI_CONFIG } from "../src/lib/ai/contracts.mjs";
 const state = globalThis.__hu22 = { auth: 0, reads: 0, publicRows: [], fail: false };
 const hooks = await hu22Modules({
   "@/lib/auth/guard": `export async function requireGestorContenido(){const s=globalThis.__hu22;return {user:s.auth?null:{id:1},response:s.auth?Response.json({success:false},{status:s.auth}):null}}`,
-  "@/services/ai/repository": `export function getAIRepository(){const s=globalThis.__hu22;s.reads++;if(s.fail)throw new Error("server-secret-do-not-expose");return s.store;}export async function getAIConfig(){return getAIRepository().getConfig()}`,
+  "@/services/ai/repository": `export function getAIRepository(){const s=globalThis.__hu22;s.reads++;if(s.fail)throw new Error("server-secret-do-not-expose");return s.store;}export async function getAIConfig(){return getAIRepository().getConfig()}export function getAIStorageMode(){return 'local'}`,
   "@/services/ai/public-context": "export async function searchPublicContext(){return globalThis.__hu22.publicRows}",
   "@/lib/supabase/server": "export function getSupabaseServerClient(){throw new Error('No DB configured')}",
 });
 globalThis.fetch = async () => { throw new Error("Network disabled in HU22 tests"); };
 const { createLocalAIStore } = await import("../src/services/ai/local-store.mjs");
 const configRoute = await import("../src/app/api/admin/ia/configuracion/route.js");
+const statusRoute = await import("../src/app/api/admin/ia/estado/route.js");
 const collection = await import("../src/app/api/admin/ia/conocimiento/route.js");
 const detail = await import("../src/app/api/admin/ia/conocimiento/[id]/route.js");
 const chat = await import("../src/app/api/ia/chat/route.js");
@@ -40,7 +41,7 @@ const context = (id) => ({ params: Promise.resolve({ id }) });
 test("HU22 Admin denies unauthenticated and unrelated roles before reading body or repositories", async () => {
   for (const status of [401, 403]) {
     state.auth = status; state.reads = 0;
-    for (const [handler, method] of [[configRoute.GET, "GET"], [configRoute.PUT, "PUT"], [collection.GET, "GET"], [collection.POST, "POST"], [detail.PUT, "PUT"], [detail.DELETE, "DELETE"], [preview.POST, "POST"]]) {
+    for (const [handler, method] of [[statusRoute.GET, "GET"], [configRoute.GET, "GET"], [configRoute.PUT, "PUT"], [collection.GET, "GET"], [collection.POST, "POST"], [detail.PUT, "PUT"], [detail.DELETE, "DELETE"], [preview.POST, "POST"]]) {
       const response = await handler(request(method), context("invalid"));
       assert.equal(response.status, status); assert.equal(response.headers.get("cache-control"), "no-store");
     }
@@ -72,6 +73,8 @@ test("HU22 public configuration projection never reveals behavior instructions o
   assert.deepEqual(Object.keys(data), ["activo", "nombre", "mensaje_inicial"]);
   assert.doesNotMatch(JSON.stringify(data), /instrucciones|QWEN|API_KEY/);
   assert.equal(response.headers.get("cache-control"), "no-store");
+  const runtime = (await (await statusRoute.GET(request())).json()).data;
+  assert.deepEqual(runtime, { provider: "mock", configured: true, storage: "local" });
 });
 
 test("HU22 public and Admin preview share grounded backend, related links and inactive knowledge filtering", async () => {
@@ -124,6 +127,10 @@ test("HU22 public retrieval requests bounded public projections and publication 
   assert.equal(activityQuery.search, undefined, "Generic activity questions must not require the word actividades in every title");
   assert.equal(activityQuery.dateFilter[0], "fecha");
   assert.match(activityQuery.dateFilter[1], /^\d{4}-\d{2}-\d{2}$/);
+  queries.length = 0;
+  await searchPublicContext(["visitar"], client);
+  assert.equal(queries.find((query) => query.table === "lugar").search, undefined);
+  assert.equal(queries.find((query) => query.table === "museo_aportes").search, undefined);
 });
 
 test("HU22 Supabase adapter errors fail explicitly instead of simulating saves", async () => {
@@ -142,4 +149,8 @@ test("HU22 SQL 020 is a local RLS migration with no anonymous writes, no key fie
   assert.match(sql, /REVOKE ALL ON public.ia_configuracion, public.ia_conocimiento FROM PUBLIC, anon, authenticated/);
   assert.doesNotMatch(sql, /GRANT (?:INSERT|UPDATE|DELETE)[^;]*TO anon/i);
   assert.doesNotMatch(sql, /api_key|qw[e]?n_api|CREATE TABLE[^;]*conversacion/i);
+  assert.match(sql, /pg_advisory_xact_lock/);
+  assert.match(sql, /BEFORE INSERT ON public.ia_conocimiento/);
+  assert.match(sql, /ON CONFLICT \(id\) DO NOTHING/);
+  assert.match(sql, /NOTIFY pgrst, 'reload schema'/);
 });

@@ -182,7 +182,9 @@ const hooks = registerHooks({
     if (url.startsWith("security-mock:")) return { format: "module", source: mocks.get(url.slice(14)), shortCircuit: true };
     if (url.startsWith("security-component:")) return { format: "module", source: "export default function Component() { return null; } export const AdminBarChart = Component, AdminDonutChart = Component, AdminLineChart = Component;", shortCircuit: true };
     if (url.startsWith("security-service:")) {
-      const path = resolve(root, "src", url.slice("security-service:@/".length) + ".js");
+      const base = resolve(root, "src", url.slice("security-service:@/".length));
+      const path = [base, base + ".js", base + ".mjs"].find(existsSync);
+      assert.ok(path, "Service fixture must resolve the actual source: " + base);
       const names = [...readFileSync(path, "utf8").matchAll(/export (?:async )?function (\w+)/g)].map((match) => match[1]);
       return { format: "module", source: names.map((name) => `export async function ${name}() { return globalThis.__rqSecurityTest.load('${name}'); }`).join("\n"), shortCircuit: true };
     }

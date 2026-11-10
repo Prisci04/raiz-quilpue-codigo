@@ -26,6 +26,22 @@ CREATE TABLE IF NOT EXISTS public.ia_conocimiento (
 );
 CREATE INDEX IF NOT EXISTS ia_conocimiento_activo_orden_idx ON public.ia_conocimiento (activo, orden);
 
+-- Serializa el alta para respetar el máximo incluso con varios procesos Vercel.
+CREATE OR REPLACE FUNCTION public.ia_limitar_conocimiento()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path = '' AS $$
+BEGIN
+  PERFORM pg_catalog.pg_advisory_xact_lock(220020);
+  IF (SELECT COUNT(*) FROM public.ia_conocimiento) >= 200 THEN
+    RAISE EXCEPTION 'KNOWLEDGE_LIMIT' USING ERRCODE = 'P0001';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.ia_limitar_conocimiento() FROM PUBLIC;
+DROP TRIGGER IF EXISTS ia_conocimiento_limite ON public.ia_conocimiento;
+CREATE TRIGGER ia_conocimiento_limite BEFORE INSERT ON public.ia_conocimiento
+  FOR EACH ROW EXECUTE FUNCTION public.ia_limitar_conocimiento();
+
 CREATE OR REPLACE FUNCTION public.ia_actualizar_fecha()
 RETURNS TRIGGER LANGUAGE plpgsql SET search_path = '' AS $$
 BEGIN
@@ -44,6 +60,8 @@ CREATE TRIGGER ia_conocimiento_fecha BEFORE UPDATE ON public.ia_conocimiento
 ALTER TABLE public.ia_configuracion ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ia_conocimiento ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.ia_configuracion, public.ia_conocimiento FROM PUBLIC, anon, authenticated;
+-- Acotar también los privilegios por defecto del rol de servicio en Supabase.
+REVOKE ALL ON public.ia_configuracion, public.ia_conocimiento FROM service_role;
 GRANT SELECT, UPDATE ON public.ia_configuracion TO service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.ia_conocimiento TO service_role;
 GRANT SELECT ON public.ia_conocimiento TO anon;
@@ -59,8 +77,4 @@ ON CONFLICT (id) DO NOTHING;
 NOTIFY pgrst, 'reload schema';
 COMMIT;
 
-/* Reversión manual, solo tras respaldar la información editorial:
-   DROP TABLE public.ia_conocimiento;
-   DROP TABLE public.ia_configuracion;
-   DROP FUNCTION public.ia_actualizar_fecha();
-*/
+-- Verificación manual de solo lectura: 020_verificacion_asistente_ia.sql.

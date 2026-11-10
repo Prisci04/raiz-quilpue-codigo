@@ -27,7 +27,11 @@ export async function readAIBody(request, maxBytes = 12000) {
 export async function runAI(operation) {
   try { return noStore(await operation()); }
   catch (error) {
-    if (error instanceof AIError) return noStore(jsonError(error.status, error.code, error.message));
+    if (error instanceof AIError) {
+      const response = noStore(jsonError(error.status, error.code, error.message));
+      if (error.status === 429) response.headers.set("Retry-After", "60");
+      return response;
+    }
     // Never log queries, bodies, credentials or provider/DB error objects.
     return noStore(jsonError(503, "AI_UNAVAILABLE", "No pudimos atender la consulta. Inténtalo de nuevo más tarde."));
   }

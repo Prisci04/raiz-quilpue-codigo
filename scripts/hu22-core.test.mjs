@@ -70,11 +70,12 @@ test("HU22 relevant context excludes inactive/unrelated rows, strips HTML, bound
   assert.equal(partial.documents.length, 1); assert.equal(partial.partial, true);
 });
 
-test("HU22 mock is grounded, unknown answer is configurable and Qwen never fetches even with a configured key", async () => {
+test("HU22 mock stays grounded and Qwen without valid configuration fails before any network request", async () => {
   assert.equal(readQwenServerConfig({}).configured, false);
   assert.equal(readQwenServerConfig({ QWEN_API_KEY: "test", QWEN_MODEL: "future", QWEN_BASE_URL: "http://no-network.test" }).configured, false);
-  assert.equal(readQwenServerConfig({ QWEN_API_KEY: "test", QWEN_MODEL: "future", QWEN_BASE_URL: "https://no-network.test/v1" }).configured, true);
-  for (const env of [{}, { AI_PROVIDER: "qwen" }, { AI_PROVIDER: "qwen", QWEN_API_KEY: "not-a-real-key", QWEN_BASE_URL: "https://no-network.test", QWEN_MODEL: "future" }]) {
+  assert.equal(readQwenServerConfig({ QWEN_API_KEY: "test", QWEN_MODEL: "future", QWEN_BASE_URL: "https://no-network.test/v1" }).configured, false);
+  await assert.rejects(() => getAIProvider({ AI_PROVIDER: "qwen" }).respond({}), (error) => error.code === "AI_PROVIDER_NOT_CONFIGURED");
+  for (const env of [{}, { AI_PROVIDER: "mock", QWEN_API_KEY: "test-only-unused" }]) {
     const provider = getAIProvider(env);
     const result = await provider.respond({ config: DEFAULT_AI_CONFIG, context: [{ titulo: "Visitas", contenido: section.contenido, href: "/actividades" }] });
     assert.match(result.answer, /se coordinan/); assert.equal(result.mode, "mock"); assert.equal(result.sources[0].href, "/actividades");
