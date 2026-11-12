@@ -45,6 +45,7 @@ test("visual browser: public/admin pages at 1440/1024/390, keyboard, motion pref
     const css = await require("postcss")([require("@tailwindcss/postcss")({ base: root })])
       .process(await readFile(join(root, "src/app/globals.css"), "utf8"), { from: join(root, "src/app/globals.css") });
     const styles = css.css + await readFile(join(root, "src/components/admin/admin-ui.css"), "utf8")
+      + await readFile(join(root, "src/components/home/home-rev1.css"), "utf8")
       + await readFile(join(root, "src/components/footer/footer.css"), "utf8")
       + '@font-face{font-family:Raiz;src:url(/raiz.otf)}:root{--font-raiz-local:Raiz;--font-poppins:Arial}body{margin:0}';
     server = createServer(async (req, res) => {

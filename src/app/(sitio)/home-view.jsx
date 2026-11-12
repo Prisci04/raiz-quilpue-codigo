@@ -4,10 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Pause, Play, Search } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Leaf, MapPin, Pause, Play, Search, Sparkles } from "lucide-react";
 import AnimatedContent from "@/components/motion/AnimatedContent";
 import ActivityCard from "@/components/actividades/ActivityCard";
 import AccessSection from "@/components/home/AccessSection";
+import "@/components/home/home-rev1.css";
 
 const fallbackImage = "/images/inicio/imageninicio.jpg";
 
@@ -15,7 +16,7 @@ const heroSlides = [
   {
     // CAMBIAR IMAGEN AQUÍ: agrega aquí la primera foto histórica del inicio.
     image: "/images/inicio/imagen-carrusel1.jpg",
-    caption: "Calle comercial de Quilpué",
+    caption: "Encuentro musical en Quilpué",
   },
   {
     // CAMBIAR IMAGEN AQUÍ: agrega aquí la segunda foto histórica del inicio.
@@ -62,7 +63,6 @@ export default function HomeView({ contents = [], activities = [] }) {
     event.preventDefault();
     const term = search.trim().toLowerCase();
     if (!term) return;
-
     if (term.includes("actividad") || term.includes("taller") || term.includes("evento")) {
       router.push("/actividades");
       return;
@@ -75,207 +75,96 @@ export default function HomeView({ contents = [], activities = [] }) {
   }
 
   return (
-    <div>
-      <section className="relative flex h-screen min-h-[600px] items-end overflow-hidden pb-20">
-        {heroSlides.map((item, index) => (
-          <div
-            key={item.caption}
-            className="absolute inset-0 transition-opacity duration-1000"
-            style={{ opacity: slide === index ? 1 : 0 }}
-          >
-            <Image
-              src={item.image}
-              alt={item.caption}
-              fill
-              priority={index === 0}
-              sizes="100vw"
-              className="object-cover"
-              style={{ filter: "sepia(20%) contrast(1.05) brightness(0.85)" }}
-              unoptimized={item.image.startsWith("/")}
-            />
+    <main className="rev1-home">
+      <section className="home-hero" aria-labelledby="home-hero-title">
+        <div className="home-hero-inner">
+          <div className="home-hero-copy">
+            <AnimatedContent className="home-eyebrow" distance={18}><Leaf size={16} aria-hidden="true" /> Cultura · Memoria · Territorio</AnimatedContent>
+            <AnimatedContent as="h1" id="home-hero-title" delay={100} distance={24} duration={560}>Historias que <em>dan forma</em> a Quilpué<span aria-hidden="true">.</span></AnimatedContent>
+            <AnimatedContent as="p" className="home-hero-description" delay={180}>Un espacio donde las historias mantienen vivas nuestras raíces.</AnimatedContent>
+            <AnimatedContent className="home-hero-actions" delay={240}>
+              <Link className="home-button home-button-dark" href="/museo">Explorar museo<ArrowUpRight size={18} aria-hidden="true" /></Link>
+              <Link className="home-text-link" href="/actividades">Conocer actividades<ArrowUpRight size={17} aria-hidden="true" /></Link>
+            </AnimatedContent>
+            <AnimatedContent delay={280} className="home-search-area">
+              <form onSubmit={handleSearch} className="home-search" role="search">
+                <label htmlFor="home-patrimonio-search" className="sr-only">Buscar en el patrimonio de Quilpué</label>
+                <Search size={17} aria-hidden="true" />
+                <input id="home-patrimonio-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="¿Qué historia quieres descubrir?" />
+                <button type="submit" aria-label="Buscar"><ArrowUpRight size={21} aria-hidden="true" /></button>
+              </form>
+              <p>Historias, patrimonio y encuentros de nuestro territorio.</p>
+            </AnimatedContent>
           </div>
-        ))}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(to bottom, rgba(148,101,65,0.35) 0%, rgba(148,101,65,0.25) 40%, rgba(112,74,49,0.78) 100%)",
-          }}
-        />
-        <div className="absolute right-6 bottom-4 font-mono text-[9px] tracking-wide text-[#e7dcd2]/55">
-          {heroSlides[slide].caption}
-        </div>
-        <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 gap-2">
-          {heroSlides.map((item, index) => (
-            <button
-              key={item.caption}
-              type="button"
-              aria-label={`Ver imagen ${index + 1}`}
-              aria-pressed={slide === index}
-              onClick={() => setSlide(index)}
-              className="flex min-h-11 w-8 items-center justify-center text-[#ffdf90]"
-            >
-              <span className="h-px w-5" style={{ background: slide === index ? "var(--accent)" : "rgba(231,220,210,0.35)" }} />
-            </button>
-          ))}
-          <button type="button" aria-label={paused ? "Reanudar imágenes" : "Pausar imágenes"}
-            aria-pressed={paused} onClick={() => setPaused((value) => !value)}
-            className="flex min-h-11 w-11 items-center justify-center text-[#ffdf90] motion-reduce:hidden">
-            {paused ? <Play size={15} aria-hidden="true" /> : <Pause size={15} aria-hidden="true" />}
-          </button>
-        </div>
-
-        <div className="relative mx-auto w-full max-w-7xl px-6">
-          <div className="max-w-2xl">
-            <div className="section-label mb-4">Museo Digital · Quilpué, Chile</div>
-            <h1 className="mb-6 font-serif text-5xl leading-[1.07] font-light text-white md:text-7xl">
-              Historias que
-              <br />
-              <em className="text-[#e48d40]">dan forma</em>
-              <br />
-              a Quilpué
-            </h1>
-            <p className="mb-8 max-w-xl text-base leading-relaxed text-[#e7dcd2]/85 md:text-lg">
-              Un espacio donde las historias mantienen vivas nuestras raíces.  
-
-            </p>
-            <form onSubmit={handleSearch} className="flex max-w-lg">
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar en el patrimonio de Quilpué..."
-                aria-label="Buscar en el patrimonio de Quilpué"
-                className="min-w-0 flex-1 px-4 py-3 text-sm"
-                style={{ background: "rgba(231,220,210,0.94)", color: "var(--foreground)" }}
-              />
-              <button type="submit" className="btn-primary px-5" aria-label="Buscar">
-                <Search size={16} strokeWidth={2} aria-hidden="true" />
-              </button>
-            </form>
-          </div>
-          <div className="mt-10 grid max-w-3xl grid-cols-2 gap-px md:grid-cols-4">
-            {[{ label: "Comienzo", value: "2026" }, { label: "Años de historia", value: "1" }, { label: "Actividades 2026", value: String(activities.length) }, { label: "Contenidos publicados", value: String(contents.length) }].map((stat) => (
-              <div key={stat.label} className="px-4 py-3" style={{ background: "rgba(148,101,65,0.65)", backdropFilter: "blur(4px)" }}>
-                <div className="font-serif text-2xl font-bold text-white">{stat.value}</div>
-                <div className="mt-0.5 font-mono text-[9px] tracking-wide text-[#e7dcd2]/55 uppercase">{stat.label}</div>
+          <AnimatedContent className="home-hero-gallery" delay={100} distance={18} duration={600}>
+            <div className="home-hero-photo">
+              {heroSlides.map((item, index) => <div key={item.caption} className="home-slide" aria-hidden={slide !== index} style={{ opacity: slide === index ? 1 : 0 }}>
+                <Image src={item.image} alt={item.caption} fill priority={index === 0} sizes="(max-width: 700px) 100vw, 55vw" className="home-slide-image" unoptimized={item.image.startsWith("/")} />
+              </div>)}
+              <div className="home-photo-shade" aria-hidden="true" />
+              <span className="home-photo-label"><MapPin size={14} aria-hidden="true" /> Quilpué, Chile</span>
+              <div className="home-photo-caption"><span>Una mirada a nuestro territorio</span><p>{heroSlides[slide].caption}</p></div>
+            </div>
+            <div className="home-gallery-controls">
+              <span className="home-slide-number" aria-hidden="true">0{slide + 1}<small> / 0{heroSlides.length}</small></span>
+              <div className="home-slide-buttons">
+                {heroSlides.map((item, index) => <button key={item.caption} type="button" aria-label={"Ver imagen " + (index + 1)} aria-pressed={slide === index} onClick={() => setSlide(index)}><span /></button>)}
+                <button type="button" aria-label={paused ? "Reanudar imágenes" : "Pausar imágenes"} aria-pressed={paused} onClick={() => setPaused((value) => !value)} className="home-pause">{paused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}</button>
               </div>
-            ))}
-          </div>
+            </div>
+          </AnimatedContent>
+        </div>
+        <div className="home-hero-foot"><a href="#home-comunidad">Encuentra nuestras raíces<ArrowDown size={15} aria-hidden="true" /></a><span>Museo Digital · Quilpué, Chile</span></div>
+      </section>
+
+      <div className="home-stats" aria-label="Raíz Quilpué en cifras"><div className="home-container home-stats-inner">
+        {[{ label: "Comienzo", value: "2026" }, { label: "Años de historia", value: "1" }, { label: "Actividades publicadas", value: String(activities.length) }, { label: "Contenidos publicados", value: String(contents.length) }].map((stat, index) => <AnimatedContent key={stat.label} delay={index * 65} className="home-stat"><strong>{stat.value}</strong><span>{stat.label}</span></AnimatedContent>)}
+      </div></div>
+
+      <section className="home-about home-container" id="home-comunidad" aria-labelledby="home-about-heading">
+        <AnimatedContent className="home-about-gallery" distance={20}>
+          <figure><Image src="/images/inicio/imgini5.jpg" alt="Comunidad de Raíz Quilpué en el Centro Cultural Daniel de la Vega" fill sizes="(max-width: 700px) 65vw, 35vw" className="home-image" unoptimized /></figure>
+          <figure><Image src="/images/inicio/imgini6.jpg" alt="¿Qué significa Quilpué para ti? Una invitación a compartir recuerdos" fill sizes="(max-width: 700px) 35vw, 20vw" className="home-image" unoptimized /></figure>
+          <figure><Image src="/images/inicio/imgini8.jpg" alt="Participación de la comunidad en una actividad de memoria local" fill sizes="(max-width: 700px) 35vw, 20vw" className="home-image" unoptimized /></figure>
+          <p className="home-gallery-caption">Historias, saberes y personas que nos conectan.</p>
+        </AnimatedContent>
+        <div className="home-about-copy">
+          <AnimatedContent as="p" className="home-eyebrow">01 / Nuestras raíces</AnimatedContent>
+          <AnimatedContent as="h2" id="home-about-heading" delay={70}>La memoria se construye <em>en comunidad.</em></AnimatedContent>
+          <AnimatedContent delay={130}><p className="home-about-lead">Raíz Quilpué es una corporación cultural e histórica.</p><p>Somos un espacio para encontrarnos con las historias, saberes, lugares, personas y expresiones que forman parte de nuestra identidad local, conectando el patrimonio con la comunidad y el territorio.</p><p>Dedicada a investigar, rescatar, difundir y construir participativamente la memoria histórica y cultural de Quilpué.</p></AnimatedContent>
+          <Link href="/quienes-somos" className="home-text-link">Conocer más<ArrowUpRight size={18} aria-hidden="true" /></Link>
         </div>
       </section>
 
-      <AnimatedContent as="section" className="bg-[#bb9c82]/25 px-6 py-16">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
-          <div>
-            <div className="section-label mb-3">¿Qué es Raíz Quilpué?</div>
-            <h2 className="mb-5 font-serif text-4xl leading-tight font-semibold text-[#946541]">Raíz Quilpué es una corporación cultural e histórica</h2>
-            <p className="mb-4 text-base leading-relaxed text-[#946541]">Somos un espacio para encontrarnos con las historias, saberes, lugares, personas y expresiones que forman parte de nuestra identidad local, conectando el patrimonio con la comunidad y el territorio.</p>
-            <p className="mb-6 text-base leading-relaxed text-[#946541]">Dedicada a investigar, rescatar, difundir y construir participativamente la memoria histórica y cultural de Quilpué.</p>
-            <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={() => router.push("/quienes-somos")} className="btn-primary px-4 py-3">Conocer más</button>
-              <button type="button" onClick={() => router.push("/museo")} className="btn-outline px-4 py-3">Explorar museo</button>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {/* CAMBIAR IMAGEN AQUÍ: reemplaza este placeholder por una foto histórica de inicio. */}
-            <Image src={"/images/inicio/imgini5.jpg"} alt="Patrimonio de Quilpué" width={800} height={600} className="aspect-[4/3] w-full object-cover" unoptimized />
-            {/* CAMBIAR IMAGEN AQUÍ: agrega aquí otra foto histórica. */}
-            <Image src={"/images/inicio/imgini6.jpg"} alt="Historia de Quilpué" width={800} height={600} className="mt-6 aspect-[4/3] w-full object-cover" unoptimized />
-            {/* CAMBIAR IMAGEN AQUÍ: agrega aquí una imagen panorámica de Quilpué. */}
-            <Image src={"/images/inicio/imgini8.jpg"} alt="Paisaje de Quilpué" width={1200} height={450} className="col-span-2 aspect-[16/6] w-full object-cover" unoptimized />
-          </div>
-        </div>
-      </AnimatedContent>
-
       <AccessSection contents={contents} activities={activities} />
 
-      <AnimatedContent as="section" className="bg-[#bb9c82]/25 px-6 py-16">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <div className="section-label mb-1">Publicaciones recientes</div>
-              <h2 className="font-serif text-3xl font-semibold text-[#946541]">
-                Últimos contenidos
-              </h2>
-            </div>
-            <Link href="/contenido" className="btn-outline hidden px-3 py-2 md:flex">
-              Ver todos
-            </Link>
-          </div>
-          {contents.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {contents.slice(0, 3).map((item) => (
-                <ContentCard key={item.id} item={item} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-[#946541]">Aún no hay contenidos publicados.</p>
-          )}
-        </div>
-      </AnimatedContent>
+      <section className="home-journal home-container" aria-labelledby="home-journal-heading">
+        <div className="home-section-heading"><AnimatedContent><p className="home-eyebrow">03 / Publicaciones recientes</p><h2 id="home-journal-heading">Historias para <em>seguir descubriendo.</em></h2><p>Últimos contenidos de nuestro territorio.</p></AnimatedContent><Link href="/contenido" className="home-text-link">Ver todos los contenidos<ArrowUpRight size={18} aria-hidden="true" /></Link></div>
+        {contents.length ? <div className={"home-story-grid" + (contents.length > 1 ? " has-featured" : "")}>
+          {contents.slice(0, 3).map((item, index) => <AnimatedContent as="article" key={item.id} className={index === 0 ? "home-story home-story-lead" : "home-story"} delay={index * 80} distance={18}><ContentCard item={item} featured={index === 0} /></AnimatedContent>)}
+        </div> : <div className="home-empty"><p>Aún no hay contenidos publicados.</p><Link href="/contenido" className="home-text-link">Explorar contenidos<ArrowUpRight size={17} aria-hidden="true" /></Link></div>}
+      </section>
 
-      <AnimatedContent as="section" className="mx-auto max-w-7xl px-6 py-16">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <div className="section-label mb-1">Encuentros y experiencias</div>
-            <h2 className="font-serif text-3xl font-semibold text-[#946541]">
-              Actividades recientes
-            </h2>
-          </div>
-          <Link href="/actividades" className="btn-outline hidden px-3 py-2 md:flex">
-            Ver todas
-          </Link>
-        </div>
-        {activities.length > 0 ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {activities.slice(0, 3).map((activity) => (
-              <ActivityCard key={activity.id} activity={activity} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-[#946541]">Aún no hay actividades publicadas.</p>
-        )}
-      </AnimatedContent>
+      <section className="home-activities" aria-labelledby="home-activities-heading"><div className="home-container">
+        <div className="home-section-heading"><AnimatedContent><p className="home-eyebrow">04 / Encuentros y experiencias</p><h2 id="home-activities-heading">La cultura <em>se vive.</em></h2><p>Actividades recientes para encontrarnos con nuestra comunidad.</p></AnimatedContent><Link href="/actividades" className="home-text-link">Ver todas las actividades<ArrowUpRight size={18} aria-hidden="true" /></Link></div>
+        {activities.length ? <div className={"home-activity-grid" + (activities.length >= 3 ? " has-featured" : "")}>
+          {activities.slice(0, 3).map((activity, index) => <AnimatedContent as="article" key={activity.id} className="home-activity-card" delay={index * 80} distance={18}><ActivityCard activity={activity} headingAs="h3" /></AnimatedContent>)}
+        </div> : <div className="home-empty"><p>Aún no hay actividades publicadas.</p><Link href="/actividades" className="home-text-link">Explorar actividades<ArrowUpRight size={17} aria-hidden="true" /></Link></div>}
+      </div></section>
 
-    </div>
+      <section className="home-assistant home-container" aria-labelledby="home-assistant-heading"><AnimatedContent className="home-assistant-inner">
+        <div className="home-assistant-mark" aria-hidden="true"><Leaf size={35} strokeWidth={1.2} /><Sparkles size={16} /></div>
+        <div><p className="home-eyebrow">Raíz Quilpué IA</p><h2 id="home-assistant-heading">Descubre Quilpué conversando.</h2><p>Una pregunta puede ser el comienzo de un nuevo encuentro con nuestras raíces.</p></div>
+        <Link href="/asistente" className="home-text-link">Iniciar conversación<ArrowUpRight size={19} aria-hidden="true" /></Link>
+      </AnimatedContent></section>
+    </main>
   );
 }
 
-function ContentCard({ item }) {
+function ContentCard({ item, featured }) {
   const image = item.image || fallbackImage;
-
-  return (
-    <Link
-      href={`/contenido/${item.id}`}
-      className="museum-card group block border text-left"
-      style={{ background: "var(--card)", borderColor: "var(--border)" }}
-    >
-      <div className="relative aspect-video overflow-hidden">
-        <Image
-          src={image}
-          alt={item.title}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          unoptimized={image.startsWith("/")}
-        />
-      </div>
-      <div className="p-5">
-        <div className="mb-2 flex items-center gap-2">
-          <span className="bg-[#ffdf90] px-2 py-0.5 font-mono text-[9px] text-[#946541] uppercase">
-            {item.tipo}
-          </span>
-          <span className="font-mono text-[9px] text-[#946541]">
-            {formatDate(item.date || item.createdAt)}
-          </span>
-        </div>
-        <h3 className="mb-2 font-serif text-xl leading-snug font-semibold text-[#946541]">
-          {item.title}
-        </h3>
-        <p className="line-clamp-2 text-sm leading-relaxed text-[#946541]">
-          {item.description}
-        </p>
-      </div>
-    </Link>
-  );
+  return <Link href={"/contenido/" + item.id} className="home-story-link interactive-card">
+    <div className="home-story-image"><Image src={image} alt={item.title} fill sizes={featured ? "(max-width: 700px) 100vw, 55vw" : "(max-width: 700px) 35vw, 20vw"} className="home-image" unoptimized={image.startsWith("/")} /><span aria-hidden="true"><ArrowUpRight size={22} /></span></div>
+    <div className="home-story-copy"><div className="home-story-meta"><span>{item.tipo}</span><time>{formatDate(item.date || item.createdAt)}</time></div><h3>{item.title}</h3><p>{item.description}</p><span className="home-story-cta">Leer historia<ArrowUpRight size={16} aria-hidden="true" /></span></div>
+  </Link>;
 }

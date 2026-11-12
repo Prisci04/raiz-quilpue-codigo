@@ -48,7 +48,7 @@ function cuposText(activity) {
   return `${activity.cupos} ${activity.cupos === 1 ? "cupo" : "cupos"}`;
 }
 
-export default function ActivityCard({ activity }) {
+export default function ActivityCard({ activity, headingAs: Heading = "h2" }) {
   const modalidad = activity.modalidad ? labelModalidad(activity.modalidad) : null;
 
   return (
@@ -82,9 +82,9 @@ export default function ActivityCard({ activity }) {
       </div>
 
       <div className="flex flex-1 flex-col px-4 pt-3 pb-4">
-        <h2 className="font-serif text-[1.2rem] leading-snug font-medium text-[#5c331c] sm:text-[1.35rem]">
+        <Heading className="font-serif text-[1.2rem] leading-snug font-medium text-[#5c331c] sm:text-[1.35rem]">
           {activity.titulo}
-        </h2>
+        </Heading>
 
         <ul className="mt-3 space-y-1.5 text-[13px] text-[#5c4638]">
           <li className="flex items-start gap-2">

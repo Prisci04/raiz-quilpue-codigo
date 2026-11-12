@@ -14,7 +14,7 @@ export const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 
 export async function bundleFixture(root, temporary, entry) {
   await writeFile(join(temporary, "entry.jsx"), entry);
-  await writeFile(join(temporary, "navigation.js"), 'export function usePathname(){return window.qaPath||"/";}export function useRouter(){return {push(){},replace(){},refresh(){},prefetch(){}};}');
+  await writeFile(join(temporary, "navigation.js"), 'export function usePathname(){return window.qaPath||"/";}export function useRouter(){return {push(path){window.qaNavigation=path;},replace(){},refresh(){},prefetch(){}};}');
   await writeFile(join(temporary, "link.jsx"), 'import React from "react";export default function Link({children,...props}){return <a {...props}>{children}</a>;}');
   await writeFile(join(temporary, "image.jsx"), 'import React from "react";export default function Image({fill,priority,unoptimized,sizes,...props}){return <img {...props} style={{...props.style,...(fill?{position:"absolute",width:"100%",height:"100%",inset:0}:{})}}/>;}');
   await writeFile(join(temporary, "loader.cjs"), 'const swc=require(' + JSON.stringify(require.resolve("next/dist/build/swc")) + ');module.exports=async function(source){await swc.loadBindings();return swc.transformSync(source,{jsc:{parser:{syntax:"ecmascript",jsx:true},transform:{react:{runtime:"automatic"}}},module:{type:"es6"}}).code;};');
