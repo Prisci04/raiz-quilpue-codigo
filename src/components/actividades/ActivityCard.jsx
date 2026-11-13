@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Calendar, Clock, MapPin } from "lucide-react";
-import { esParticipacionInscripcion, labelModalidad } from "@/lib/actividades";
+import { esParticipacionInscripcion, labelLugarActividad, labelModalidad } from "@/lib/actividades";
 
 function formatLongDate(dateString) {
   if (!dateString) return "Fecha pendiente";
@@ -97,7 +97,7 @@ export default function ActivityCard({ activity }) {
           </li>
           <li className="flex items-start gap-2">
             <MapPin size={15} strokeWidth={1.7} className="mt-0.5 shrink-0" aria-hidden="true" />
-            <span>{activity.lugar || "Lugar pendiente"}</span>
+            <span>{labelLugarActividad(activity)}</span>
           </li>
         </ul>
 

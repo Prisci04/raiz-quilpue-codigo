@@ -93,8 +93,15 @@ export function parseActividadInput(input, catalogos = {}) {
   const publico = parseCatalogoId(input.id_publico, catalogos.publico_objetivo, "El público objetivo");
   if (!publico.ok) return publico;
 
-  const lugar = parseCatalogoId(input.id_lugar, catalogos.lugares, "El lugar");
-  if (!lugar.ok) return fail("Indica el lugar de la actividad.");
+  const comuna = parseCatalogoId(input.id_comuna, catalogos.comuna, "La comuna");
+  if (!comuna.ok) return fail("Indica la comuna de la actividad.");
+
+  const direccion = text(input.lugar_direccion ?? input.direccion, 250, { required: true });
+  if (!direccion) return fail("Indica la dirección de la actividad.");
+
+  const nombreLugar =
+    text(input.lugar_nombre ?? input.nombre_lugar, 150) || direccion.slice(0, 150);
+  const googlePlaceId = text(input.google_place_id, 255);
 
   const participacion = parseOptionalCatalogoId(
     input.id_tipo_participacion,
@@ -167,7 +174,12 @@ export function parseActividadInput(input, catalogos = {}) {
       fecha,
       hora_inicio: horaInicio,
       hora_fin: horaFin,
-      id_lugar: lugar.value,
+      lugar: {
+        nombre_lugar: nombreLugar,
+        direccion,
+        id_comuna: comuna.value,
+        google_place_id: googlePlaceId,
+      },
       id_publico: publico.value,
       id_modalidad: modalidad.value,
       id_tipo_participacion: participacion.value,

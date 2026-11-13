@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, ChevronLeft, ChevronRight, X } from "lucide-react";
 import ImagePlaceholder from "./ImagePlaceholder";
+import { labelLugarActividad } from "@/lib/actividades";
 
 const WEEKDAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
@@ -338,9 +339,9 @@ export default function ActividadesCalendar({ activities = [] }) {
                       <span className="block font-serif text-base leading-snug font-semibold text-[#704a31]">
                         {activity.titulo}
                       </span>
-                      {activity.lugar ? (
+                      {labelLugarActividad(activity, "") ? (
                         <span className="mt-0.5 block truncate text-sm text-[#946541]">
-                          {activity.lugar}
+                          {labelLugarActividad(activity)}
                         </span>
                       ) : null}
                     </span>

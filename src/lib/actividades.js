@@ -60,6 +60,13 @@ export function labelParticipacion(value, { corta = false } = {}) {
   return value;
 }
 
+export function labelLugarActividad(activity, fallback = "Lugar pendiente") {
+  const direccion =
+    typeof activity?.lugar_direccion === "string" ? activity.lugar_direccion.trim() : "";
+  const nombre = typeof activity?.lugar === "string" ? activity.lugar.trim() : "";
+  return direccion || nombre || fallback;
+}
+
 export function labelCosto(value, monto) {
   if (!value) return "Pendiente";
   let label = value;

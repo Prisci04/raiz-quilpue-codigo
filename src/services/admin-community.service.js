@@ -23,6 +23,7 @@ import {
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { listCatalogo } from "@/services/catalogos.service";
+import { resolveLugarForActividad } from "@/services/lugares.service";
 import { deleteOwnedPortada } from "@/services/storage.service";
 
 const ACTIVIDAD_COLUMNS = `
@@ -177,6 +178,11 @@ function actividadWritePayload(input, { usuarioId, isCreate }) {
 }
 
 export async function saveActividadAdmin(id, input, usuarioId) {
+  const resolved = { ...input };
+  if (input.lugar) {
+    resolved.id_lugar = await resolveLugarForActividad(input.lugar);
+  }
+
   if (id) {
     const current = await getActividadAdmin(id);
     if (!current) return null;
@@ -184,7 +190,7 @@ export async function saveActividadAdmin(id, input, usuarioId) {
     const data = assertQuery(
       await admin()
         .from("actividades")
-        .update(actividadWritePayload(input, { usuarioId, isCreate: false }))
+        .update(actividadWritePayload(resolved, { usuarioId, isCreate: false }))
         .eq("id_actividad", id)
         .select(ACTIVIDAD_COLUMNS)
         .maybeSingle(),
@@ -203,7 +209,7 @@ export async function saveActividadAdmin(id, input, usuarioId) {
   const data = assertQuery(
     await admin()
       .from("actividades")
-      .insert(actividadWritePayload(input, { usuarioId, isCreate: true }))
+      .insert(actividadWritePayload(resolved, { usuarioId, isCreate: true }))
       .select(ACTIVIDAD_COLUMNS)
       .single(),
     "Failed to save actividad",

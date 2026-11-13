@@ -18,6 +18,7 @@ import {
   esEstadoPublicada,
   esParticipacionInscripcion,
   labelCosto,
+  labelLugarActividad,
   labelModalidad,
   labelParticipacion,
   labelPublicoObjetivo,
@@ -95,7 +96,7 @@ function Dato({ icon: Icon, label, value }) {
 export default function ActividadDetallePanel({ activity }) {
   const fecha = dateLabel(activity.fecha);
   const horario = horarioLabel(activity.hora_inicio, activity.hora_fin);
-  const lugar = activity.lugar || "Lugar pendiente";
+  const lugar = labelLugarActividad(activity);
 
   return (
     <section className="admin-page">

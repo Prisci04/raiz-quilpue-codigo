@@ -1,9 +1,5 @@
 import { jsonError, jsonSuccess, logInternalError, parsePositiveInteger } from "@/lib/http";
-import {
-  getUbicacionesDefault,
-  listComunas,
-  listLugares,
-} from "@/services/lugares.service";
+import { getUbicacionesDefault, listComunas } from "@/services/lugares.service";
 
 export const dynamic = "force-dynamic";
 
@@ -41,13 +37,10 @@ export async function GET(request) {
         ? defaults.id_comuna
         : (comunas[0]?.id ?? null));
 
-    const lugares = idComuna ? await listLugares({ idComuna }) : [];
-
     return noStore(
       jsonSuccess({
         regiones: defaults.regiones,
         comunas: idRegion ? await listComunas(idRegion) : defaults.comunas,
-        lugares,
         id_region: idRegion,
         id_comuna: idComuna,
       }),

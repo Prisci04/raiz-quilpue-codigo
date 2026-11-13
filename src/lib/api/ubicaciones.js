@@ -41,10 +41,3 @@ export function getUbicaciones({ idRegion, idComuna } = {}) {
   const query = params.toString();
   return requestJson(`/api/ubicaciones${query ? `?${query}` : ""}`);
 }
-
-export function createLugar(payload) {
-  return requestJson("/api/admin/lugares", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}

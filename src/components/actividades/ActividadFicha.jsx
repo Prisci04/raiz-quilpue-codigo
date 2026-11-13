@@ -5,6 +5,7 @@ import ContenidoDocumento from "@/components/contenido/ContenidoDocumento";
 import {
   esParticipacionInscripcion,
   labelCosto,
+  labelLugarActividad,
   labelModalidad,
   labelParticipacion,
   labelPublicoObjetivo,
@@ -59,7 +60,7 @@ export default function ActividadFicha({ activity, backHref, backLabel, children
   const participacion = labelParticipacion(activity.tipo_participacion);
   const fecha = formatLongDate(activity.fecha);
   const hora = formatHorario(activity.hora_inicio, activity.hora_fin);
-  const lugar = activity.lugar || "Lugar pendiente";
+  const lugar = labelLugarActividad(activity);
   const valor = labelCosto(activity.costo, activity.valor_monto);
   const cuposLabel = cupos === null
     ? esParticipacionInscripcion(activity.tipo_participacion)

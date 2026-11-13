@@ -43,7 +43,7 @@ const CATALOGOS = {
     { id: 1, nombre: "Borrador" },
     { id: 2, nombre: "Publicada" },
   ],
-  lugares: [{ id: 10, nombre: "Centro Cultural Daniel de la Vega" }],
+  comuna: [{ id: 27, nombre: "Quilpué", id_region: 6 }],
 };
 
 const base = {
@@ -51,7 +51,8 @@ const base = {
   descripcion: "Desc",
   fecha: "2099-01-01",
   id_modalidad: 1,
-  id_lugar: 10,
+  id_comuna: 27,
+  lugar_direccion: "Av. Diego Portales 1234",
   id_publico: 1,
   id_tipo_participacion: 1,
   id_costo: 1,
@@ -91,17 +92,23 @@ test("exige un público objetivo válido por ID", () => {
   assert.equal(mayores.value.id_publico, 2);
 });
 
-test("exige un lugar para cualquier modalidad", () => {
-  const presencial = parse({ id_lugar: "" });
+test("exige dirección y comuna para cualquier modalidad", () => {
+  const presencial = parse({ lugar_direccion: "" });
   assert.equal(presencial.ok, false);
-  assert.match(presencial.message, /lugar/i);
+  assert.match(presencial.message, /dirección/i);
 
-  const virtual = parse({ id_modalidad: 2, id_lugar: "" });
+  const sinComuna = parse({ id_comuna: "" });
+  assert.equal(sinComuna.ok, false);
+  assert.match(sinComuna.message, /comuna/i);
+
+  const virtual = parse({ id_modalidad: 2, lugar_direccion: "" });
   assert.equal(virtual.ok, false);
 
-  const hibrida = parse({ id_modalidad: 3, id_lugar: 10 });
+  const hibrida = parse({ id_modalidad: 3, lugar_direccion: "Calle Prat 100" });
   assert.equal(hibrida.ok, true);
-  assert.equal(hibrida.value.id_lugar, 10);
+  assert.equal(hibrida.value.lugar.direccion, "Calle Prat 100");
+  assert.equal(hibrida.value.lugar.id_comuna, 27);
+  assert.equal(hibrida.value.lugar.nombre_lugar, "Calle Prat 100");
 });
 
 test("la imagen de la actividad solo acepta un archivo subido", () => {

@@ -6,6 +6,7 @@ import ActivityCard from "@/components/actividades/ActivityCard";
 import ActividadesCalendar from "@/components/actividades/ActividadesCalendar";
 import ViewTabs from "@/components/actividades/ViewTabs";
 import Pagination from "@/components/Pagination";
+import { labelLugarActividad } from "@/lib/actividades";
 
 const PAGE_SIZE = 12;
 
@@ -19,7 +20,7 @@ export default function ActividadesView({ activities = [], error = "", initialVi
     if (!normalizedQuery) return activities;
 
     return activities.filter((activity) => {
-      const text = `${activity.titulo} ${activity.lugar ?? ""} ${activity.descripcion}`.toLowerCase();
+      const text = `${activity.titulo} ${labelLugarActividad(activity, "")} ${activity.descripcion}`.toLowerCase();
       return text.includes(normalizedQuery);
     });
   }, [activities, normalizedQuery]);
