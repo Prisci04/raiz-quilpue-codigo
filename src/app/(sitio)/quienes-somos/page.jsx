@@ -319,9 +319,8 @@ export default function QuienesSomosPage() {
               <div className="mb-8 flex gap-5 sm:gap-6">
                 <div className="flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center bg-[#ffdf90] text-[#687a42]">
                   <div className="text-center">
-                    <div className="font-serif text-2xl leading-none font-bold">17</div>
-                    <div className="mt-1 font-mono text-[8px] tracking-wide uppercase">
-                      Jun 2026
+                    <div className="px-1 font-serif text-xs leading-tight font-bold">
+                      {content.foundationDate}
                     </div>
                   </div>
                 </div>

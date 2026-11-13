@@ -1,4 +1,11 @@
-import { CalendarDays, FileText, Landmark, LayoutDashboard, Users } from "lucide-react";
+import {
+  CalendarDays,
+  FileText,
+  Landmark,
+  LayoutDashboard,
+  PanelsTopLeft,
+  Users,
+} from "lucide-react";
 
 export const ADMIN_NAV = [
   {
@@ -11,6 +18,7 @@ export const ADMIN_NAV = [
       { href: "/admin/contenidos", label: "Contenidos", icon: FileText },
       { href: "/admin/actividades", label: "Actividades", icon: CalendarDays },
       { href: "/admin/museo", label: "Museo Digital", icon: Landmark },
+      { href: "/admin/paginas", label: "Página", icon: PanelsTopLeft },
       // Rehabilitar esta opción cuando se vuelva a implementar Market.
       // { href: "/admin/market", label: "Market", icon: ShoppingBag },
     ],

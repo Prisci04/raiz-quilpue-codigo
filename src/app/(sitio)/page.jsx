@@ -20,16 +20,16 @@ export default async function HomePage() {
 
   const contents = contentsResult.status === "fulfilled" ? contentsResult.value : [];
   const activities = activitiesResult.status === "fulfilled" ? activitiesResult.value : [];
-  const museumItems =
-    museumResult.status === "fulfilled"
-      ? museumResult.value.slice(0, 3).map((piece) => ({
-          id: piece.id,
-          title: piece.titulo,
-          description: piece.descripcion,
-          tipo: piece.categoria,
-          image: piece.imagen_url,
-        }))
-      : [];
-
-  return <HomeView contents={contents} activities={activities} museumItems={museumItems} />;
+  const museumItems = museumResult.status === "fulfilled" ? museumResult.value.slice(0, 3) : [];
+  if (museumResult.status === "rejected") {
+    console.error("[HomePage] Error al cargar piezas del museo:", museumResult.reason);
+  }
+  return (
+    <HomeView
+      contents={contents}
+      activities={activities}
+      museumItems={museumItems}
+      museumError={museumResult.status === "rejected"}
+    />
+  );
 }

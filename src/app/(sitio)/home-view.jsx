@@ -37,7 +37,7 @@ function formatDate(date) {
   });
 }
 
-export default function HomeView({ contents = [], activities = [], museumItems = [] }) {
+export default function HomeView({ contents = [], activities = [], museumItems = [], museumError = false }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [slide, setSlide] = useState(0);
@@ -83,7 +83,7 @@ export default function HomeView({ contents = [], activities = [], museumItems =
               sizes="100vw"
               className="object-cover"
               style={{ filter: "sepia(20%) contrast(1.05) brightness(0.85)" }}
-              unoptimized={item.image.startsWith("/")}
+              unoptimized
             />
           </div>
         ))}
@@ -242,7 +242,11 @@ export default function HomeView({ contents = [], activities = [], museumItems =
             ))}
           </div>
         ) : (
-          <p className="text-[#946541]">Aún no hay piezas publicadas en el museo.</p>
+          <p className="text-[#946541]">
+            {museumError
+              ? "No fue posible cargar las publicaciones del museo. Inténtalo de nuevo más tarde."
+              : "Aún no hay piezas publicadas en el museo."}
+          </p>
         )}
       </section>
 

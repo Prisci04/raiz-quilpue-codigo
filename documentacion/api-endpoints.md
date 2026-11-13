@@ -163,6 +163,8 @@ Las rutas `GET/POST /api/admin/museo`, `GET/PATCH/DELETE /api/admin/museo/{id}`,
 
 Las categorías oficiales del museo son `Fotografías`, `Documentos`, `Objetos y piezas`, `Memorias y relatos`, `Lugares de memoria` y `Cultura y comunidad`.
 
+La sección `Página` de Administración permite preparar borradores temporales de Inicio y Quiénes somos. Los cambios no se guardan ni se publican en el sitio.
+
 ---
 
 ## Formato de errores

@@ -6,17 +6,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createPortal } from "react-dom";
-import { CalendarCheck, CalendarDays, CircleCheck, Clock3, Eye, ImageIcon, MoreVertical, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { CalendarCheck, CalendarDays, CircleCheck, Clock3, Eye, ImageIcon, MoreHorizontal, Plus, Users } from "lucide-react";
 import AdminBadge from "@/components/admin/AdminBadge";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
-import { deleteActividad, saveActividadEstado } from "@/lib/api/community";
+import { deleteActividad } from "@/lib/api/community";
 import {
   esEstadoBorrador,
   esEstadoPublicada,
   isActividadPasada,
   labelModalidad,
 } from "@/lib/actividades";
-import { NOMBRE_ESTADO_BORRADOR, NOMBRE_ESTADO_PUBLICADA } from "@/lib/catalogos.mjs";
 
 const dateLabel = (value) => {
   if (!value) return "Fecha pendiente";
@@ -50,7 +49,7 @@ function Status({ value, pasada }) {
   return <AdminBadge tone={published ? "success" : "warning"}>{published ? "Publicada" : "Borrador"}</AdminBadge>;
 }
 
-function ActivityActions({ activity, busy, onToggleStatus, onDelete }) {
+function RowActions({ activity, busy, onDelete }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const triggerRef = useRef(null);
@@ -126,16 +125,8 @@ function ActivityActions({ activity, busy, onToggleStatus, onDelete }) {
   }, [open]);
 
   return (
-    <div className="relative flex justify-start gap-0.5">
-      <Link
-        href={`/admin/actividades/${activity.id}/editar`}
-        title="Editar"
-        aria-label={`Editar ${activity.titulo}`}
-        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
-      >
-        <Pencil size={15} aria-hidden="true" />
-      </Link>
-      {activity.estado === "publicada" ? (
+    <div className="flex items-center justify-end gap-0.5">
+      {esEstadoPublicada(activity.estado) ? (
         <Link
           href={`/actividades/${activity.id}`}
           target="_blank"
@@ -153,54 +144,53 @@ function ActivityActions({ activity, busy, onToggleStatus, onDelete }) {
           <Eye size={15} aria-hidden="true" />
         </span>
       )}
-      <button
-        ref={triggerRef}
-        type="button"
-        disabled={busy}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
-        aria-label={`Más acciones de ${activity.titulo}`}
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-      >
-        <MoreVertical size={18} strokeWidth={1.8} aria-hidden="true" />
-      </button>
-      {open && typeof document !== "undefined"
-        ? createPortal(
-        <div
-          ref={menuRef}
-          className="fixed z-[100] min-w-48 border border-[#e4ddd4] bg-white py-1 shadow-lg"
-          style={{
-            left: menuPosition?.left ?? 0,
-            top: menuPosition?.top ?? 0,
-            visibility: menuPosition ? "visible" : "hidden",
-          }}
+      <div>
+        <button
+          ref={triggerRef}
+          type="button"
+          disabled={busy}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc] disabled:opacity-40"
+          aria-label={`Más acciones de ${activity.titulo}`}
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
         >
-          <button
-            type="button"
-            disabled={busy}
-            className="block min-h-10 w-full px-3 py-2 text-left text-xs text-[#2c1810] hover:bg-[#faf7f4] disabled:opacity-50"
-            onClick={() => {
-              setOpen(false);
-              onToggleStatus(activity);
-            }}
-          >
-            {activity.estado === "publicada" ? "Pasar a borrador" : "Publicar"}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            className="block min-h-10 w-full px-3 py-2 text-left text-xs text-[#8d3b28] hover:bg-[#faf7f4] disabled:opacity-50"
-            onClick={() => {
-              setOpen(false);
-              onDelete(activity);
-            }}
-          >
-            Eliminar
-          </button>
-        </div>,
-        document.body,
-      )
-        : null}
+          <MoreHorizontal size={16} aria-hidden="true" />
+        </button>
+        {open && typeof document !== "undefined"
+          ? createPortal(
+            <div
+              ref={menuRef}
+              className="fixed z-[100] min-w-44 border border-[#e4ddd4] bg-white py-1 shadow-lg"
+              style={{
+                left: menuPosition?.left ?? 0,
+                top: menuPosition?.top ?? 0,
+                visibility: menuPosition ? "visible" : "hidden",
+              }}
+            >
+              <Link
+                href={`/admin/actividades/${activity.id}/editar`}
+                style={{ fontSize: "14px", lineHeight: "20px", fontWeight: 400 }}
+                className="flex min-h-10 w-full items-center px-3 py-2 text-left text-[#2c1810] hover:bg-[#faf7f4]"
+              >
+                Editar
+              </Link>
+              <button
+                type="button"
+                style={{ fontSize: "14px", lineHeight: "20px", fontWeight: 400 }}
+                className="flex min-h-10 w-full items-center px-3 py-2 text-left text-[#8d3b28] hover:bg-[#faf7f4]"
+                onClick={() => {
+                  triggerRef.current?.focus();
+                  setOpen(false);
+                  onDelete(activity);
+                }}
+              >
+                Eliminar
+              </button>
+            </div>,
+            document.body,
+          )
+          : null}
+      </div>
     </div>
   );
 }
@@ -224,21 +214,6 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
     const matchesQuery = !term || `${activity.titulo} ${activity.descripcion} ${activity.lugar ?? ""}`.toLocaleLowerCase("es-CL").includes(term);
     return matchesQuery && matchesFilter(activity, filter);
   }), [activities, filter, query]);
-
-  async function toggleStatus(activity) {
-    setBusyId(activity.id);
-    setActionError("");
-    try {
-      const next = esEstadoPublicada(activity.estado) ? NOMBRE_ESTADO_BORRADOR : NOMBRE_ESTADO_PUBLICADA;
-      await saveActividadEstado(activity.id, next);
-      setNoticeText(esEstadoPublicada(next) ? "Actividad publicada correctamente." : "Actividad guardada como borrador.");
-      router.refresh();
-    } catch (saveError) {
-      setActionError(saveError.message);
-    } finally {
-      setBusyId(null);
-    }
-  }
 
   async function removeActivity() {
     if (!deleteTarget) return;
@@ -289,21 +264,22 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row xl:ml-auto xl:max-w-md"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar actividades..." aria-label="Buscar actividades" className="min-h-11 min-w-0 flex-1 rounded-sm border border-[#eadfd4] bg-[#fbf8f5] px-3 text-sm outline-none focus:border-[#c4a484]" /><Link href="/admin/actividades/nueva" className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-sm bg-[#c45c38] px-4 text-sm font-medium text-white hover:bg-[#a84c2c]"><Plus size={15} />Nueva actividad</Link></div>
         </div>
         {visible.length ? (
-          <div tabIndex={0} role="region" aria-label="Listado de actividades" className="admin-table-scroll mt-4 overflow-x-auto">
-            <table className="admin-table w-full min-w-[864px] table-fixed border-collapse text-left text-sm">
+          <div tabIndex={0} role="region" aria-label="Listado de actividades" className="admin-table-scroll mt-4 overflow-x-hidden">
+            <table className="admin-table w-full min-w-0 table-fixed border-collapse text-left text-sm">
               <thead>
                 <tr className="border-y border-[#efe6dc] text-xs uppercase tracking-wide text-[#8d7b6d]">
-                  <th className="w-72 max-w-72 px-3 py-3">Actividad</th>
-                  <th className="w-36 px-3 py-3">Fecha y lugar</th>
-                  <th className="w-28 px-3 py-3">Estado</th>
-                  <th className="w-40 px-3 py-3 text-right">Participantes</th>
-                  <th className="w-40 px-3 py-3">Acciones</th>
+                  <th className="w-[28%] px-3 py-3">Actividad</th>
+                  <th className="w-[19%] px-3 py-3">Fecha y lugar</th>
+                  <th className="w-[12%] px-3 py-3">Modalidad</th>
+                  <th className="w-[11%] px-3 py-3">Estado</th>
+                  <th className="w-[18%] px-3 py-3">Participantes</th>
+                  <th className="w-[12%] px-3 py-3">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {visible.map((activity) => (
                   <tr key={activity.id} className="border-b border-[#f3eee8]">
-                    <td className="w-72 max-w-72 px-3 py-4">
+                    <td className="min-w-0 px-3 py-4">
                       <Link
                         href={`/admin/actividades/${activity.id}`}
                         title={activity.titulo}
@@ -323,7 +299,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                           </span>
                         )}
                         <span className="flex min-w-0 flex-col">
-                          <span className="truncate font-medium">{activity.titulo}</span>
+                          <span className="line-clamp-2 font-medium">{activity.titulo}</span>
                           <span className="text-xs text-[#8d7b6d]">
                             {activity.modalidad === "virtual" ? "Online" : activity.modalidad === "hibrida" ? "Híbrida" : "Presencial"}
                           </span>
@@ -332,7 +308,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                     </td>
                     <td className="px-3 py-4 text-[#5c4d42]">
                       {dateLabel(activity.fecha)}
-                      <p className="mt-1 text-xs text-[#8d7b6d]">{activity.lugar || "Lugar pendiente"}</p>
+                      <p className="mt-1 break-words text-xs text-[#8d7b6d]">{activity.lugar || "Lugar pendiente"}</p>
                     </td>
                     <td className="px-3 py-4 text-[#5c4d42]">
                       {labelModalidad(activity.modalidad)}
@@ -345,59 +321,18 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                         href={`/admin/actividades/${activity.id}/participantes`}
                         title="Ver participantes"
                         aria-label={`Ver participantes de ${activity.titulo}`}
-                        className="inline-flex min-h-10 items-center justify-end gap-1.5 rounded-md px-2 text-[#1e4536] hover:bg-[#e5f6ea]"
+                        className="inline-flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-md px-1 text-[#1e4536] hover:bg-[#e5f6ea]"
                       >
                         <Users size={15} aria-hidden="true" />
                         Participantes
                       </Link>
                     </td>
-                    <td className="px-3 py-4">
-                      <ActivityActions
+                    <td className="px-1 py-4">
+                      <RowActions
                         activity={activity}
                         busy={busyId === activity.id}
-                        onToggleStatus={toggleStatus}
                         onDelete={setDeleteTarget}
                       />
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/admin/actividades/${activity.id}/editar`}
-                          title="Editar"
-                          aria-label={`Editar ${activity.titulo}`}
-                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
-                        >
-                          <Pencil size={15} />
-                        </Link>
-                        {esEstadoPublicada(activity.estado) ? (
-                          <Link
-                            href={`/actividades/${activity.id}`}
-                            target="_blank"
-                            title="Ver actividad"
-                            aria-label={`Ver ${activity.titulo} en el portal`}
-                            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] hover:bg-[#efe6dc]"
-                          >
-                            <Eye size={15} />
-                          </Link>
-                        ) : (
-                          <span className="inline-flex h-8 w-8" aria-hidden="true" />
-                        )}
-                        <button
-                          type="button"
-                          disabled={busyId === activity.id}
-                          onClick={() => toggleStatus(activity)}
-                          className="min-h-10 rounded-md border border-[#e6ddd4] px-3 text-xs text-[#5c4636] hover:bg-[#f3eee8] disabled:opacity-50"
-                        >
-                          {esEstadoPublicada(activity.estado) ? "Borrador" : "Publicar"}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={busyId === activity.id}
-                          onClick={() => setDeleteTarget(activity)}
-                          aria-label={`Eliminar ${activity.titulo}`}
-                          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#a5452d] hover:bg-[#fff3f0]"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
                     </td>
                   </tr>
                 ))}
