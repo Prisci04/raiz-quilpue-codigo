@@ -58,6 +58,7 @@ test("valida categoría, título, correo e imagen del aporte comunitario", () =>
   assert.equal(ok.value.correo_aportante, "ana.perez@correo.cl");
   assert.equal(ok.value.nombre_aportante, "Ana Pérez");
   assert.equal(ok.value.id_categoria_museo, 1);
+  assert.equal(ok.value.imagen_url, aporteUrl);
 
   assert.equal(
     parseAporteMuseoInput({
@@ -81,4 +82,24 @@ test("valida categoría, título, correo e imagen del aporte comunitario", () =>
     }, catalogos).ok,
     false,
   );
+  assert.equal(
+    parseAporteMuseoInput({
+      nombre: "Ana",
+      apellido: "Pérez",
+      correo: "ana@correo.cl",
+      id_categoria_museo: 1,
+      titulo: "Foto",
+      descripcion: "Desc",
+      imagen_url: "https://evil.example/x.png",
+    }, catalogos).ok,
+    false,
+  );
+  assert.equal(parseAporteMuseoInput({
+    nombre: "Ana",
+    correo: "ana@correo.cl",
+    id_categoria_museo: 1,
+    titulo: "Foto",
+    descripcion: "Desc",
+    imagen_url: null,
+  }, catalogos).ok, false);
 });

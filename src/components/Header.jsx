@@ -40,7 +40,7 @@ export default function Header() {
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center px-6">
         <div className="flex flex-1 items-center">
-          <Link href="/" className="group flex items-center gap-3">
+          <Link href="/" className="group flex items-center gap-2 sm:gap-3">
             <div
               className="flex h-8 w-8 items-center justify-center"
               style={{
@@ -50,24 +50,24 @@ export default function Header() {
               {/* CAMBIAR IMAGEN AQUÍ: sube el logo oficial con este nombre. */}
               <Image
                 src="/images/logo/LogoRaizQuilpue.png"
-                alt="Logo de Raíz Quilpué"
+                alt="Logo de Corporación Raíz Quilpué"
                 width={32}
                 height={32}
                 className="h-auto w-8 object-contain"
               />
             </div>
-            <div className="leading-tight">
+            <div className="min-w-0 leading-tight">
               <div
-                className="font-serif text-base font-bold"
+                className="font-serif text-xs font-bold sm:text-sm"
                 style={{ color: "var(--primary)", letterSpacing: "0.01em" }}
               >
-                Raíz
+                Corporación
               </div>
               <div
-                className="font-mono text-[9px] tracking-[0.18em] uppercase"
+                className="font-mono text-[8px] tracking-[0.12em] uppercase sm:text-[9px] sm:tracking-[0.18em]"
                 style={{ color: "var(--active-indicator)", marginTop: "-3px" }}
               >
-                Quilpué
+                Raíz Quilpué
               </div>
             </div>
           </Link>

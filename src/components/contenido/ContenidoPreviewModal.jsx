@@ -155,7 +155,7 @@ export default function ContenidoPreviewModal({ item, tipoLabel, onClose }) {
 
           <Link
             href={`/contenido/${item.id}`}
-            className="mt-8 inline-flex min-h-12 items-center gap-2 bg-[#704a31] px-5 font-mono text-[11px] tracking-[0.14em] text-[#f4ece4] uppercase"
+            className="mt-6 inline-flex min-h-10 items-center gap-2 bg-[#704a31] px-4 text-sm font-medium text-[#f4ece4]"
           >
             Ver nota completa
             <ArrowRight size={14} strokeWidth={1.8} aria-hidden="true" />

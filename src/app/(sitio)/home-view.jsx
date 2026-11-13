@@ -37,7 +37,7 @@ function formatDate(date) {
   });
 }
 
-export default function HomeView({ contents = [], activities = [] }) {
+export default function HomeView({ contents = [], activities = [], museumItems = [], museumError = false }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [slide, setSlide] = useState(0);
@@ -68,7 +68,7 @@ export default function HomeView({ contents = [], activities = [] }) {
 
   return (
     <div>
-      <section className="relative flex h-screen min-h-[600px] items-end overflow-hidden pb-20">
+      <section className="relative flex min-h-[100svh] items-end overflow-hidden pb-20">
         {heroSlides.map((item, index) => (
           <div
             key={item.caption}
@@ -83,7 +83,7 @@ export default function HomeView({ contents = [], activities = [] }) {
               sizes="100vw"
               className="object-cover"
               style={{ filter: "sepia(20%) contrast(1.05) brightness(0.85)" }}
-              unoptimized={item.image.startsWith("/")}
+              unoptimized
             />
           </div>
         ))}
@@ -112,29 +112,29 @@ export default function HomeView({ contents = [], activities = [] }) {
           ))}
         </div>
 
-        <div className="relative mx-auto w-full max-w-7xl px-6">
+        <div className="relative mx-auto w-full max-w-7xl translate-y-4 px-6 sm:translate-y-6">
           <div className="max-w-2xl">
             <div className="section-label mb-4">Museo Digital · Quilpué, Chile</div>
-            <h1 className="mb-6 font-serif text-5xl leading-[1.07] font-light text-white md:text-7xl">
+            <h1 className="home-hero-title mb-6 font-serif leading-[1.05] font-light text-white">
               Historias que
               <br />
               <em className="text-[#e48d40]">dan forma</em>
               <br />
               a Quilpué
             </h1>
-            <p className="mb-8 max-w-xl text-base leading-relaxed text-[#e7dcd2]/85 md:text-lg">
+            <p className="mb-8 max-w-xl text-base leading-normal text-[#e7dcd2]/85 md:text-lg">
               Un espacio donde las historias mantienen vivas nuestras raíces.  
 
             </p>
-            <form onSubmit={handleSearch} className="flex max-w-lg">
+            <form onSubmit={handleSearch} className="mx-0 flex w-full max-w-lg">
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar en el patrimonio de Quilpué..."
-                className="flex-1 px-4 py-3 text-sm outline-none"
+                className="min-w-0 flex-1 px-4 py-3 text-sm outline-none"
                 style={{ background: "rgba(231,220,210,0.94)", color: "var(--foreground)" }}
               />
-              <button type="submit" className="btn-primary px-5" aria-label="Buscar">
+              <button type="submit" className="btn-primary min-h-12 shrink-0 px-5" aria-label="Buscar">
                 <Search size={16} strokeWidth={2} aria-hidden="true" />
               </button>
             </form>
@@ -142,7 +142,7 @@ export default function HomeView({ contents = [], activities = [] }) {
           <div className="mt-10 grid max-w-3xl grid-cols-2 gap-px md:grid-cols-4">
             {[{ label: "Comienzo", value: "2026" }, { label: "Años de historia", value: "1" }, { label: "Actividades 2026", value: String(activities.length) }, { label: "Contenidos publicados", value: String(contents.length) }].map((stat) => (
               <div key={stat.label} className="px-4 py-3" style={{ background: "rgba(148,101,65,0.65)", backdropFilter: "blur(4px)" }}>
-                <div className="font-serif text-2xl font-bold text-white">{stat.value}</div>
+                <div className="font-sans text-2xl font-bold text-white">{stat.value}</div>
                 <div className="mt-0.5 font-mono text-[9px] tracking-wide text-[#e7dcd2]/55 uppercase">{stat.label}</div>
               </div>
             ))}
@@ -154,12 +154,12 @@ export default function HomeView({ contents = [], activities = [] }) {
         <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div>
             <div className="section-label mb-3">¿Qué es Raíz Quilpué?</div>
-            <h2 className="mb-5 font-serif text-4xl leading-tight font-semibold text-[#946541]">Raíz Quilpué es una corporación cultural e histórica</h2>
-            <p className="mb-4 text-base leading-relaxed text-[#946541]">Somos un espacio para encontrarnos con las historias, saberes, lugares, personas y expresiones que forman parte de nuestra identidad local, conectando el patrimonio con la comunidad y el territorio.</p>
-            <p className="mb-6 text-base leading-relaxed text-[#946541]">Dedicada a investigar, rescatar, difundir y construir participativamente la memoria histórica y cultural de Quilpué.</p>
-            <div className="flex flex-wrap gap-3">
-              <button type="button" onClick={() => router.push("/quienes-somos")} className="btn-primary px-4 py-3">Conocer más</button>
-              <button type="button" onClick={() => router.push("/museo")} className="btn-outline px-4 py-3">Explorar museo</button>
+            <h2 className="mb-5 font-sans text-3xl leading-tight font-bold text-[#946541] sm:text-4xl">Raíz Quilpué es una corporación cultural e histórica</h2>
+            <p className="mb-4 text-base leading-normal text-[#946541]">Somos un espacio para encontrarnos con las historias, saberes, lugares, personas y expresiones que forman parte de nuestra identidad local, conectando el patrimonio con la comunidad y el territorio.</p>
+            <p className="mb-6 text-base leading-normal text-[#946541]">Dedicada a investigar, rescatar, difundir y construir participativamente la memoria histórica y cultural de Quilpué.</p>
+            <div className="flex flex-wrap justify-center gap-3 sm:justify-start">
+              <button type="button" onClick={() => router.push("/quienes-somos")} className="btn-primary inline-flex min-h-12 items-center justify-center px-5 py-3 text-sm font-semibold">Conocer más</button>
+              <button type="button" onClick={() => router.push("/museo")} className="btn-outline min-h-12 px-5 py-3 text-sm font-semibold">Explorar museo</button>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -175,12 +175,35 @@ export default function HomeView({ contents = [], activities = [] }) {
 
       <AccessSection contents={contents} activities={activities} />
 
+      <section className="mx-auto max-w-7xl px-6 py-16">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <div className="section-label mb-1">Encuentros y experiencias</div>
+            <h2 className="font-sans text-2xl leading-tight font-bold text-[#946541] sm:text-3xl">
+              Actividades recientes
+            </h2>
+          </div>
+          <Link href="/actividades" className="btn-outline hidden px-3 py-2 md:flex">
+            Ver todas
+          </Link>
+        </div>
+        {activities.length > 0 ? (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {activities.slice(0, 3).map((activity) => (
+              <ActivityCard key={activity.id} activity={activity} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-[#946541]">Aún no hay actividades publicadas.</p>
+        )}
+      </section>
+
       <section className="bg-[#bb9c82]/25 px-6 py-16">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 flex items-center justify-between">
             <div>
               <div className="section-label mb-1">Publicaciones recientes</div>
-              <h2 className="font-serif text-3xl font-semibold text-[#946541]">
+              <h2 className="font-sans text-2xl leading-tight font-bold text-[#946541] sm:text-3xl">
                 Últimos contenidos
               </h2>
             </div>
@@ -203,27 +226,68 @@ export default function HomeView({ contents = [], activities = [] }) {
       <section className="mx-auto max-w-7xl px-6 py-16">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <div className="section-label mb-1">Encuentros y experiencias</div>
-            <h2 className="font-serif text-3xl font-semibold text-[#946541]">
-              Actividades recientes
+            <div className="section-label mb-1">Memoria de Quilpué</div>
+            <h2 className="font-sans text-2xl leading-tight font-bold text-[#946541] sm:text-3xl">
+              Museo Digital
             </h2>
           </div>
-          <Link href="/actividades" className="btn-outline hidden px-3 py-2 md:flex">
-            Ver todas
+          <Link href="/museo" className="btn-outline hidden px-3 py-2 md:flex">
+            Explorar museo
           </Link>
         </div>
-        {activities.length > 0 ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {activities.slice(0, 3).map((activity) => (
-              <ActivityCard key={activity.id} activity={activity} />
+        {museumItems.length > 0 ? (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {museumItems.slice(0, 3).map((item) => (
+              <MuseumCard key={item.id} item={item} />
             ))}
           </div>
         ) : (
-          <p className="text-[#946541]">Aún no hay actividades publicadas.</p>
+          <p className="text-[#946541]">
+            {museumError
+              ? "No fue posible cargar las publicaciones del museo. Inténtalo de nuevo más tarde."
+              : "Aún no hay piezas publicadas en el museo."}
+          </p>
         )}
       </section>
 
     </div>
+  );
+}
+
+function MuseumCard({ item }) {
+  return (
+    <Link
+      href="/museo"
+      className="museum-card group block border text-left"
+      style={{ background: "var(--card)", borderColor: "var(--border)" }}
+    >
+      <div className="relative aspect-video overflow-hidden bg-[#bb9c82]/30">
+        {item.image ? (
+          <Image
+            src={item.image}
+            alt={item.title}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center font-mono text-xs text-[#946541]">
+            Imagen próximamente
+          </div>
+        )}
+      </div>
+      <div className="p-5">
+        <span className="mb-2 inline-block bg-[#ffdf90] px-2 py-0.5 font-mono text-[9px] text-[#946541] uppercase">
+          {item.tipo}
+        </span>
+        <h3 className="mb-2 font-sans text-lg leading-snug font-semibold text-[#946541]">
+          {item.title}
+        </h3>
+        <p className="line-clamp-2 text-sm leading-normal text-[#946541]">
+          {item.description}
+        </p>
+      </div>
+    </Link>
   );
 }
 
@@ -255,10 +319,10 @@ function ContentCard({ item }) {
             {formatDate(item.date || item.createdAt)}
           </span>
         </div>
-        <h3 className="mb-2 font-serif text-xl leading-snug font-semibold text-[#946541]">
+        <h3 className="mb-2 font-sans text-lg leading-snug font-semibold text-[#946541]">
           {item.title}
         </h3>
-        <p className="line-clamp-2 text-sm leading-relaxed text-[#946541]">
+        <p className="line-clamp-2 text-sm leading-normal text-[#946541]">
           {item.description}
         </p>
       </div>

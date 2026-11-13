@@ -47,7 +47,7 @@ function Dato({ icon: Icon, label, value }) {
       <Icon size={16} strokeWidth={1.7} className="mt-0.5 shrink-0 text-[#db700f]" aria-hidden="true" />
       <div className="min-w-0">
         <p className="font-mono text-[10px] tracking-[0.14em] text-[#946541] uppercase">{label}</p>
-        <p className="mt-0.5 text-sm leading-6 text-[#5c331c]">{value}</p>
+        <p className="mt-0.5 text-sm leading-normal text-[#5c331c]">{value}</p>
       </div>
     </div>
   );
@@ -73,7 +73,7 @@ export default function ActividadFicha({ activity, backHref, backLabel, children
       {backHref ? (
         <Link
           href={backHref}
-          className="inline-flex h-11 items-center gap-2 border border-[#bb9c82] bg-[#f4ece4] px-4 text-sm text-[#704a31]"
+          className="site-back-link inline-flex items-center gap-2 border bg-[#f4ece4] text-[#704a31] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#db700f]"
         >
           <ArrowLeft size={18} strokeWidth={1.8} aria-hidden="true" />
           {backLabel || "Volver"}
@@ -105,14 +105,14 @@ export default function ActividadFicha({ activity, backHref, backLabel, children
           <span className="font-mono text-[11px] text-[#946541]">{finalizada ? "Finalizada" : participacion}</span>
         </div>
 
-        <h1 className="mt-5 font-serif text-4xl leading-tight font-medium text-[#5c331c] sm:text-5xl">
+        <h1 className="mt-4 text-[#5c331c]">
           {activity.titulo}
         </h1>
 
         <div className="mt-5 h-px w-16 bg-[#c4a04a]" />
 
         {activity.descripcion ? (
-          <p className="mt-6 text-[15px] leading-7 text-[#5c4638] sm:text-base">
+          <p className="mt-6 text-[15px] leading-normal text-[#5c4638] sm:text-base">
             {activity.descripcion}
           </p>
         ) : null}
@@ -125,6 +125,12 @@ export default function ActividadFicha({ activity, backHref, backLabel, children
           <Dato icon={Users} label="Público" value={labelPublicoObjetivo(activity.publico_objetivo)} />
           <Dato icon={Wallet} label="Valor" value={valor} />
         </dl>
+
+        {activity.forma_pago ? (
+          <p className="mt-4 text-sm leading-normal text-[#704a31]">
+            Forma de pago: {activity.forma_pago}
+          </p>
+        ) : null}
 
         {activity.informacion_adicional ? (
           <ContenidoDocumento documento={activity.informacion_adicional} />

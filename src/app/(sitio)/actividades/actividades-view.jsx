@@ -59,21 +59,31 @@ export default function ActividadesView({ activities = [], error = "", initialVi
 
   return (
     <main className="bg-[#e7dcd2] text-[#946541]">
-      <section className="bg-[#bb9c82]/25">
-        <div className="mx-auto max-w-[1200px] px-4 pt-8 pb-5 sm:px-8 sm:pt-16 sm:pb-8 lg:flex lg:items-end lg:justify-between lg:gap-12">
-          <div className="max-w-2xl">
-          <p className="text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">
-            Talleres · Visitas · Conferencias
-          </p>
-          <h1 className="mt-3 font-serif text-[clamp(2.1rem,5vw,3.8rem)] leading-none font-semibold text-[#704a31]">
-            Actividades
-          </h1>
-          <p className="mt-4 max-w-xl text-sm leading-relaxed sm:mt-6 sm:text-[17px]">
-            Descubre y participa en actividades que mantienen viva la historia y cultura de Quilpué, desde talleres y encuentros hasta muchas otras experiencias para compartir en comunidad.
-
-          </p>
+      <section className="site-page-hero bg-[#bb9c82]/25 px-6">
+        <div className="site-page-hero-inner mx-auto max-w-7xl">
+          <div>
+            <p className="site-page-hero-eyebrow mb-3 font-sans font-semibold tracking-[0.18em] text-[#db700f] uppercase">
+              Talleres · Visitas · Conferencias
+            </p>
+            <h1 className="site-page-hero-title font-serif text-[#704a31]">
+              Actividades
+            </h1>
+            <p className="site-page-hero-description mt-3 max-w-2xl">
+              Descubre y participa en actividades que mantienen viva la historia y cultura de Quilpué, desde talleres y encuentros hasta muchas otras experiencias para compartir en comunidad.
+            </p>
           </div>
-          <label className="mt-5 flex min-h-12 w-full items-center gap-2 border border-[#bb9c82] bg-[#f4ece4] px-4 text-[#946541] lg:mt-0 lg:w-80 lg:shrink-0">
+        </div>
+      </section>
+
+      <ViewTabs
+        value={view}
+        onChange={handleViewChange}
+        count={visibleActivities.length}
+      />
+
+      <section className="px-6 py-4">
+        <div className="mx-auto flex max-w-7xl justify-end">
+          <label className="flex min-h-11 w-full max-w-sm items-center gap-2 border border-[#bb9c82] bg-[#f4ece4] px-4 text-[#946541]">
             <Search size={16} strokeWidth={1.8} aria-hidden="true" />
             <span className="sr-only">Buscar actividad</span>
             <input
@@ -85,12 +95,6 @@ export default function ActividadesView({ activities = [], error = "", initialVi
           </label>
         </div>
       </section>
-
-      <ViewTabs
-        value={view}
-        onChange={handleViewChange}
-        count={visibleActivities.length}
-      />
 
       <section
         id="actividades-list"

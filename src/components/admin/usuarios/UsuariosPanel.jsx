@@ -193,9 +193,9 @@ export default function UsuariosPanel() {
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex min-h-10 items-center gap-2 rounded-md bg-[#2c1810] px-4 text-[12px] font-medium tracking-[0.08em] text-[#f4ebe3] uppercase transition-colors hover:bg-[#3d2418]"
+          className="inline-flex min-h-9 items-center gap-1 rounded-sm bg-[#2c1810] px-3 text-xs font-medium text-[#f4ebe3] transition-colors hover:bg-[#3d2418]"
         >
-          <Plus size={15} strokeWidth={1.8} aria-hidden="true" />
+          <Plus size={14} strokeWidth={1.8} aria-hidden="true" />
           Crear usuario
         </button>
       </div>

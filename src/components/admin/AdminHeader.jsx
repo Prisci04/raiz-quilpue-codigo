@@ -40,6 +40,9 @@ export default function AdminHeader({
   const [logoutError, setLogoutError] = useState("");
 
   const results = searchAdminNav(query, isAdministrador);
+  const profileMenuItemClass =
+    "flex min-h-10 w-full items-center gap-2.5 rounded-sm px-2.5 py-2 text-left font-normal";
+  const profileMenuLabelStyle = { fontSize: "12px", lineHeight: "20px" };
 
   useEffect(() => {
     function onPointerDown(event) {
@@ -219,28 +222,30 @@ export default function AdminHeader({
               <div className="space-y-0.5 border-t border-[#2c1810]/6 pt-1.5">
                 <Link
                   href="/admin/perfil"
-                  className="flex min-h-10 items-center gap-2.5 rounded-sm px-2.5 text-[13px] text-[#2c1810] hover:bg-[#f6f1eb]"
+                  className={`${profileMenuItemClass} text-[#2c1810] hover:bg-[#f6f1eb]`}
                   onClick={() => setProfileOpen(false)}
                 >
                   <UserRound size={15} strokeWidth={1.8} aria-hidden="true" />
-                  Perfil
+                  <span style={profileMenuLabelStyle}>Perfil</span>
                 </Link>
                 <Link
                   href="/"
-                  className="flex min-h-10 items-center gap-2.5 rounded-sm px-2.5 text-[13px] text-[#2c1810] hover:bg-[#f6f1eb]"
+                  className={`${profileMenuItemClass} text-[#2c1810] hover:bg-[#f6f1eb]`}
                   onClick={() => setProfileOpen(false)}
                 >
                   <SquareArrowOutUpRight size={15} strokeWidth={1.8} aria-hidden="true" />
-                  Ir a portal público
+                  <span style={profileMenuLabelStyle}>Ir a portal público</span>
                 </Link>
                 <button
                   type="button"
-                  className="flex min-h-10 w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-[13px] text-[#8d3b28] hover:bg-[#f6e4dc] disabled:opacity-60"
+                  className={`${profileMenuItemClass} text-[#8d3b28] hover:bg-[#f6e4dc] disabled:opacity-60`}
                   disabled={loggingOut}
                   onClick={handleLogout}
                 >
                   <LogOut size={15} strokeWidth={1.8} aria-hidden="true" />
-                  {loggingOut ? "Cerrando sesión…" : "Cerrar sesión"}
+                  <span style={profileMenuLabelStyle}>
+                    {loggingOut ? "Cerrando sesión…" : "Cerrar sesión"}
+                  </span>
                 </button>
                 {logoutError ? (
                   <AdminNotice tone="error" sticky={false} onDismiss={() => setLogoutError("")}>

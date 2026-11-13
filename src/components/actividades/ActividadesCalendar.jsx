@@ -153,7 +153,7 @@ export default function ActividadesCalendar({ activities = [] }) {
         >
           <ChevronLeft size={16} strokeWidth={1.8} aria-hidden="true" />
         </button>
-        <h2 className="font-serif text-lg text-[#704a31] sm:text-2xl">
+        <h2 className="font-sans text-lg font-semibold text-[#704a31] sm:text-2xl">
           {formatMonthTitle(monthDate)}
         </h2>
         <button
@@ -281,7 +281,7 @@ export default function ActividadesCalendar({ activities = [] }) {
             <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center bg-[#687a42] text-[#e7dcd2]">
-                  <span className="font-serif text-lg leading-none font-bold">
+                  <span className="font-sans text-lg leading-none font-bold">
                     {selectedDate.getDate()}
                   </span>
                   <span className="mt-0.5 font-mono text-[7px] tracking-[0.12em] uppercase">
@@ -296,7 +296,7 @@ export default function ActividadesCalendar({ activities = [] }) {
                   </p>
                   <h3
                     id="agenda-title"
-                    className="font-serif text-lg leading-snug font-semibold text-[#704a31] sm:text-xl"
+                    className="font-sans text-lg leading-snug font-semibold text-[#704a31] sm:text-xl"
                   >
                     {formatPanelDate(selectedDate)}
                   </h3>
@@ -336,7 +336,7 @@ export default function ActividadesCalendar({ activities = [] }) {
                       )}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block font-serif text-base leading-snug font-semibold text-[#704a31]">
+                      <span className="block font-sans text-base leading-snug font-semibold text-[#704a31]">
                         {activity.titulo}
                       </span>
                       {labelLugarActividad(activity, "") ? (

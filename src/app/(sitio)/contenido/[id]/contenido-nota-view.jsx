@@ -30,9 +30,9 @@ export default function ContenidoNotaView({ contenido }) {
       <article className="mx-auto max-w-3xl px-6 pt-8 sm:pt-10">
         <Link
           href="/contenido"
-          className="inline-flex h-11 items-center gap-2 border border-[#bb9c82] bg-[#f4ece4] px-4 text-sm text-[#704a31]"
+          className="site-back-link inline-flex items-center gap-2 border bg-[#f4ece4] text-[#704a31] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#db700f]"
         >
-          <ArrowLeft size={18} strokeWidth={1.8} aria-hidden="true" />
+          <ArrowLeft size={16} strokeWidth={1.8} aria-hidden="true" />
           Volver a contenidos
         </Link>
 
@@ -61,18 +61,18 @@ export default function ContenidoNotaView({ contenido }) {
               </span>
             ) : null}
             {dateLabel ? (
-              <span className="font-mono text-[11px] text-[#946541]">{dateLabel}</span>
+              <span className="font-sans text-[13px] text-[#946541]">{dateLabel}</span>
             ) : null}
           </div>
 
-          <h1 className="mt-5 font-serif text-4xl leading-tight font-medium text-[#5c331c] sm:text-5xl">
+          <h1 className="mt-4 text-[#5c331c]">
             {contenido.title || "Contenido"}
           </h1>
 
-          <div className="mt-5 h-px w-16 bg-[#c4a04a]" />
+          <div className="mt-4 h-px w-16 bg-[#c4a04a]" />
 
           {summary ? (
-            <p className="mt-6 font-sans text-lg leading-relaxed text-[#704a31] italic">
+            <p className="mt-5 font-sans leading-normal text-[#704a31] italic">
               {summary}
             </p>
           ) : null}

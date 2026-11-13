@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 import {
   ChevronDown,
   ChevronLeft,
@@ -142,18 +143,76 @@ function Thumb({ contenido }) {
 function RowActions({ contenido, busy, onEstado, onDelete }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
+  const triggerRef = useRef(null);
+  const [menuPosition, setMenuPosition] = useState(null);
+
+  useLayoutEffect(() => {
+    if (!open) return undefined;
+
+    function updatePosition() {
+      const trigger = triggerRef.current;
+      const menu = menuRef.current;
+      if (!trigger || !menu) return;
+
+      const triggerRect = trigger.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const left = Math.max(
+        8,
+        Math.min(triggerRect.right - menuRect.width, window.innerWidth - menuRect.width - 8),
+      );
+      const top =
+        triggerRect.top - menuRect.height - 4 >= 8
+          ? triggerRect.top - menuRect.height - 4
+          : triggerRect.bottom + 4;
+
+      setMenuPosition({ left, top });
+    }
+
+    updatePosition();
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return undefined;
 
     function onPointerDown(event) {
-      if (!menuRef.current?.contains(event.target)) {
+      if (
+        !menuRef.current?.contains(event.target) &&
+        !triggerRef.current?.contains(event.target)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    function onKeyDown(event) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+
+    function onFocusIn(event) {
+      if (
+        !menuRef.current?.contains(event.target) &&
+        !triggerRef.current?.contains(event.target)
+      ) {
         setOpen(false);
       }
     }
 
     document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("focusin", onFocusIn);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("focusin", onFocusIn);
+    };
   }, [open]);
 
   return (
@@ -181,19 +240,9 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
           <Eye size={15} strokeWidth={1.8} aria-hidden="true" />
         </span>
       )}
-      <div className="relative" ref={menuRef}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            event.stopPropagation();
-            setOpen(false);
-            menuRef.current?.querySelector("button")?.focus();
-          }
-        }}
-        onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
-        }}
-      >
+      <div>
         <button
+          ref={triggerRef}
           type="button"
           disabled={busy}
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[#7c6756] transition-colors hover:bg-[#efe6dc] disabled:opacity-40"
@@ -203,11 +252,20 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
         >
           <MoreHorizontal size={16} strokeWidth={1.8} aria-hidden="true" />
         </button>
-        {open ? (
-          <div className="absolute right-0 bottom-full z-20 mb-1 min-w-44 border border-[#e4ddd4] bg-white py-1 shadow-lg">
+        {open && typeof document !== "undefined"
+          ? createPortal(
+          <div
+            ref={menuRef}
+            className="fixed z-[100] min-w-44 border border-[#e4ddd4] bg-white py-1 shadow-lg"
+            style={{
+              left: menuPosition?.left ?? 0,
+              top: menuPosition?.top ?? 0,
+              visibility: menuPosition ? "visible" : "hidden",
+            }}
+          >
             <button
               type="button"
-              className="block min-h-10 w-full px-3 py-2 text-left text-[13px] text-[#2c1810] hover:bg-[#faf7f4]"
+              className="block min-h-10 w-full px-3 py-2 text-left text-xs text-[#2c1810] hover:bg-[#faf7f4]"
               onClick={() => {
                 setOpen(false);
                 onEstado(contenido);
@@ -217,17 +275,19 @@ function RowActions({ contenido, busy, onEstado, onDelete }) {
             </button>
             <button
               type="button"
-              className="block min-h-10 w-full px-3 py-2 text-left text-[13px] text-[#8d3b28] hover:bg-[#faf7f4]"
+              className="block min-h-10 w-full px-3 py-2 text-left text-xs text-[#8d3b28] hover:bg-[#faf7f4]"
               onClick={() => {
-                menuRef.current?.querySelector("button")?.focus();
+                triggerRef.current?.focus();
                 setOpen(false);
                 onDelete(contenido);
               }}
             >
               Eliminar
             </button>
-          </div>
-        ) : null}
+          </div>,
+          document.body,
+        )
+          : null}
       </div>
     </div>
   );

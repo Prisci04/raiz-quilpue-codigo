@@ -117,7 +117,6 @@ export default function Footer() {
 						<ul className="space-y-2 text-sm text-[#e7dcd2]/55">
 							<li>Quilpué, Región de Valparaíso, Chile</li>
 							<li className="pt-2"><a href={gmailComposeUrl} target="_blank" rel="noreferrer">raizquilpue@gmail.com</a></li>
-							<li>+56 9 3940 5350</li>
 						</ul>
 					</div>
 				</div>

@@ -34,6 +34,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-poppins), sans-serif;
+  line-height: 1.5;
 }
 
 h1,
@@ -42,7 +43,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-raiz);
+  font-family: var(--font-poppins), sans-serif;
 }
 
 button,
@@ -123,6 +124,168 @@ textarea {
 .site-footer {
   background: var(--primary);
   color: var(--background);
+}
+
+.site-shell {
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.site-shell h1 {
+  font-family: var(--font-raiz), Georgia, "Times New Roman", serif;
+  font-size: clamp(2.25rem, 3.6vw, 3rem);
+  font-weight: 400;
+  line-height: 1.12;
+}
+
+.site-shell .home-hero-title {
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  line-height: 1.05;
+}
+
+.site-shell .site-page-hero {
+  min-height: 19rem;
+  padding-top: 3.5rem;
+  padding-bottom: 3.5rem;
+}
+
+.site-shell .site-page-hero-inner {
+  min-height: 11rem;
+}
+
+.site-shell .site-page-hero-eyebrow {
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.site-shell .site-page-hero-title {
+  font-size: clamp(2rem, 3.2vw, 2.875rem);
+  line-height: 1.12;
+}
+
+.site-shell .site-page-hero-description {
+  max-width: 42rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.site-shell .museum-hero h1.museum-hero-title {
+  font-family: var(--font-raiz), Georgia, "Times New Roman", serif;
+  font-size: clamp(2.5rem, 4vw, 3.75rem);
+  line-height: 1.08;
+}
+
+.site-shell .museum-hero .museum-hero-eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.site-shell .museum-hero .museum-hero-tagline {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(1.125rem, 1.7vw, 1.5rem);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.site-shell .museum-hero .museum-hero-description {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.site-shell h2 {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(1.2rem, 2.1vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.site-shell h3 {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: clamp(1.125rem, 1.8vw, 1.25rem);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.site-shell :is(h4, h5, h6) {
+  font-family: var(--font-poppins), sans-serif;
+  line-height: 1.25;
+}
+
+.site-shell p {
+  font-size: clamp(0.875rem, 0.3vw + 0.8rem, 0.9375rem);
+  line-height: 1.5;
+}
+
+.site-shell .font-mono {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 0.8125rem;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+}
+
+.site-shell :not(h1).font-serif {
+  font-family: var(--font-poppins), sans-serif;
+}
+
+.site-shell :is(button, input, select, textarea) {
+  font-family: var(--font-poppins), sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.site-shell .site-back-link {
+  min-height: 2.5rem;
+  border-color: rgba(112, 74, 49, 0.3);
+  border-radius: 0.125rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.site-shell .site-back-link:hover {
+  border-color: #704a31;
+  background: #704a31;
+  color: #f4ece4;
+}
+
+.site-shell .content-card-detail {
+  min-height: 2rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+@media (max-width: 639px) {
+  .site-shell .site-page-hero {
+    min-height: 19rem;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .site-shell .site-page-hero-inner {
+    min-height: 0;
+  }
+
+  .site-shell .site-page-hero-title {
+    font-size: 2.25rem;
+    line-height: 1.12;
+  }
+
+  .site-shell .museum-hero h1.museum-hero-title {
+    font-size: 2.25rem;
+    line-height: 1.08;
+  }
+
+  .site-shell .museum-hero .museum-hero-tagline {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .site-shell .museum-hero .museum-hero-description {
+    font-size: 0.9375rem;
+  }
 }
 
 @keyframes fade-in {

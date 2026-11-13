@@ -209,7 +209,7 @@ export default function QuienesSomosPage() {
                   style={{ background: value.background, color: value.ink }}
                 >
                   <span
-                    className="pointer-events-none absolute -top-1 right-1 font-serif text-5xl leading-none font-light select-none sm:text-6xl"
+                    className="pointer-events-none absolute top-3 right-2 font-sans text-3xl leading-none font-light select-none sm:text-4xl"
                     style={{ color: value.numberColor, opacity: 0.38 }}
                     aria-hidden="true"
                   >
@@ -319,9 +319,8 @@ export default function QuienesSomosPage() {
               <div className="mb-8 flex gap-5 sm:gap-6">
                 <div className="flex h-[4.75rem] w-[4.75rem] shrink-0 items-center justify-center bg-[#ffdf90] text-[#687a42]">
                   <div className="text-center">
-                    <div className="font-serif text-2xl leading-none font-bold">17</div>
-                    <div className="mt-1 font-mono text-[8px] tracking-wide uppercase">
-                      Jun 2026
+                    <div className="px-1 font-serif text-xs leading-tight font-bold">
+                      {content.foundationDate}
                     </div>
                   </div>
                 </div>
