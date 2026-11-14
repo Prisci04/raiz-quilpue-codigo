@@ -163,7 +163,28 @@ Las rutas `GET/POST /api/admin/museo`, `GET/PATCH/DELETE /api/admin/museo/{id}`,
 
 Las categorías oficiales del museo son `Fotografías`, `Documentos`, `Objetos y piezas`, `Memorias y relatos`, `Lugares de memoria` y `Cultura y comunidad`.
 
-La sección `Página` de Administración permite preparar borradores temporales de Inicio y Quiénes somos. Los cambios no se guardan ni se publican en el sitio.
+#### Gestión de Páginas (Inicio y Quiénes somos)
+
+Todas estas rutas exigen sesión interna y rol administrador o editor. Las mutaciones validan el origen y, al guardar, invalidan `/` y `/quienes-somos`. La estructura de las páginas es fija: no se pueden crear páginas, secciones ni campos nuevos. El diseño completo está en `documentacion/gestion-paginas.md`.
+
+| Método y ruta | Descripción |
+|---|---|
+| `GET /api/admin/paginas/{id}` | Contenido de la página (`1` Inicio, `2` Quiénes somos) con campos, valores, integrantes, imágenes y catálogo de cargos |
+| `PATCH /api/admin/paginas/{id}/secciones/{codigo}` | Body `{ "campos": { "codigo_campo": "texto" } }`. Solo actualiza `valor` de campos existentes |
+| `POST /api/admin/paginas/valores` | Crea un valor al final de la lista (`texto_superior`, `titulo`, `descripcion`) |
+| `PATCH /api/admin/paginas/valores` | Reordena: `{ "ids": [..] }` con todos los valores en el orden deseado |
+| `PATCH` / `DELETE /api/admin/paginas/valores/{id}` | Edita / elimina un valor (el orden se compacta) |
+| `POST /api/admin/paginas/integrantes` | Crea un integrante (`id_cargo` del catálogo `cargos_organizacion`, `nombre_integrante`, `descripcion`) |
+| `PATCH /api/admin/paginas/integrantes` | Reordena el directorio con `{ "ids": [..] }` |
+| `PATCH` / `DELETE /api/admin/paginas/integrantes/{id}` | Edita / elimina un integrante |
+| `POST /api/admin/paginas/integrantes/{id}/imagen` | `multipart/form-data` con `file`. Sube la fotografía del integrante a `paginas/quienes-somos/directorio/{uuid}.ext` y la deja asignada |
+| `PATCH /api/admin/paginas/integrantes/{id}/imagen` | `{ "id_imagen": 12 }` asigna una imagen de la biblioteca; `{ "id_imagen": null }` quita la foto |
+| `GET /api/admin/paginas/imagenes` | Biblioteca de imágenes registradas en `public-media` (excluye `museo/aportes/`) |
+| `POST /api/admin/paginas/{id}/secciones/{codigo}/imagenes` | `multipart/form-data` con `file` (y `descripcion` opcional). Sube a `paginas/{pagina}/{seccion}/{uuid}.ext`, registra en `imagenes` y asocia en `imagenes_seccion` |
+| `PATCH /api/admin/paginas/{id}/secciones/{codigo}/imagenes` | `{ "ids": [..] }` define las imágenes de la sección y su orden (asociar, reordenar, reemplazar, quitar) |
+| `PATCH /api/admin/paginas/imagenes/{id}` | Edita `descripcion_imagen` |
+
+Las listas devuelven siempre `{ "items": [...] }` completa y ordenada; las imágenes, `{ "imagenes": [...] }`. Los errores de validación responden `400 VALIDATION`; los elementos inexistentes, `404 NOT_FOUND`.
 
 ---
 

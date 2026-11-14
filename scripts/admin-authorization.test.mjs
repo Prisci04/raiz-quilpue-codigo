@@ -133,6 +133,7 @@ state.load = (name) => {
 const mocks = new Map([
   ["server-only", "export {};"],
   ["next/link", "export default function Link() { return null; }"],
+  ["next/cache", "export function revalidatePath(path) { (globalThis.__rqRevalidated ??= []).push(path); }"],
   ["next/headers", `export async function cookies() {
     const s = globalThis.__rqSecurityTest;
     return {
@@ -345,13 +346,57 @@ test("un cambio de rol se vuelve a comprobar en la siguiente llamada", async () 
 
 test("management GET APIs allow active administrator/editor", async () => {
   for (const codigo of ["administrador", "editor"]) {
-    for (const path of ["actividades", "museo", "actividades/[id]/participantes"]) {
+    for (const path of ["actividades", "museo", "actividades/[id]/participantes", "paginas/[id]", "paginas/imagenes"]) {
       reset({ roles: [role(codigo)] });
       const route = await import(pathToFileURL(join(root, "src/app/api/admin", path, "route.js")));
       const response = await route.GET(request(), { params: Promise.resolve({ id: "1" }) });
       assert.equal(response.status, 200);
       assert.ok(state.calls.length > 0);
     }
+  }
+});
+
+test("páginas: un editor autorizado edita contenido, pero la validación va antes del servicio", async () => {
+  const jsonRequest = (method, body) => new Request("http://localhost/api/admin/paginas", {
+    method,
+    body: JSON.stringify(body),
+    headers: { origin: "http://localhost", host: "localhost", "content-type": "application/json" },
+  });
+  const load = async (path) => import(pathToFileURL(join(root, "src/app/api/admin/paginas", path, "route.js")));
+  const secciones = await load("[id]/secciones/[codigo]");
+  const valores = await load("valores");
+  const valor = await load("valores/[id]");
+  const integrantes = await load("integrantes");
+  const params = (extra = {}) => ({ params: Promise.resolve({ id: "1", codigo: "portada", ...extra }) });
+
+  for (const codigo of ["administrador", "editor"]) {
+    // Cuerpos inválidos: 400 y ningún acceso a datos.
+    for (const [handler, body, context] of [
+      [secciones.PATCH, { campos: { inventado: "x" } }, params()],
+      [secciones.PATCH, { campos: { titulo: "" } }, params()],
+      [secciones.PATCH, { campos: { titulo: "Hola" } }, params({ id: "9" })],
+      [secciones.PATCH, { campos: { titulo: "Hola" } }, params({ codigo: "no_existe" })],
+      [valores.POST, { titulo: "" }, params()],
+      [valores.PATCH, { ids: [1, 1] }, params()],
+      [valor.PATCH, { titulo: "x" }, params({ id: "abc" })],
+      [valor.DELETE, undefined, params({ id: "0" })],
+      [integrantes.POST, { id_cargo: "Presidenta", nombre_integrante: "Ana" }, params()],
+    ]) {
+      reset({ roles: [role(codigo)] });
+      const method = handler === valor.DELETE ? "DELETE" : "POST";
+      const response = await handler(jsonRequest(method, body), context);
+      assert.equal(response.status, 400, `${codigo} ${JSON.stringify(body)}`);
+      assert.equal(response.headers.get("Cache-Control"), "no-store");
+      assert.deepEqual(state.calls, []);
+    }
+
+    // Cuerpo válido: llega al servicio y se invalida el sitio público.
+    reset({ roles: [role(codigo)] });
+    globalThis.__rqRevalidated = [];
+    const response = await secciones.PATCH(jsonRequest("PATCH", { campos: { titulo: "Nuevo título" } }), params());
+    assert.equal(response.status, 200);
+    assert.ok(state.calls.length > 0);
+    assert.deepEqual(globalThis.__rqRevalidated, ["/", "/quienes-somos"]);
   }
 });
 

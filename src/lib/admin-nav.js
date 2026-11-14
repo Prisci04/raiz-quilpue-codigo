@@ -18,7 +18,7 @@ export const ADMIN_NAV = [
       { href: "/admin/contenidos", label: "Contenidos", icon: FileText },
       { href: "/admin/actividades", label: "Actividades", icon: CalendarDays },
       { href: "/admin/museo", label: "Museo Digital", icon: Landmark },
-      { href: "/admin/paginas", label: "Página", icon: PanelsTopLeft },
+      { href: "/admin/paginas", label: "Páginas", icon: PanelsTopLeft },
       // Rehabilitar esta opción cuando se vuelva a implementar Market.
       // { href: "/admin/market", label: "Market", icon: ShoppingBag },
     ],

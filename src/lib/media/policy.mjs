@@ -81,6 +81,30 @@ export function mediaTarget(contexto, tipoImagen, registroId) {
   };
 }
 
+/*
+  Imágenes de las páginas públicas (Gestión de Páginas). Viven en paginas/<pagina>/<seccion>/
+  y solo se asocian a una sección mediante imagenes + imagenes_seccion. Lo que esté
+  fuera de esta carpeta (actividades, contenidos, museo) puede reutilizarse pero
+  nunca se elimina desde este módulo.
+*/
+const PAGINA_SLUG = /^[a-z][a-z0-9-]{1,40}$/;
+const PAGINA_SECCION = /^[a-z][a-z0-9_]{1,60}$/;
+const PAGINA_OBJECT_PATH =
+  /^paginas\/[a-z][a-z0-9-]{1,40}\/[a-z][a-z0-9_]{1,60}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|avif)$/i;
+
+export function paginaMediaTarget(paginaSlug, seccionCodigo) {
+  if (!PAGINA_SLUG.test(paginaSlug ?? "") || !PAGINA_SECCION.test(seccionCodigo ?? "")) {
+    return null;
+  }
+
+  return { folder: `paginas/${paginaSlug}/${seccionCodigo}` };
+}
+
+/** Solo los archivos creados por este módulo pueden eliminarse físicamente. */
+export function isPaginaObjectPath(path) {
+  return typeof path === "string" && PAGINA_OBJECT_PATH.test(path);
+}
+
 export function extensionForType(mime) {
   return MEDIA_TYPES[mime] ?? null;
 }

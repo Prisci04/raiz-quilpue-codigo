@@ -3,30 +3,41 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import ActivityCard from "@/components/actividades/ActivityCard";
 import AccessSection from "@/components/home/AccessSection";
+import { splitParagraphs, splitTitleLines } from "@/lib/paginas/text.mjs";
 
 const fallbackImage = "/images/inicio/imageninicio.jpg";
 
-const heroSlides = [
-  {
-    // CAMBIAR IMAGEN AQUÍ: agrega aquí la primera foto histórica del inicio.
-    image: "/images/inicio/imagen-carrusel1.jpg",
-    caption: "Calle comercial de Quilpué",
-  },
-  {
-    // CAMBIAR IMAGEN AQUÍ: agrega aquí la segunda foto histórica del inicio.
-    image: "/images/contenido/iglesia desde plaza.jpg",
-    caption: "Plaza e Iglesia de Quilpué",
-  },
-  {
-    // CAMBIAR IMAGEN AQUÍ: agrega aquí la tercera foto histórica del inicio.
-    image: "/images/contenido/carozzi.jpeg",
-    caption: "Compañía Carozzi en Quilpué",
-  },
+/*
+  Fotografías de respaldo: se usan solo mientras la sección no tenga imágenes
+  asignadas desde Gestión de Páginas.
+*/
+const FALLBACK_HERO_SLIDES = [
+  { id: "fallback-1", image: "/images/inicio/imagen-carrusel1.jpg", caption: "Calle comercial de Quilpué" },
+  { id: "fallback-2", image: "/images/contenido/iglesia desde plaza.jpg", caption: "Plaza e Iglesia de Quilpué" },
+  { id: "fallback-3", image: "/images/contenido/carozzi.jpeg", caption: "Compañía Carozzi en Quilpué" },
 ];
+
+/* Cada posición de la presentación tiene su propio formato dentro de la grilla. */
+const PRESENTATION_SLOTS = [
+  { fallback: "/images/inicio/imgini5.jpg", alt: "Patrimonio de Quilpué", width: 800, height: 600, className: "aspect-[4/3] w-full object-cover" },
+  { fallback: "/images/inicio/imgini6.jpg", alt: "Historia de Quilpué", width: 800, height: 600, className: "mt-6 aspect-[4/3] w-full object-cover" },
+  { fallback: "/images/inicio/imgini8.jpg", alt: "Paisaje de Quilpué", width: 1200, height: 450, className: "col-span-2 aspect-[16/6] w-full object-cover" },
+];
+
+function HeroTitle({ value }) {
+  const { lines, emphasisIndex } = splitTitleLines(value);
+
+  return lines.map((line, index) => (
+    <span key={`${index}-${line}`}>
+      {index > 0 ? <br /> : null}
+      {index === emphasisIndex ? <em className="text-[#e48d40]">{line}</em> : line}
+    </span>
+  ));
+}
 
 function formatDate(date) {
   if (!date) return "";
@@ -37,18 +48,40 @@ function formatDate(date) {
   });
 }
 
-export default function HomeView({ contents = [], activities = [], museumItems = [], museumError = false }) {
+export default function HomeView({ page = null, contents = [], activities = [], museumItems = [], museumError = false }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [slide, setSlide] = useState(0);
 
+  const portada = page?.secciones?.portada;
+  const presentacion = page?.secciones?.presentacion;
+  const heroImages = portada?.imagenes;
+  const heroSlides = useMemo(
+    () =>
+      heroImages?.length
+        ? heroImages.map((item, index) => ({
+            id: item.id,
+            image: item.url,
+            caption: item.descripcion || `Fotografía ${index + 1} de Quilpué`,
+          }))
+        : FALLBACK_HERO_SLIDES,
+    [heroImages],
+  );
+  const slideCount = heroSlides.length;
+  const activeIndex = slide % slideCount;
+  const presentationParagraphs = splitParagraphs(presentacion?.campos?.contenido);
+  const presentationImages = presentacion?.imagenes?.length
+    ? presentacion.imagenes.slice(0, PRESENTATION_SLOTS.length).map((item, index) => ({
+        src: item.url,
+        alt: item.descripcion || PRESENTATION_SLOTS[index].alt,
+        slot: PRESENTATION_SLOTS[index],
+      }))
+    : PRESENTATION_SLOTS.map((slot) => ({ src: slot.fallback, alt: slot.alt, slot }));
+
   useEffect(() => {
-    const timer = setInterval(
-      () => setSlide((current) => (current + 1) % heroSlides.length),
-      5000,
-    );
+    const timer = setInterval(() => setSlide((current) => (current + 1) % slideCount), 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slideCount]);
 
   function handleSearch(event) {
     event.preventDefault();
@@ -71,9 +104,9 @@ export default function HomeView({ contents = [], activities = [], museumItems =
       <section className="relative flex min-h-[100svh] items-end overflow-hidden pb-20">
         {heroSlides.map((item, index) => (
           <div
-            key={item.caption}
+            key={item.id}
             className="absolute inset-0 transition-opacity duration-1000"
-            style={{ opacity: slide === index ? 1 : 0 }}
+            style={{ opacity: activeIndex === index ? 1 : 0 }}
           >
             <Image
               src={item.image}
@@ -95,18 +128,18 @@ export default function HomeView({ contents = [], activities = [], museumItems =
           }}
         />
         <div className="absolute right-6 bottom-4 font-mono text-[9px] tracking-wide text-[#e7dcd2]/55">
-          {heroSlides[slide].caption}
+          {heroSlides[activeIndex].caption}
         </div>
         <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 gap-2">
           {heroSlides.map((item, index) => (
             <button
-              key={item.caption}
+              key={item.id}
               type="button"
               aria-label={`Ver imagen ${index + 1}`}
               onClick={() => setSlide(index)}
               className="h-px w-5 transition-all duration-300"
               style={{
-                background: slide === index ? "var(--accent)" : "rgba(231,220,210,0.35)",
+                background: activeIndex === index ? "var(--accent)" : "rgba(231,220,210,0.35)",
               }}
             />
           ))}
@@ -114,18 +147,17 @@ export default function HomeView({ contents = [], activities = [], museumItems =
 
         <div className="relative mx-auto w-full max-w-7xl translate-y-4 px-6 sm:translate-y-6">
           <div className="max-w-2xl">
-            <div className="section-label mb-4">Museo Digital · Quilpué, Chile</div>
+            {portada?.campos.texto_superior ? (
+              <div className="section-label mb-4">{portada.campos.texto_superior}</div>
+            ) : null}
             <h1 className="home-hero-title mb-6 font-serif leading-[1.05] font-light text-white">
-              Historias que
-              <br />
-              <em className="text-[#e48d40]">dan forma</em>
-              <br />
-              a Quilpué
+              <HeroTitle value={portada?.campos.titulo} />
             </h1>
-            <p className="mb-8 max-w-xl text-base leading-normal text-[#e7dcd2]/85 md:text-lg">
-              Un espacio donde las historias mantienen vivas nuestras raíces.  
-
-            </p>
+            {portada?.campos.descripcion ? (
+              <p className="mb-8 max-w-xl text-base leading-normal text-[#e7dcd2]/85 whitespace-pre-line md:text-lg">
+                {portada.campos.descripcion}
+              </p>
+            ) : null}
             <form onSubmit={handleSearch} className="mx-0 flex w-full max-w-lg">
               <input
                 value={search}
@@ -153,22 +185,29 @@ export default function HomeView({ contents = [], activities = [], museumItems =
       <section className="bg-[#bb9c82]/25 px-6 py-16">
         <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-2">
           <div>
-            <div className="section-label mb-3">¿Qué es Raíz Quilpué?</div>
-            <h2 className="mb-5 font-sans text-3xl leading-tight font-bold text-[#946541] sm:text-4xl">Raíz Quilpué es una corporación cultural e histórica</h2>
-            <p className="mb-4 text-base leading-normal text-[#946541]">Somos un espacio para encontrarnos con las historias, saberes, lugares, personas y expresiones que forman parte de nuestra identidad local, conectando el patrimonio con la comunidad y el territorio.</p>
-            <p className="mb-6 text-base leading-normal text-[#946541]">Dedicada a investigar, rescatar, difundir y construir participativamente la memoria histórica y cultural de Quilpué.</p>
+            {presentacion?.campos.texto_superior ? (
+              <div className="section-label mb-3">{presentacion.campos.texto_superior}</div>
+            ) : null}
+            {presentacion?.campos.titulo ? (
+              <h2 className="mb-5 font-sans text-3xl leading-tight font-bold text-[#946541] sm:text-4xl">{presentacion.campos.titulo}</h2>
+            ) : null}
+            {presentationParagraphs.map((paragraph, index) => (
+              <p
+                key={`${index}-${paragraph.slice(0, 24)}`}
+                className={`${index === presentationParagraphs.length - 1 ? "mb-6" : "mb-4"} text-base leading-normal whitespace-pre-line text-[#946541]`}
+              >
+                {paragraph}
+              </p>
+            ))}
             <div className="flex flex-wrap justify-center gap-3 sm:justify-start">
               <button type="button" onClick={() => router.push("/quienes-somos")} className="btn-primary inline-flex min-h-12 items-center justify-center px-5 py-3 text-sm font-semibold">Conocer más</button>
               <button type="button" onClick={() => router.push("/museo")} className="btn-outline min-h-12 px-5 py-3 text-sm font-semibold">Explorar museo</button>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {/* CAMBIAR IMAGEN AQUÍ: reemplaza este placeholder por una foto histórica de inicio. */}
-            <Image src={"/images/inicio/imgini5.jpg"} alt="Patrimonio de Quilpué" width={800} height={600} className="aspect-[4/3] w-full object-cover" unoptimized />
-            {/* CAMBIAR IMAGEN AQUÍ: agrega aquí otra foto histórica. */}
-            <Image src={"/images/inicio/imgini6.jpg"} alt="Historia de Quilpué" width={800} height={600} className="mt-6 aspect-[4/3] w-full object-cover" unoptimized />
-            {/* CAMBIAR IMAGEN AQUÍ: agrega aquí una imagen panorámica de Quilpué. */}
-            <Image src={"/images/inicio/imgini8.jpg"} alt="Paisaje de Quilpué" width={1200} height={450} className="col-span-2 aspect-[16/6] w-full object-cover" unoptimized />
+            {presentationImages.map(({ src, alt, slot }) => (
+              <Image key={src} src={src} alt={alt} width={slot.width} height={slot.height} className={slot.className} unoptimized />
+            ))}
           </div>
         </div>
       </section>
