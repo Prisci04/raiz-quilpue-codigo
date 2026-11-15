@@ -15,7 +15,7 @@ const raiz = localFont({
 });
 
 export const metadata = {
-  title: "Raíz Quilpué",
+  title: "Corporación Raíz Quilpué",
   description:
     "Corporación cultural dedicada a rescatar, preservar y difundir la historia e identidad de Quilpué.",
 };
