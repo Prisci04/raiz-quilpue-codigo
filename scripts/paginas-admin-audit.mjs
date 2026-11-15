@@ -62,11 +62,12 @@ async function http(path, { method = "GET", cookie, json, form, origin = true } 
 const api = (cookie) => ({
   get: (path) => http(`/api/admin/paginas${path}`, { cookie }),
   send: (method, path, json) => http(`/api/admin/paginas${path}`, { method, cookie, json }),
-  upload: (path, file, descripcion) => {
+  upload: (path, file, descripcion, reemplazar) => {
     const form = new FormData();
 
     form.set("file", file);
     if (descripcion) form.set("descripcion", descripcion);
+    if (reemplazar) form.set("reemplazar", String(reemplazar));
 
     return http(`/api/admin/paginas${path}`, { method: "POST", cookie, form });
   },
@@ -359,6 +360,30 @@ try {
     await admin.send("PATCH", portadaPath, { ids: imagenesOriginales.portada });
 
     check("la imagen existente sigue en la biblioteca tras quitarla", (await admin.get("/imagenes")).body.data.imagenes.some((imagen) => imagen.id === existente.id));
+  }
+
+  /* Reemplazar subiendo una imagen nueva en una sección llena (presentación: 3/3) */
+  const originalesPres = imagenesOriginales.presentacion;
+
+  if (originalesPres.length === 3) {
+    const [primera, segunda] = originalesPres;
+    const primeraUrl = antes.body.data.secciones.presentacion.imagenes[0].url;
+
+    check("sin reemplazo, subir a una sección llena se rechaza", (await admin.upload(presentacionPath, new File([PNG], "extra.png", { type: "image/png" }))).status === 400);
+    check("rechaza reemplazar una imagen que no está en la sección", (await admin.upload(presentacionPath, new File([PNG], "x.png", { type: "image/png" }), undefined, 999999)).status === 400);
+
+    const reemplazo = await admin.upload(presentacionPath, new File([PNG], "nueva.png", { type: "image/png" }), "Reemplazo de auditoría", primera);
+    const lista = reemplazo.body?.data?.imagenes ?? [];
+
+    check("reemplaza subiendo una imagen en una sección llena", reemplazo.status === 201 && lista.length === 3 && lista[0].descripcion === "Reemplazo de auditoría" && lista[1].id === segunda, `status ${reemplazo.status} ${reemplazo.text.slice(0, 120)}`);
+    check("el reemplazo conserva la posición de la imagen original", lista[0]?.id !== primera && lista.slice(1).map((imagen) => imagen.id).join() === originalesPres.slice(1).join());
+    check("la imagen inicial reemplazada NO se borra de Storage", (await head(primeraUrl)) === 200);
+    check("la imagen nueva es pública en Storage", lista[0] ? (await head(lista[0].url)) === 200 : false);
+
+    // Se restaura (en el cleanup) y la imagen subida durante la auditoría se elimina físicamente.
+    const restaurada = await admin.send("PATCH", presentacionPath, { ids: originalesPres });
+
+    check("al restaurar, la imagen subida en el reemplazo se elimina de Storage", restaurada.status === 200 && lista[0] && [400, 404].includes(await head(lista[0].url)));
   }
 
   check("rechaza más imágenes que el máximo de la sección", (await admin.send("PATCH", presentacionPath, { ids: libres.slice(0, 4).map((imagen) => imagen.id) })).status === 400);

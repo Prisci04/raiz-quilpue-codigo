@@ -40,7 +40,7 @@ export default function PaginasPanel({ idPagina, data, error }) {
             href={pagina.ruta}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-10 items-center gap-2 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810]"
+            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-sm border sm:w-auto border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810]"
           >
             Ver página pública
             <ExternalLink size={14} aria-hidden="true" />
@@ -49,13 +49,13 @@ export default function PaginasPanel({ idPagina, data, error }) {
         </div>
       </div>
 
-      <nav aria-label="Página a editar" className="mt-5 flex flex-wrap gap-2 border-b border-[#e6ddd4]">
+      <nav aria-label="Página a editar" className="mt-5 flex gap-1 overflow-x-auto border-b border-[#e6ddd4] sm:gap-2">
         {PAGINAS.map((item) => (
           <Link
             key={item.id}
             href={`/admin/paginas?pagina=${item.id}`}
             aria-current={item.id === idPagina ? "page" : undefined}
-            className={`inline-flex min-h-11 items-center border-b-2 px-4 text-sm font-semibold ${
+            className={`inline-flex min-h-11 flex-1 items-center justify-center border-b-2 px-4 text-sm font-semibold whitespace-nowrap sm:flex-none ${
               item.id === idPagina
                 ? "border-[#db700f] text-[#2c1810]"
                 : "border-transparent text-[#7c5c47] hover:text-[#2c1810]"

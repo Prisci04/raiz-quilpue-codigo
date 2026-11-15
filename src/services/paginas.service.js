@@ -592,22 +592,39 @@ export async function setImagenesSeccion(idPagina, seccionDef, ids) {
   return imagenesDeSeccion(idSeccion);
 }
 
-/** Sube un archivo ya validado, lo registra en `imagenes` y lo asocia al final de la sección. */
-export async function subirImagenSeccion(idPagina, seccionDef, { bytes, mime, extension, descripcion }) {
+/**
+ * Sube un archivo ya validado, lo registra en `imagenes` y lo asocia a la sección:
+ * al final, o en el lugar de `reemplazarId` (conserva su posición aunque la sección
+ * esté llena). La imagen reemplazada solo pierde su relación; el archivo físico se
+ * elimina únicamente si lo subió este módulo y quedó sin uso.
+ */
+export async function subirImagenSeccion(
+  idPagina,
+  seccionDef,
+  { bytes, mime, extension, descripcion, reemplazarId = null },
+) {
   const max = exigirImagenes(seccionDef);
   const idSeccion = await resolverSeccionId(idPagina, seccionDef.codigo);
   const client = getSupabaseAdminClient();
 
   const { data: filas, error: filasError } = await client
     .from("imagenes_seccion")
-    .select("orden")
+    .select("id_imagen, orden")
     .eq("id_seccion", idSeccion);
 
   if (filasError) throw filasError;
 
-  if ((filas ?? []).length >= max) {
+  const reemplazada = reemplazarId === null
+    ? null
+    : (filas ?? []).find((fila) => fila.id_imagen === reemplazarId);
+
+  if (reemplazarId !== null && !reemplazada) {
+    throw validation("La imagen que quieres reemplazar ya no está en la sección. Recarga la página.");
+  }
+
+  if (!reemplazada && (filas ?? []).length >= max) {
     throw validation(
-      `Esta sección admite hasta ${max} imágenes. Quita una antes de subir otra.`,
+      `Esta sección admite hasta ${max} imágenes. Usa Reemplazar o quita una antes de subir otra.`,
     );
   }
 
@@ -629,7 +646,9 @@ export async function subirImagenSeccion(idPagina, seccionDef, { bytes, mime, ex
     throw imagenError;
   }
 
-  const orden = (filas ?? []).reduce((acc, fila) => Math.max(acc, fila.orden), 0) + 1;
+  const orden = reemplazada
+    ? reemplazada.orden
+    : (filas ?? []).reduce((acc, fila) => Math.max(acc, fila.orden), 0) + 1;
   const { error: relacionError } = await client
     .from("imagenes_seccion")
     .insert({ id_seccion: idSeccion, id_imagen: imagen.id_imagen, orden });
@@ -638,6 +657,19 @@ export async function subirImagenSeccion(idPagina, seccionDef, { bytes, mime, ex
     await client.from("imagenes").delete().eq("id_imagen", imagen.id_imagen);
     await deleteImage(path).catch(() => logInternalError("rollback storage imagen"));
     throw relacionError;
+  }
+
+  if (reemplazada) {
+    // Primero queda asociada la nueva; recién después se retira la anterior.
+    const { error } = await client
+      .from("imagenes_seccion")
+      .delete()
+      .eq("id_seccion", idSeccion)
+      .eq("id_imagen", reemplazada.id_imagen);
+
+    if (error) throw error;
+
+    await limpiarImagenHuerfana(reemplazada.id_imagen);
   }
 
   return imagenesDeSeccion(idSeccion);

@@ -43,7 +43,7 @@ export default function FotoIntegrante({ integrante, busy, ejecutar }) {
   }
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-3">
+    <div className="mt-3 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:flex sm:flex-wrap sm:gap-3">
       {foto ? (
         <span className="relative block h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-[#feca2b] bg-[#e7dcd2]">
           <Image
@@ -63,24 +63,29 @@ export default function FotoIntegrante({ integrante, busy, ejecutar }) {
           {initials(integrante.nombre)}
         </span>
       )}
-      <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        className={`${btnSecondary} w-full sm:w-auto`}
+        disabled={busy}
+        onClick={() => archivoRef.current?.click()}
+      >
+        <Upload size={16} aria-hidden="true" />
+        {foto ? "Cambiar foto" : "Subir foto"}
+      </button>
+      <div className="col-span-2 grid grid-cols-2 gap-2 sm:contents">
         <button
           type="button"
-          className={btnSecondary}
+          className={`${btnSecondary} w-full sm:w-auto ${foto ? "" : "col-span-2 sm:col-span-1"}`}
           disabled={busy}
-          onClick={() => archivoRef.current?.click()}
+          onClick={() => abrir()}
         >
-          <Upload size={16} aria-hidden="true" />
-          {foto ? "Cambiar foto" : "Subir foto"}
-        </button>
-        <button type="button" className={btnSecondary} disabled={busy} onClick={() => abrir()}>
           <Images size={16} aria-hidden="true" />
           Biblioteca
         </button>
         {foto ? (
           <button
             type="button"
-            className={`${btnSecondary} text-[#8d3b28]`}
+            className={`${btnSecondary} w-full text-[#8d3b28] sm:w-auto`}
             disabled={busy}
             onClick={() => setConfirmarQuitar(true)}
             aria-label={`Quitar fotografía de ${integrante.nombre}`}
@@ -100,7 +105,7 @@ export default function FotoIntegrante({ integrante, busy, ejecutar }) {
         onChange={subir}
       />
       {!foto ? (
-        <p className="basis-full text-xs text-[#7c5c47]">
+        <p className="col-span-2 text-xs text-[#7c5c47] sm:basis-full">
           Sin fotografía: el sitio muestra sus iniciales. JPG, PNG, WebP o AVIF de hasta 5 MB.
         </p>
       ) : null}
@@ -131,11 +136,11 @@ export default function FotoIntegrante({ integrante, busy, ejecutar }) {
             {integrante.nombre} se mostrará con sus iniciales. Las imágenes de la biblioteca que usan otras
             secciones o contenidos no se eliminan.
           </p>
-          <div className="mt-6 flex justify-end gap-2">
-            <button type="button" onClick={() => setConfirmarQuitar(false)} className={btnSecondary}>
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button type="button" onClick={() => setConfirmarQuitar(false)} className={`${btnSecondary} w-full sm:w-auto`}>
               Cancelar
             </button>
-            <button type="button" onClick={quitar} className={btnDanger}>
+            <button type="button" onClick={quitar} className={`${btnDanger} w-full sm:w-auto`}>
               Quitar
             </button>
           </div>

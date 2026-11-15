@@ -150,3 +150,19 @@ SELECT
     orden
 FROM public.valores
 ORDER BY orden;
+
+
+/* COLUMNAS */
+
+ALTER TABLE public.valores
+ADD COLUMN id_usuario_modificador INTEGER,
+ADD COLUMN fec_actualizacion TIMESTAMPTZ;
+
+
+/* FOREIGN KEY */
+
+ALTER TABLE public.valores
+ADD CONSTRAINT valores_usuario_fk
+FOREIGN KEY (id_usuario_modificador)
+REFERENCES public.usuarios(id_user)
+ON DELETE SET NULL;

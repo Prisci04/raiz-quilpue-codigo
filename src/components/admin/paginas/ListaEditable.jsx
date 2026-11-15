@@ -127,7 +127,7 @@ export default function ListaEditable({
           type="button"
           onClick={() => abrir(null)}
           disabled={busy || completa || editor?.id === null}
-          className={btnSecondary}
+          className={`${btnSecondary} w-full sm:w-auto`}
         >
           <Plus size={16} aria-hidden="true" />
           {textos.agregar}
@@ -163,7 +163,7 @@ export default function ListaEditable({
             ) : (
               <li
                 key={item.id}
-                className="flex flex-col gap-3 rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] p-3 sm:flex-row sm:items-center"
+                className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] p-3 sm:flex sm:items-center"
               >
                 <span
                   aria-hidden="true"
@@ -175,7 +175,7 @@ export default function ListaEditable({
                   {resumen(item)}
                   {extra ? extra(item, { busy, ejecutar }) : null}
                 </div>
-                <div className="flex shrink-0 gap-2">
+                <div className="col-span-2 grid grid-cols-4 gap-2 sm:col-span-1 sm:flex sm:shrink-0 [&>button]:w-full sm:[&>button]:w-10">
                   <button
                     type="button"
                     className={btnIcon}
@@ -256,11 +256,11 @@ export default function ListaEditable({
               {deleteError}
             </p>
           ) : null}
-          <div className="mt-6 flex justify-end gap-2">
-            <button type="button" disabled={busy} onClick={() => setAEliminar(null)} className={btnSecondary}>
+          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button type="button" disabled={busy} onClick={() => setAEliminar(null)} className={`${btnSecondary} w-full sm:w-auto`}>
               Cancelar
             </button>
-            <button type="button" disabled={busy} onClick={eliminar} className={btnDanger}>
+            <button type="button" disabled={busy} onClick={eliminar} className={`${btnDanger} w-full sm:w-auto`}>
               {busy ? "Eliminando…" : "Eliminar"}
             </button>
           </div>
@@ -327,11 +327,11 @@ function Formulario({ id, titulo, campos, inicial, busy, error, onSubmit, onCanc
           {error}
         </p>
       ) : null}
-      <div className="flex justify-end gap-2">
-        <button type="button" disabled={busy} onClick={onCancel} className={btnSecondary}>
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <button type="button" disabled={busy} onClick={onCancel} className={`${btnSecondary} w-full sm:w-auto`}>
           Cancelar
         </button>
-        <button type="submit" disabled={busy} className={btnPrimary}>
+        <button type="submit" disabled={busy} className={`${btnPrimary} w-full sm:w-auto`}>
           {busy ? "Guardando…" : "Guardar"}
         </button>
       </div>

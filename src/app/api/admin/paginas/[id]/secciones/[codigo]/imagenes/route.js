@@ -3,6 +3,7 @@ import { inspectImageFile } from "@/lib/media/policy.mjs";
 import { requireJsonBody, respuestaOk, runPaginasAdmin } from "@/lib/paginas/http";
 import {
   parseDescripcionFormulario,
+  parseId,
   parseImagenesSeccionPayload,
   parsePaginaId,
   parseSeccionCodigo,
@@ -23,6 +24,7 @@ export async function POST(request, { params }) {
       const seccion = parseSeccionCodigo(idPagina, codigo);
       const form = await request.formData();
       const file = form.get("file");
+      const reemplazo = form.get("reemplazar");
 
       if (!file || typeof file.arrayBuffer !== "function") {
         throw new MediaError(400, "INVALID_FILE", "El archivo no es válido.");
@@ -45,6 +47,7 @@ export async function POST(request, { params }) {
         mime: inspected.mime,
         extension: inspected.extension,
         descripcion: parseDescripcionFormulario(form.get("descripcion")),
+        reemplazarId: reemplazo ? parseId(reemplazo, "La imagen a reemplazar") : null,
       });
 
       return respuestaOk({ imagenes }, 201);

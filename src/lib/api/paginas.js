@@ -83,11 +83,13 @@ export const asignarFotoIntegrante = (idIntegrante, idImagen) =>
     json: { id_imagen: idImagen },
   }).then((data) => data.items);
 
-export const subirImagenSeccion = (idPagina, codigoSeccion, file, descripcion) => {
+/** `reemplazarId`: sube la imagen en el lugar de otra de la misma sección. */
+export const subirImagenSeccion = (idPagina, codigoSeccion, file, descripcion, reemplazarId) => {
   const form = new FormData();
 
   form.set("file", file);
   if (descripcion) form.set("descripcion", descripcion);
+  if (reemplazarId) form.set("reemplazar", String(reemplazarId));
 
   return request(`${base}/${idPagina}/secciones/${codigoSeccion}/imagenes`, {
     method: "POST",

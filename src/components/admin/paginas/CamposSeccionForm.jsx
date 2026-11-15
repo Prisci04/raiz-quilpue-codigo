@@ -49,57 +49,78 @@ export default function CamposSeccionForm({ idPagina, seccion, valoresIniciales 
     }
   }
 
-  return (
-    <form className="admin-form space-y-4" onSubmit={guardar} aria-busy={busy}>
-      <div className="grid gap-4 lg:grid-cols-2">
-        {seccion.campos.map((campo) => {
-          const etiqueta = campo.requerido ? `${campo.etiqueta} *` : campo.etiqueta;
-          const comun = {
-            name: campo.codigo,
-            value: borrador[campo.codigo] ?? "",
-            maxLength: campo.max,
-            required: campo.requerido,
-            disabled: busy,
-            className: inputClass,
-            onChange: (event) => actualizar(campo.codigo, event.target.value),
-          };
+  // Una sola caja de texto corto: el campo y el botón comparten fila.
+  const compacto = seccion.campos.length === 1 && seccion.campos[0].tipo === "texto";
 
-          return (
-            <Field
-              key={campo.codigo}
-              label={etiqueta}
-              ayuda={campo.ayuda}
-              className={campo.tipo === "texto" ? "" : "lg:col-span-2"}
-            >
-              {campo.tipo === "texto" ? (
-                <input type="text" {...comun} />
-              ) : (
-                <textarea rows={campo.tipo === "titulo" ? 3 : 6} {...comun} />
-              )}
-            </Field>
-          );
-        })}
-      </div>
+  const campos = seccion.campos.map((campo) => {
+    const etiqueta = campo.requerido ? `${campo.etiqueta} *` : campo.etiqueta;
+    const comun = {
+      name: campo.codigo,
+      value: borrador[campo.codigo] ?? "",
+      maxLength: campo.max,
+      required: campo.requerido,
+      disabled: busy,
+      className: inputClass,
+      onChange: (event) => actualizar(campo.codigo, event.target.value),
+    };
+
+    return (
+      <Field
+        key={campo.codigo}
+        label={etiqueta}
+        ayuda={campo.ayuda}
+        className={compacto ? "min-w-0 flex-1 sm:max-w-xl" : campo.tipo === "texto" ? "" : "lg:col-span-2"}
+      >
+        {campo.tipo === "texto" ? (
+          <input type="text" {...comun} />
+        ) : (
+          <textarea rows={campo.tipo === "titulo" ? 3 : 6} {...comun} />
+        )}
+      </Field>
+    );
+  });
+
+  const acciones = (
+    <div
+      className={
+        compacto
+          ? "flex flex-col gap-2 sm:flex-row sm:items-center"
+          : "flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end"
+      }
+    >
+      {modificado ? (
+        <>
+          {compacto ? null : <span className="text-xs text-[#7c5c47] sm:mr-auto">Hay cambios sin guardar.</span>}
+          <button type="button" disabled={busy} onClick={() => setBorrador(guardado)} className={`${btnSecondary} w-full sm:w-auto`}>
+            Descartar
+          </button>
+        </>
+      ) : null}
+      <button type="submit" disabled={!modificado || busy} className={`${btnPrimary} w-full sm:w-auto`}>
+        {busy ? "Guardando…" : "Guardar textos"}
+      </button>
+    </div>
+  );
+
+  return (
+    <form className="admin-form space-y-3" onSubmit={guardar} aria-busy={busy}>
+      {compacto ? (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          {campos}
+          {acciones}
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-4 lg:grid-cols-2">{campos}</div>
+          {acciones}
+        </>
+      )}
 
       {notice ? (
         <AdminNotice tone={notice.tone} sticky={false} onDismiss={() => setNotice(null)}>
           {notice.text}
         </AdminNotice>
       ) : null}
-
-      <div className="flex flex-wrap items-center justify-end gap-3">
-        {modificado ? (
-          <>
-            <span className="mr-auto text-xs text-[#7c5c47]">Hay cambios sin guardar.</span>
-            <button type="button" disabled={busy} onClick={() => setBorrador(guardado)} className={btnSecondary}>
-              Descartar
-            </button>
-          </>
-        ) : null}
-        <button type="submit" disabled={!modificado || busy} className={btnPrimary}>
-          {busy ? "Guardando…" : "Guardar textos"}
-        </button>
-      </div>
     </form>
   );
 }

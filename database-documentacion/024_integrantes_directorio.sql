@@ -199,3 +199,20 @@ INNER JOIN public.cargos_organizacion c
 ORDER BY
     d.orden,
     d.id_integrante;
+
+
+
+/* COLUMNAS */
+
+ALTER TABLE public.integrantes_directorio
+ADD COLUMN id_usuario_modificador INTEGER,
+ADD COLUMN fec_actualizacion TIMESTAMPTZ;
+
+
+/* FOREIGN KEY */
+
+ALTER TABLE public.integrantes_directorio
+ADD CONSTRAINT integrantes_directorio_usuario_fk
+FOREIGN KEY (id_usuario_modificador)
+REFERENCES public.usuarios(id_user)
+ON DELETE SET NULL;

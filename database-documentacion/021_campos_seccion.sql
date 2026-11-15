@@ -138,3 +138,20 @@ ORDER BY
     p.id_pagina,
     s.orden,
     c.codigo_campo;
+
+
+
+/* COLUMNAS */
+
+ALTER TABLE public.campos_seccion
+ADD COLUMN id_usuario_modificador INTEGER,
+ADD COLUMN fec_actualizacion TIMESTAMPTZ;
+
+
+/* FOREIGN KEY */
+
+ALTER TABLE public.campos_seccion
+ADD CONSTRAINT campos_seccion_usuario_fk
+FOREIGN KEY (id_usuario_modificador)
+REFERENCES public.usuarios(id_user)
+ON DELETE SET NULL;

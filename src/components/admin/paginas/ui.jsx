@@ -1,14 +1,14 @@
-export const inputClass =
+﻿export const inputClass =
   "mt-1.5 w-full rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] px-3 py-2.5 text-sm text-[#2c1810] outline-none focus:border-[#c4a484]";
 
 export const btnPrimary =
-  "inline-flex min-h-10 items-center justify-center gap-2 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50";
+  "inline-flex min-h-10 items-center justify-center gap-2 [&>svg]:shrink-0 rounded-sm bg-[#2c1810] px-4 text-sm font-medium text-white disabled:opacity-50";
 
 export const btnSecondary =
-  "inline-flex min-h-10 items-center justify-center gap-2 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50";
+  "inline-flex min-h-10 items-center justify-center gap-2 [&>svg]:shrink-0 rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50";
 
 export const btnDanger =
-  "inline-flex min-h-10 items-center justify-center gap-2 rounded-sm bg-[#a5452d] px-4 text-sm font-medium text-white disabled:opacity-50";
+  "inline-flex min-h-10 items-center justify-center gap-2 [&>svg]:shrink-0 rounded-sm bg-[#a5452d] px-4 text-sm font-medium text-white disabled:opacity-50";
 
 export const btnIcon =
   "inline-flex h-10 w-10 items-center justify-center rounded-sm border border-[#e6ddd4] bg-white text-[#2c1810] hover:bg-[#fbf8f4] disabled:opacity-40";
