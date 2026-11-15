@@ -5,23 +5,62 @@ import {
   NOMBRE_COSTO_GRATUITA,
   NOMBRE_COSTO_PAGADA,
   NOMBRE_ESTADO_BORRADOR,
+  NOMBRE_ESTADO_FINALIZADA,
   NOMBRE_ESTADO_PUBLICADA,
   NOMBRE_MODALIDAD_VIRTUAL,
   NOMBRE_PARTICIPACION_ABIERTA,
   NOMBRE_PARTICIPACION_INSCRIPCION,
 } from "./catalogos.mjs";
 
-export function todayISO() {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Santiago",
+const ZONA_CHILE = "America/Santiago";
+const HORA_FIN_SIN_DEFINIR = "23:59:59";
+
+export function nowPartsSantiago(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: ZONA_CHILE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(new Date());
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const read = (type) => parts.find((part) => part.type === type)?.value ?? "";
+  return {
+    date: `${read("year")}-${read("month")}-${read("day")}`,
+    time: `${read("hour")}:${read("minute")}:${read("second")}`,
+  };
 }
 
-export function isActividadPasada(fecha) {
-  return Boolean(fecha) && fecha < todayISO();
+export function todayISO(now = new Date()) {
+  return nowPartsSantiago(now).date;
+}
+
+function normalizeHora(value) {
+  if (typeof value !== "string") return null;
+  const match = value.trim().match(/^([01]\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
+  if (!match) return null;
+  return `${match[1]}:${match[2]}:${match[3] ?? "00"}`;
+}
+
+/**
+ * True cuando fecha + hora_fin ya pasaron en America/Santiago.
+ * No usa hora_inicio: una actividad en curso sigue abierta hasta hora_fin.
+ * Sin hora_fin, el término implícito es el final del día de la actividad.
+ */
+export function haTerminadoActividad(fecha, horaFin = null, now = new Date()) {
+  if (typeof fecha !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return false;
+  const { date, time } = nowPartsSantiago(now);
+  if (fecha < date) return true;
+  if (fecha > date) return false;
+  return (normalizeHora(horaFin) ?? HORA_FIN_SIN_DEFINIR) <= time;
+}
+
+/** @deprecated Preferir haTerminadoActividad(fecha, hora_fin). Se mantiene por compatibilidad. */
+export function isActividadPasada(fecha, horaFin = null, now = new Date()) {
+  if (horaFin != null) return haTerminadoActividad(fecha, horaFin, now);
+  return Boolean(fecha) && fecha < todayISO(now);
 }
 
 export function labelPublicoObjetivo(value) {
@@ -36,8 +75,20 @@ export function esEstadoPublicada(value) {
   return mismoNombreCatalogo(value, NOMBRE_ESTADO_PUBLICADA);
 }
 
+export function esEstadoFinalizada(value) {
+  return mismoNombreCatalogo(value, NOMBRE_ESTADO_FINALIZADA);
+}
+
 export function esEstadoBorrador(value) {
   return mismoNombreCatalogo(value, NOMBRE_ESTADO_BORRADOR);
+}
+
+export function esEstadoVisibleEnPortal(value) {
+  return esEstadoPublicada(value) || esEstadoFinalizada(value);
+}
+
+export function mostrarComoFinalizada(estado, pasada = false) {
+  return esEstadoFinalizada(estado) || (Boolean(pasada) && esEstadoPublicada(estado));
 }
 
 export function esCostoPagada(value) {
@@ -72,17 +123,19 @@ export function labelCosto(value, monto) {
   return label;
 }
 
-export function cuposDisponibles(cupos, inscritos) {
+/** Cupos oficiales libres. `inscritosConfirmados` puede superar cupos_max; el disponible no baja de 0. */
+export function cuposDisponibles(cupos, inscritosConfirmados) {
   if (!Number.isInteger(cupos)) return null;
-  const used = Number.isInteger(inscritos) ? inscritos : 0;
+  const used = Number.isInteger(inscritosConfirmados) ? inscritosConfirmados : 0;
   return Math.max(0, cupos - used);
 }
 
-export function listaEsperaDisponibles(cupos, inscritos, cuposEspera = 0) {
+/** Plazas de espera libres. El conteo oficial de asistencia no usa este valor. */
+export function listaEsperaDisponibles(cupos, cuposEspera = 0, inscritosEspera = 0) {
   if (!Number.isInteger(cupos)) return null;
-  const used = Number.isInteger(inscritos) ? inscritos : 0;
-  const espera = Number.isInteger(cuposEspera) ? cuposEspera : 0;
-  return Math.max(0, espera - Math.max(0, used - cupos));
+  const capacidad = Number.isInteger(cuposEspera) ? cuposEspera : 0;
+  const used = Number.isInteger(inscritosEspera) ? inscritosEspera : 0;
+  return Math.max(0, capacidad - used);
 }
 
 export function capacidadInscripcion(cupos, cuposEspera = 0) {
@@ -142,12 +195,10 @@ export function markListaEspera(participants, cupos) {
   return rows.map((person) => ({ ...person, ...(ranked.get(person.id) ?? { lista_espera: false, cupo: null }) }));
 }
 
-export function compareActividades(left, right) {
-  const today = todayISO();
-
+export function compareActividades(left, right, now = new Date()) {
   function rank(row) {
     if (!row.fecha) return 1;
-    return row.fecha >= today ? 0 : 2;
+    return haTerminadoActividad(row.fecha, row.hora_fin, now) ? 2 : 0;
   }
 
   const rankDiff = rank(left) - rank(right);
@@ -183,7 +234,9 @@ export function mapActividadVista(row) {
   const participacion = nested(row.tipo_participacion);
   const costo = nested(row.costo_actividad);
   const estado = nested(row.estado_publicacion);
+  // Conteo oficial = solo Confirmada (puede superar cupos_max). Espera va aparte.
   const inscritos = Number.isInteger(row.inscritos) ? row.inscritos : 0;
+  const inscritosEspera = Number.isInteger(row.inscritos_espera) ? row.inscritos_espera : 0;
   const cupos = row.cupos_max ?? row.cupos ?? null;
   const cuposEspera = row.cupos_espera ?? 0;
 
@@ -224,8 +277,9 @@ export function mapActividadVista(row) {
     latitud: row.latitud ?? null,
     longitud: row.longitud ?? null,
     inscritos,
+    inscritos_espera: inscritosEspera,
     cupos_disponibles: cuposDisponibles(cupos, inscritos),
-    lista_espera_disponibles: listaEsperaDisponibles(cupos, inscritos, cuposEspera),
+    lista_espera_disponibles: listaEsperaDisponibles(cupos, cuposEspera, inscritosEspera),
     id_costo: row.id_costo ?? costo?.id_costo ?? null,
     costo:
       costo?.nombre_costo ??
@@ -241,7 +295,12 @@ export function mapActividadVista(row) {
       (typeof row.estado === "string" ? row.estado : null),
     fecha_creacion: row.fec_creacion ?? row.fecha_creacion ?? null,
     fecha_actualizacion: row.fec_actualizacion ?? row.fecha_actualizacion ?? null,
-    pasada: isActividadPasada(row.fecha),
+    pasada:
+      esEstadoFinalizada(
+        estado?.nombre_estado ??
+          row.estado_nombre ??
+          (typeof row.estado === "string" ? row.estado : null),
+      ) || haTerminadoActividad(row.fecha, row.hora_fin),
   };
 }
 

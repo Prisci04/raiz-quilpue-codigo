@@ -12,8 +12,9 @@ import { deleteActividad, saveActividadEstado } from "@/lib/api/community";
 import {
   esEstadoBorrador,
   esEstadoPublicada,
-  isActividadPasada,
+  esEstadoVisibleEnPortal,
   labelModalidad,
+  mostrarComoFinalizada,
 } from "@/lib/actividades";
 import { NOMBRE_ESTADO_BORRADOR, NOMBRE_ESTADO_PUBLICADA } from "@/lib/catalogos.mjs";
 
@@ -28,21 +29,21 @@ const dateLabel = (value) => {
 };
 
 function isFinalizada(activity) {
-  return isActividadPasada(activity.fecha);
+  return mostrarComoFinalizada(activity.estado, activity.pasada);
 }
 
 function matchesFilter(activity, filter) {
   if (filter === "todas") return true;
   if (filter === "finalizada") return isFinalizada(activity);
   if (filter === "publicada") {
-    return esEstadoPublicada(activity.estado) && !isActividadPasada(activity.fecha);
+    return esEstadoPublicada(activity.estado) && !activity.pasada;
   }
   if (filter === "borrador") return esEstadoBorrador(activity.estado);
   return false;
 }
 
 function Status({ value, pasada }) {
-  if (pasada && esEstadoPublicada(value)) {
+  if (mostrarComoFinalizada(value, pasada)) {
     return <AdminBadge tone="neutral">Finalizada</AdminBadge>;
   }
   const published = esEstadoPublicada(value);
@@ -70,6 +71,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
   }), [activities, filter, query]);
 
   async function toggleStatus(activity) {
+    if (isFinalizada(activity)) return;
     setBusyId(activity.id);
     setActionError("");
     try {
@@ -102,7 +104,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
 
   const cards = [
     { label: "Total actividades", value: activities.length, icon: CalendarDays, id: "todas" },
-    { label: "Publicadas", value: activities.filter((item) => esEstadoPublicada(item.estado) && !isActividadPasada(item.fecha)).length, icon: CircleCheck, id: "publicada" },
+    { label: "Publicadas", value: activities.filter((item) => esEstadoPublicada(item.estado) && !item.pasada).length, icon: CircleCheck, id: "publicada" },
     { label: "Borradores", value: activities.filter((item) => esEstadoBorrador(item.estado)).length, icon: Clock3, id: "borrador" },
     { label: "Finalizadas", value: activities.filter(isFinalizada).length, icon: CalendarCheck, id: "finalizada" },
   ];
@@ -178,7 +180,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                       {labelModalidad(activity.modalidad)}
                     </td>
                     <td className="px-3 py-4">
-                      <Status value={activity.estado} pasada={isActividadPasada(activity.fecha)} />
+                      <Status value={activity.estado} pasada={activity.pasada} />
                     </td>
                     <td className="px-3 py-4 text-right">
                       <Link
@@ -201,7 +203,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                         >
                           <Pencil size={15} />
                         </Link>
-                        {esEstadoPublicada(activity.estado) ? (
+                        {esEstadoVisibleEnPortal(activity.estado) ? (
                           <Link
                             href={`/actividades/${activity.id}`}
                             target="_blank"
@@ -214,14 +216,18 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                         ) : (
                           <span className="inline-flex h-8 w-8" aria-hidden="true" />
                         )}
-                        <button
-                          type="button"
-                          disabled={busyId === activity.id}
-                          onClick={() => toggleStatus(activity)}
-                          className="min-h-10 rounded-md border border-[#e6ddd4] px-3 text-xs text-[#5c4636] hover:bg-[#f3eee8] disabled:opacity-50"
-                        >
-                          {esEstadoPublicada(activity.estado) ? "Borrador" : "Publicar"}
-                        </button>
+                        {isFinalizada(activity) ? (
+                          <span className="inline-flex min-h-10 items-center px-3 text-xs text-[#8d7b6d]">Finalizada</span>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={busyId === activity.id}
+                            onClick={() => toggleStatus(activity)}
+                            className="min-h-10 rounded-md border border-[#e6ddd4] px-3 text-xs text-[#5c4636] hover:bg-[#f3eee8] disabled:opacity-50"
+                          >
+                            {esEstadoPublicada(activity.estado) ? "Borrador" : "Publicar"}
+                          </button>
+                        )}
                         <button
                           type="button"
                           disabled={busyId === activity.id}

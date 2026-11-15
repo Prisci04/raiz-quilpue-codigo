@@ -23,6 +23,7 @@ import {
   labelModalidad,
   labelParticipacion,
   labelPublicoObjetivo,
+  mostrarComoFinalizada,
 } from "@/lib/actividades";
 
 const MONTHS = [
@@ -31,7 +32,7 @@ const MONTHS = [
 ];
 
 function Status({ value, pasada }) {
-  if (pasada && esEstadoPublicada(value)) {
+  if (mostrarComoFinalizada(value, pasada)) {
     return <AdminBadge tone="neutral">Finalizada</AdminBadge>;
   }
   const published = esEstadoPublicada(value);

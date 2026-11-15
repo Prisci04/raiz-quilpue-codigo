@@ -1,0 +1,25 @@
+{
+  "huella": "c2babab483c7cf8a872101f1bd605546ae17fd63dfb4c6e1cf4076e08938a163",
+  "n_filas": 3,
+  "esquema": "7vars-cupos_max-cat-tiempo",
+  "predictoras": [
+    "mes",
+    "dia_semana",
+    "hora",
+    "cupos_max",
+    "id_modalidad",
+    "id_publico",
+    "id_costo"
+  ],
+  "y_min": 15,
+  "y_max": 20,
+  "y_media": 18.333333333333332,
+  "metricas_ilustrativas": true,
+  "metricas": {
+    "mae": 10.272783314672042,
+    "rmse": 10.272783314672042,
+    "mae_base": 2.5,
+    "r2": null,
+    "ilustrativas": true
+  }
+}

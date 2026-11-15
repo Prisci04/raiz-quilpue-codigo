@@ -1,8 +1,25 @@
 import { compareActividades, mapActividadVista } from "@/lib/actividades";
-import { NOMBRE_ESTADO_PUBLICADA, NOMBRE_INSCRIPCION_CANCELADA } from "@/lib/catalogos.mjs";
+import {
+  NOMBRE_ESTADO_FINALIZADA,
+  NOMBRE_ESTADO_PUBLICADA,
+  NOMBRE_INSCRIPCION_CONFIRMADA,
+  NOMBRE_INSCRIPCION_ESPERA,
+} from "@/lib/catalogos.mjs";
+import { logInternalError } from "@/lib/http";
 import { actividadUbicacionColumns, readActividadUbicacion } from "@/services/actividad-ubicacion.service";
+import { finalizarActividadesVencidas } from "@/services/actividades-finalizacion.service";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+
+async function sincronizarFinalizacion() {
+  try {
+    await finalizarActividadesVencidas();
+  } catch {
+    logInternalError("finalizar actividades");
+  }
+}
+
+const ESTADOS_PORTAL = [NOMBRE_ESTADO_PUBLICADA, NOMBRE_ESTADO_FINALIZADA];
 
 const ACTIVIDAD_LISTADO_COLUMNS = `
   id_actividad,
@@ -45,32 +62,44 @@ function publicadasQuery(columns, options) {
   return getSupabaseServerClient()
     .from("actividades")
     .select(columns, options)
-    .eq("estado_publicacion.nombre_estado", NOMBRE_ESTADO_PUBLICADA);
+    .in("estado_publicacion.nombre_estado", ESTADOS_PORTAL);
 }
 
 async function countInscritos(ids) {
-  const counts = new Map(ids.map((id) => [id, 0]));
+  const confirmadas = new Map(ids.map((id) => [id, 0]));
+  const espera = new Map(ids.map((id) => [id, 0]));
 
-  if (!ids.length) return counts;
+  if (!ids.length) return { confirmadas, espera };
 
   const { data, error } = await getSupabaseAdminClient()
     .from("inscripciones")
     .select("id_actividad, estado_inscripcion!inner(nombre_estado_inscripcion)")
     .in("id_actividad", ids)
-    .neq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CANCELADA);
+    .in("estado_inscripcion.nombre_estado_inscripcion", [
+      NOMBRE_INSCRIPCION_CONFIRMADA,
+      NOMBRE_INSCRIPCION_ESPERA,
+    ]);
 
   if (error) {
     throw new Error("Failed to count inscripciones");
   }
 
   for (const row of data ?? []) {
-    counts.set(row.id_actividad, (counts.get(row.id_actividad) ?? 0) + 1);
+    const estado = Array.isArray(row.estado_inscripcion)
+      ? row.estado_inscripcion[0]?.nombre_estado_inscripcion
+      : row.estado_inscripcion?.nombre_estado_inscripcion;
+    if (estado === NOMBRE_INSCRIPCION_CONFIRMADA) {
+      confirmadas.set(row.id_actividad, (confirmadas.get(row.id_actividad) ?? 0) + 1);
+    } else if (estado === NOMBRE_INSCRIPCION_ESPERA) {
+      espera.set(row.id_actividad, (espera.get(row.id_actividad) ?? 0) + 1);
+    }
   }
 
-  return counts;
+  return { confirmadas, espera };
 }
 
 export async function getActividades({ page, limit, orderBy = "fecha" }) {
+  await sincronizarFinalizacion();
   const ordenarPorCreacion = orderBy === "fecha_creacion";
   const { data, error } = await publicadasQuery(ACTIVIDAD_LISTADO_COLUMNS).order(
     ordenarPorCreacion ? "fec_creacion" : "id_actividad",
@@ -87,7 +116,8 @@ export async function getActividades({ page, limit, orderBy = "fecha" }) {
     .map((row) =>
       mapActividadVista({
         ...row,
-        inscritos: counts.get(row.id_actividad) ?? 0,
+        inscritos: counts.confirmadas.get(row.id_actividad) ?? 0,
+        inscritos_espera: counts.espera.get(row.id_actividad) ?? 0,
       }),
     )
     .sort(
@@ -108,6 +138,7 @@ export async function getActividades({ page, limit, orderBy = "fecha" }) {
 }
 
 export async function getActividadById(id) {
+  await sincronizarFinalizacion();
   const { data, error } = await readActividadUbicacion((withLocation) =>
     publicadasQuery(ACTIVIDAD_DETALLE_COLUMNS + actividadUbicacionColumns(withLocation))
       .eq("id_actividad", id).maybeSingle());
@@ -121,6 +152,7 @@ export async function getActividadById(id) {
   const counts = await countInscritos([data.id_actividad]);
   return mapActividadVista({
     ...data,
-    inscritos: counts.get(data.id_actividad) ?? 0,
+    inscritos: counts.confirmadas.get(data.id_actividad) ?? 0,
+    inscritos_espera: counts.espera.get(data.id_actividad) ?? 0,
   });
 }

@@ -10,15 +10,18 @@ import ActividadUbicacionField from "@/components/admin/actividades/ActividadUbi
 import ContenidoEditor from "@/components/admin/contenidos/ContenidoEditor";
 import { esCostoPagada, todayISO } from "@/lib/actividades";
 import {
+  mismoNombreCatalogo,
   NOMBRE_COSTO_GRATUITA,
   NOMBRE_ESTADO_BORRADOR,
   NOMBRE_ESTADO_PUBLICADA,
   NOMBRE_MODALIDAD_PRESENCIAL,
   NOMBRE_PARTICIPACION_ABIERTA,
+  NOMBRE_PARTICIPACION_INSCRIPCION,
 } from "@/lib/catalogos.mjs";
 import { getCatalogos } from "@/lib/api/catalogos";
 import { deleteActividad, getActividadAdmin, saveActividad } from "@/lib/api/community";
 import { discardUploadedPortada, uploadPortada } from "@/lib/api/media";
+import EstimacionInscripcionesCard from "@/components/admin/actividades/EstimacionInscripcionesCard";
 import LugarFields from "@/components/admin/actividades/LugarFields";
 import { coordenadasValidas } from "@/lib/actividad-ubicacion.mjs";
 
@@ -375,6 +378,14 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
   const busy = saving || uploading;
   const portadaVisible = portadaPreview || form.imagen_url || "";
   const pastDate = Boolean(form.fecha && form.fecha < todayISO());
+  const participacionNombre = catalogNombre(
+    catalogos?.tipo_participacion ?? [],
+    form.id_tipo_participacion,
+  );
+  const muestraEstimacion = mismoNombreCatalogo(
+    participacionNombre,
+    NOMBRE_PARTICIPACION_INSCRIPCION,
+  );
 
   return (
     <section className="admin-page">
@@ -504,6 +515,8 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
                 </Field>
               ) : null}
             </div>
+
+            <EstimacionInscripcionesCard form={form} visible={muestraEstimacion} />
           </div>
 
           <ActividadUbicacionField value={{ ...form, modalidad: catalogNombre(catalogos?.modalidad ?? [], form.id_modalidad) }} catalogLugar disabled={busy}

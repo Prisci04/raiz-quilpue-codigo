@@ -84,18 +84,6 @@ export default function AdminDashboardView({
   enrollmentsByActivity = [],
   monthlyEnrollments = [],
 }) {
-  const activityMax = Math.max(1, ...enrollmentsByActivity.map((item) => item.value));
-  const monthlyMax = Math.max(1, ...monthlyEnrollments.map((item) => item.value));
-  const monthlyTicks = [
-    ...new Set([
-      0,
-      Math.ceil(monthlyMax / 4),
-      Math.ceil(monthlyMax / 2),
-      Math.ceil((monthlyMax * 3) / 4),
-      monthlyMax,
-    ]),
-  ];
-
   return (
     <div className="space-y-7">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -159,14 +147,11 @@ export default function AdminDashboardView({
         {contentError ? <UnavailableChart title="Inscritos por actividad" /> : <AdminBarChart
           title="Inscritos por actividad"
           series={enrollmentsByActivity}
-          max={activityMax}
         />}
         {contentError ? <UnavailableChart title="Inscripciones por mes" /> : <AdminLineChart
           title="Inscripciones por mes"
           series={monthlyEnrollments}
           color="#c4a04a"
-          max={monthlyMax}
-          yTicks={monthlyTicks}
         />}
       </section>
 

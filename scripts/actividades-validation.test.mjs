@@ -229,10 +229,12 @@ test("ordena próximas primero, después sin fecha y las pasadas al final", () =
 test("la lista de espera usa cupos_espera y no un valor fijo", () => {
   assert.equal(capacidadInscripcion(20), 20);
   assert.equal(capacidadInscripcion(20, 15), 35);
-  assert.equal(listaEsperaDisponibles(20, 20, 15), 15);
-  assert.equal(listaEsperaDisponibles(20, 21, 15), 14);
-  assert.equal(listaEsperaDisponibles(20, 35, 15), 0);
+  assert.equal(listaEsperaDisponibles(20, 15, 0), 15);
+  assert.equal(listaEsperaDisponibles(20, 15, 1), 14);
+  assert.equal(listaEsperaDisponibles(20, 15, 15), 0);
   assert.equal(cuposDisponibles(20, 21), 0);
+  // El conteo oficial puede superar cupos_max (p. ej. 35 confirmadas con 20 cupos).
+  assert.equal(cuposDisponibles(20, 35), 0);
 
   const ranked = markListaEspera(
     [

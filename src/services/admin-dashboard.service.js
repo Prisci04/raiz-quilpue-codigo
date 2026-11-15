@@ -9,7 +9,7 @@ import {
 } from "@/lib/admin-dashboard";
 import {
   NOMBRE_ESTADO_PUBLICADA,
-  NOMBRE_INSCRIPCION_CANCELADA,
+  NOMBRE_INSCRIPCION_CONFIRMADA,
   NOMBRE_REVISION_APROBADO,
 } from "@/lib/catalogos.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -159,7 +159,7 @@ export async function getAdminDashboardData({ now = new Date() } = {}) {
           count: "exact",
           head: true,
         })
-        .neq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CANCELADA),
+        .eq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CONFIRMADA),
       "Failed to count actividad inscripciones",
     ),
     Promise.all(
@@ -173,7 +173,7 @@ export async function getAdminDashboardData({ now = new Date() } = {}) {
               count: "exact",
               head: true,
             })
-            .neq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CANCELADA)
+            .eq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CONFIRMADA)
             .gte("fec_inscripcion", start)
             .lt("fec_inscripcion", end),
           "Failed to count monthly actividad inscripciones",
@@ -225,7 +225,7 @@ export async function getAdminDashboardData({ now = new Date() } = {}) {
             head: true,
           })
           .eq("id_actividad", activity.id_actividad)
-          .neq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CANCELADA),
+          .eq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CONFIRMADA),
         `Failed to count inscripciones for actividad ${activity.id_actividad}`,
       ),
     })),

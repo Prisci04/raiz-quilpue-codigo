@@ -53,3 +53,6 @@ VALUES
 SELECT *
 FROM public.estado_publicacion
 ORDER BY id_estado;
+
+INSERT INTO public.estado_publicacion (nombre_estado)
+VALUES ('Finalizada');

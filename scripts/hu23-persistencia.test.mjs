@@ -57,7 +57,27 @@ state.client = {
       select(value) { columns = value; return query; },
       eq(key, value) { filters.push((row) => key.split(".").reduce((value, part) => value?.[part], joined(row)) === value); return query; },
       neq(key, value) { filters.push((row) => key.split(".").reduce((item, part) => item?.[part], joined(row)) !== value); return query; },
-      in(key, values) { filters.push((row) => values.includes(row[key])); return query; },
+      in(key, values) {
+        filters.push((row) => {
+          const resolved = key.split(".").reduce((item, part) => item?.[part], joined(row));
+          return values.includes(resolved);
+        });
+        return query;
+      },
+      lt(key, value) {
+        filters.push((row) => {
+          const resolved = key.split(".").reduce((item, part) => item?.[part], joined(row));
+          return resolved != null && resolved < value;
+        });
+        return query;
+      },
+      lte(key, value) {
+        filters.push((row) => {
+          const resolved = key.split(".").reduce((item, part) => item?.[part], joined(row));
+          return resolved != null && resolved <= value;
+        });
+        return query;
+      },
       order() { return query; },
       maybeSingle() { single = true; return query; }, single() { single = true; return query; },
       insert(value) { operation = "insert"; payload = value; return query; },

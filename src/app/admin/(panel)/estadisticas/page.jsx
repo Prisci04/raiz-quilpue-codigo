@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
-import AdminPlaceholder from "@/components/admin/AdminPlaceholder";
+
+import EstadisticasPanel from "@/components/admin/estadisticas/EstadisticasPanel";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getAdminEstadisticas } from "@/services/admin-estadisticas.service";
 import { usuarioTieneRol } from "@/services/usuarios.service";
 
 export const metadata = { title: "Estadísticas — Admin Raíz Quilpué" };
@@ -20,11 +22,24 @@ export default async function AdminEstadisticasPage() {
     redirect("/admin");
   }
 
+  let stats = null;
+  let error = "";
+
+  try {
+    stats = await getAdminEstadisticas();
+  } catch (loadError) {
+    console.error("[admin/estadisticas]", loadError);
+    error = "No se pudieron cargar las estadísticas. Intenta nuevamente más tarde.";
+  }
+
   return (
-    <AdminPlaceholder
-      eyebrow="Reportes"
-      title="Estadísticas"
-      description="Los indicadores ampliados de visitas, inscripciones y museo se concentrarán en esta página."
+    <EstadisticasPanel
+      error={error}
+      actividadesRealizadas={stats?.actividadesRealizadas ?? 0}
+      totalConfirmadas={stats?.totalConfirmadas ?? 0}
+      topActividades={stats?.topActividades ?? []}
+      mensualConfirmadas={stats?.mensualConfirmadas ?? []}
+      distribucionEstados={stats?.distribucionEstados ?? []}
     />
   );
 }

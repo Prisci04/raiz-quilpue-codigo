@@ -8,6 +8,7 @@ import {
   isCatalogoPublico,
   mapCatalogoRow,
   NOMBRE_COMUNA_DEFAULT,
+  NOMBRE_ESTADO_FINALIZADA,
   NOMBRE_ESTADO_PUBLICADA,
   NOMBRE_REGION_DEFAULT,
   parseCatalogoId,
@@ -76,6 +77,7 @@ test("valida IDs de catálogo y permite NULL cuando corresponde", () => {
 
 test("conserva los nombres sembrados en la base", () => {
   assert.equal(NOMBRE_ESTADO_PUBLICADA, "Publicada");
+  assert.equal(NOMBRE_ESTADO_FINALIZADA, "Finalizada");
   assert.equal(NOMBRE_REGION_DEFAULT, "Valparaíso");
   assert.equal(NOMBRE_COMUNA_DEFAULT, "Quilpué");
 });

@@ -9,12 +9,13 @@ import { mapAporteMuseo, mapAporteMuseoPublico } from "@/lib/museo";
 import {
   capacidadInscripcion,
   esParticipacionInscripcion,
-  isActividadPasada,
+  haTerminadoActividad,
   mapActividadVista,
 } from "@/lib/actividades";
 import {
   findCatalogoByNombre,
   mismoNombreCatalogo,
+  NOMBRE_ESTADO_FINALIZADA,
   NOMBRE_INSCRIPCION_CANCELADA,
   NOMBRE_INSCRIPCION_CONFIRMADA,
   NOMBRE_INSCRIPCION_ESPERA,
@@ -24,6 +25,7 @@ import {
 } from "@/lib/catalogos.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { finalizarActividadesVencidas } from "@/services/actividades-finalizacion.service";
 import { listCatalogo } from "@/services/catalogos.service";
 import { deleteOwnedPortada } from "@/services/storage.service";
 
@@ -108,6 +110,12 @@ function admin() {
 ========================= */
 
 export async function listActividadesAdmin() {
+  try {
+    await finalizarActividadesVencidas();
+  } catch {
+    logInternalError("finalizar actividades");
+  }
+
   const data = assertQuery(
     await admin()
       .from("actividades")
@@ -131,6 +139,7 @@ export async function getActividadAdmin(id) {
 }
 
 export async function countParticipantesAdmin(actividadId) {
+  // Conteo oficial: solo Confirmada (puede superar cupos_max).
   const result = await admin()
     .from("inscripciones")
     .select("id_inscripcion, estado_inscripcion!inner(nombre_estado_inscripcion)", {
@@ -138,7 +147,7 @@ export async function countParticipantesAdmin(actividadId) {
       head: true,
     })
     .eq("id_actividad", actividadId)
-    .neq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CANCELADA);
+    .eq("estado_inscripcion.nombre_estado_inscripcion", NOMBRE_INSCRIPCION_CONFIRMADA);
 
   if (result.error) {
     throw new Error(`Failed to count participantes: ${result.error.message}`);
@@ -307,7 +316,7 @@ export async function crearInscripcion(actividadId, input) {
     await getSupabaseServerClient()
       .from("actividades")
       .select(
-        "id_actividad,fecha,cupos_max,cupos_espera,tipo_participacion(nombre_tipo_participacion)",
+        "id_actividad,fecha,hora_fin,cupos_max,cupos_espera,tipo_participacion(nombre_tipo_participacion),estado_publicacion(nombre_estado)",
       )
       .eq("id_actividad", actividadId)
       .maybeSingle(),
@@ -317,12 +326,19 @@ export async function crearInscripcion(actividadId, input) {
   const participacion = Array.isArray(actividad?.tipo_participacion)
     ? actividad.tipo_participacion[0]
     : actividad?.tipo_participacion;
+  const estado = Array.isArray(actividad?.estado_publicacion)
+    ? actividad.estado_publicacion[0]
+    : actividad?.estado_publicacion;
 
   if (!actividad || !esParticipacionInscripcion(participacion?.nombre_tipo_participacion)) {
     return { error: "ACTIVITY_UNAVAILABLE" };
   }
 
-  if (isActividadPasada(actividad.fecha)) {
+  // Bloquea aunque la actividad aún figure como Publicada en la BD.
+  if (
+    haTerminadoActividad(actividad.fecha, actividad.hora_fin) ||
+    mismoNombreCatalogo(estado?.nombre_estado, NOMBRE_ESTADO_FINALIZADA)
+  ) {
     return { error: "ACTIVITY_ENDED" };
   }
 

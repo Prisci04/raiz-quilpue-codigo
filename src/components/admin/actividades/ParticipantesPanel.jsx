@@ -29,6 +29,7 @@ import {
   esEstadoPublicada,
   labelParticipacion,
   listaEsperaDisponibles,
+  mostrarComoFinalizada,
   todayISO,
 } from "@/lib/actividades";
 import { deleteParticipante } from "@/lib/api/community";
@@ -50,7 +51,7 @@ const AVATARS = [
 const MONTHS_SHORT = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sept", "oct", "nov", "dic"];
 
 function Status({ value, pasada }) {
-  if (pasada && esEstadoPublicada(value)) {
+  if (mostrarComoFinalizada(value, pasada)) {
     return <AdminBadge tone="neutral">Finalizada</AdminBadge>;
   }
   const published = esEstadoPublicada(value);
@@ -188,8 +189,8 @@ export default function ParticipantesPanel({
   const remaining = cuposDisponibles(activity.cupos, confirmedCount);
   const waitlistRemaining = listaEsperaDisponibles(
     activity.cupos,
-    participants.length,
     activity.cupos_espera,
+    waitlistCount,
   );
   const filledPct = cupos ? Math.min(100, Math.round((confirmedCount / cupos) * 100)) : 0;
   const fechaActividad = activityDateLabel(activity.fecha);

@@ -21,6 +21,7 @@
 # production
 /build
 
+.venv-ml/
 # misc
 .DS_Store
 *.pem
@@ -41,3 +42,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+__pycache__/
+*.pyc
+ml/modelos/*.lock
+ml/modelos/*.tmp
+

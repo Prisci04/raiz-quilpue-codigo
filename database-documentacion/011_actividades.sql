@@ -129,7 +129,7 @@ USING (
     SELECT 1
     FROM public.estado_publicacion ep
     WHERE ep.id_estado = actividades.id_estado
-      AND ep.nombre_estado = 'Publicada'
+      AND ep.nombre_estado IN ('Publicada', 'Finalizada')
   )
 );
 
@@ -151,3 +151,21 @@ ON public.actividades (id_usuario_creador);
 SELECT *
 FROM public.actividades
 ORDER BY fecha, hora_inicio;
+
+
+/* ACTUALIZACIONES DE POLÍTICA (aplicar en Supabase si la política antigua ya existe) */
+
+DROP POLICY IF EXISTS "Lectura publica actividades" ON public.actividades;
+
+CREATE POLICY "Lectura publica actividades"
+ON public.actividades
+FOR SELECT
+TO anon
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.estado_publicacion ep
+    WHERE ep.id_estado = actividades.id_estado
+      AND ep.nombre_estado IN ('Publicada', 'Finalizada')
+  )
+);

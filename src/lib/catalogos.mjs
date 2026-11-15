@@ -81,6 +81,7 @@ export const CATALOGO_MUSEO_NOMBRES = ["categoria_museo", "estado_revision"];
 
 export const NOMBRE_ESTADO_BORRADOR = "Borrador";
 export const NOMBRE_ESTADO_PUBLICADA = "Publicada";
+export const NOMBRE_ESTADO_FINALIZADA = "Finalizada";
 export const NOMBRE_TIPO_NOTICIA = "Noticia";
 export const NOMBRE_TIPO_PATRIMONIO = "Patrimonio";
 export const NOMBRE_TIPO_CAPSULA = "Cápsula histórica";
