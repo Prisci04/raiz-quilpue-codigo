@@ -6,13 +6,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUpRight, Leaf, MapPin, Pause, Play, Search, Sparkles } from "lucide-react";
 import AnimatedContent from "@/components/motion/AnimatedContent";
+import { splitParagraphs, splitTitleLines } from "@/lib/paginas/text.mjs";
 import ActivityCard from "@/components/actividades/ActivityCard";
 import AccessSection from "@/components/home/AccessSection";
 import "@/components/home/home-rev1.css";
 
 const fallbackImage = "/images/inicio/imageninicio.jpg";
 
-const heroSlides = [
+const fallbackHeroSlides = [
   {
     // CAMBIAR IMAGEN AQUÍ: agrega aquí la primera foto histórica del inicio.
     image: "/images/inicio/imagen-carrusel1.jpg",
@@ -39,11 +40,24 @@ function formatDate(date) {
   });
 }
 
-export default function HomeView({ contents = [], activities = [] }) {
+export default function HomeView({ page = null, contents = [], activities = [] }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [slide, setSlide] = useState(0);
   const [paused, setPaused] = useState(false);
+  const portada = page?.secciones?.portada;
+  const presentacion = page?.secciones?.presentacion;
+  const heroSlides = portada?.imagenes?.length
+    ? portada.imagenes.map((item) => ({ image: item.url, caption: item.descripcion || "", id: item.id }))
+    : fallbackHeroSlides;
+  const activeSlide = slide % heroSlides.length;
+  const title = splitTitleLines(portada?.campos?.titulo);
+  const paragraphs = splitParagraphs(presentacion?.campos?.contenido);
+  const collage = (index, fallback, alt) => {
+    const item = presentacion?.imagenes?.[index];
+    return { src: item?.url || fallback, alt: item?.descripcion || alt };
+  };
+
 
   useEffect(() => {
     const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -57,7 +71,7 @@ export default function HomeView({ contents = [], activities = [] }) {
     schedule();
     preference.addEventListener("change", schedule);
     return () => { clearInterval(timer); preference.removeEventListener("change", schedule); };
-  }, [paused]);
+  }, [paused, heroSlides.length]);
 
   function handleSearch(event) {
     event.preventDefault();
@@ -79,9 +93,9 @@ export default function HomeView({ contents = [], activities = [] }) {
       <section className="home-hero" aria-labelledby="home-hero-title">
         <div className="home-hero-inner">
           <div className="home-hero-copy">
-            <AnimatedContent className="home-eyebrow" distance={18}><Leaf size={16} aria-hidden="true" /> Cultura · Memoria · Territorio</AnimatedContent>
-            <AnimatedContent as="h1" id="home-hero-title" delay={100} distance={24} duration={560}>Historias que <em>dan forma</em> a Quilpué<span aria-hidden="true">.</span></AnimatedContent>
-            <AnimatedContent as="p" className="home-hero-description" delay={180}>Un espacio donde las historias mantienen vivas nuestras raíces.</AnimatedContent>
+            <AnimatedContent className="home-eyebrow" distance={18}><Leaf size={16} aria-hidden="true" /> {portada?.campos?.texto_superior ?? "Cultura · Memoria · Territorio"}</AnimatedContent>
+            <AnimatedContent as="h1" id="home-hero-title" delay={100} distance={24} duration={560}>{title.lines.length ? title.lines.map((line, index) => index === title.emphasisIndex ? <em key={index}>{line}</em> : <span key={index} style={{ display: "block" }}>{line}</span>) : <>Historias que <em>dan forma</em> a Quilpué<span aria-hidden="true">.</span></>}</AnimatedContent>
+            <AnimatedContent as="p" className="home-hero-description" delay={180}>{portada?.campos?.descripcion ?? "Un espacio donde las historias mantienen vivas nuestras raíces."}</AnimatedContent>
             <AnimatedContent className="home-hero-actions" delay={240}>
               <Link className="home-button home-button-dark" href="/museo">Explorar museo<ArrowUpRight size={18} aria-hidden="true" /></Link>
               <Link className="home-text-link" href="/actividades">Conocer actividades<ArrowUpRight size={17} aria-hidden="true" /></Link>
@@ -98,17 +112,17 @@ export default function HomeView({ contents = [], activities = [] }) {
           </div>
           <AnimatedContent className="home-hero-gallery" delay={100} distance={18} duration={600}>
             <div className="home-hero-photo">
-              {heroSlides.map((item, index) => <div key={item.caption} className="home-slide" aria-hidden={slide !== index} style={{ opacity: slide === index ? 1 : 0 }}>
-                <Image src={item.image} alt={item.caption} fill priority={index === 0} sizes="(max-width: 700px) 100vw, 55vw" className="home-slide-image" unoptimized={item.image.startsWith("/")} />
+              {heroSlides.map((item, index) => <div key={item.id || item.image} className="home-slide" aria-hidden={activeSlide !== index} style={{ opacity: activeSlide === index ? 1 : 0 }}>
+                <Image src={item.image} alt={item.caption} fill priority={index === 0} sizes="(max-width: 700px) 100vw, 55vw" className="home-slide-image" unoptimized />
               </div>)}
               <div className="home-photo-shade" aria-hidden="true" />
               <span className="home-photo-label"><MapPin size={14} aria-hidden="true" /> Quilpué, Chile</span>
-              <div className="home-photo-caption"><span>Una mirada a nuestro territorio</span><p>{heroSlides[slide].caption}</p></div>
+              <div className="home-photo-caption"><span>Una mirada a nuestro territorio</span><p>{heroSlides[activeSlide].caption}</p></div>
             </div>
             <div className="home-gallery-controls">
-              <span className="home-slide-number" aria-hidden="true">0{slide + 1}<small> / 0{heroSlides.length}</small></span>
+              <span className="home-slide-number" aria-hidden="true">0{activeSlide + 1}<small> / 0{heroSlides.length}</small></span>
               <div className="home-slide-buttons">
-                {heroSlides.map((item, index) => <button key={item.caption} type="button" aria-label={"Ver imagen " + (index + 1)} aria-pressed={slide === index} onClick={() => setSlide(index)}><span /></button>)}
+                {heroSlides.map((item, index) => <button key={item.id || item.image} type="button" aria-label={"Ver imagen " + (index + 1)} aria-pressed={activeSlide === index} onClick={() => setSlide(index)}><span /></button>)}
                 <button type="button" aria-label={paused ? "Reanudar imágenes" : "Pausar imágenes"} aria-pressed={paused} onClick={() => setPaused((value) => !value)} className="home-pause">{paused ? <Play size={16} aria-hidden="true" /> : <Pause size={16} aria-hidden="true" />}</button>
               </div>
             </div>
@@ -123,15 +137,15 @@ export default function HomeView({ contents = [], activities = [] }) {
 
       <section className="home-about home-container" id="home-comunidad" aria-labelledby="home-about-heading">
         <AnimatedContent className="home-about-gallery" distance={20}>
-          <figure><Image src="/images/inicio/imgini5.jpg" alt="Comunidad de Raíz Quilpué en el Centro Cultural Daniel de la Vega" fill sizes="(max-width: 700px) 65vw, 35vw" className="home-image" unoptimized /></figure>
-          <figure><Image src="/images/inicio/imgini6.jpg" alt="¿Qué significa Quilpué para ti? Una invitación a compartir recuerdos" fill sizes="(max-width: 700px) 35vw, 20vw" className="home-image" unoptimized /></figure>
-          <figure><Image src="/images/inicio/imgini8.jpg" alt="Participación de la comunidad en una actividad de memoria local" fill sizes="(max-width: 700px) 35vw, 20vw" className="home-image" unoptimized /></figure>
+          <figure><Image src={collage(0, '/images/inicio/imgini5.jpg', 'Comunidad de Raíz Quilpué en el Centro Cultural Daniel de la Vega').src} alt={collage(0, '/images/inicio/imgini5.jpg', 'Comunidad de Raíz Quilpué en el Centro Cultural Daniel de la Vega').alt} fill sizes="(max-width: 700px) 65vw, 35vw" className="home-image" unoptimized /></figure>
+          <figure><Image src={collage(1, '/images/inicio/imgini6.jpg', '¿Qué significa Quilpué para ti? Una invitación a compartir recuerdos').src} alt={collage(1, '/images/inicio/imgini6.jpg', '¿Qué significa Quilpué para ti? Una invitación a compartir recuerdos').alt} fill sizes="(max-width: 700px) 35vw, 20vw" className="home-image" unoptimized /></figure>
+          <figure><Image src={collage(2, '/images/inicio/imgini8.jpg', 'Participación de la comunidad en una actividad de memoria local').src} alt={collage(2, '/images/inicio/imgini8.jpg', 'Participación de la comunidad en una actividad de memoria local').alt} fill sizes="(max-width: 700px) 35vw, 20vw" className="home-image" unoptimized /></figure>
           <p className="home-gallery-caption">Historias, saberes y personas que nos conectan.</p>
         </AnimatedContent>
         <div className="home-about-copy">
-          <AnimatedContent as="p" className="home-eyebrow">01 / Nuestras raíces</AnimatedContent>
-          <AnimatedContent as="h2" id="home-about-heading" delay={70}>La memoria se construye <em>en comunidad.</em></AnimatedContent>
-          <AnimatedContent delay={130}><p className="home-about-lead">Raíz Quilpué es una corporación cultural e histórica.</p><p>Somos un espacio para encontrarnos con las historias, saberes, lugares, personas y expresiones que forman parte de nuestra identidad local, conectando el patrimonio con la comunidad y el territorio.</p><p>Dedicada a investigar, rescatar, difundir y construir participativamente la memoria histórica y cultural de Quilpué.</p></AnimatedContent>
+          <AnimatedContent as="p" className="home-eyebrow">{presentacion?.campos?.texto_superior ?? "01 / Nuestras raíces"}</AnimatedContent>
+          <AnimatedContent as="h2" id="home-about-heading" delay={70}>{presentacion?.campos?.titulo ?? <>La memoria se construye <em>en comunidad.</em></>}</AnimatedContent>
+          <AnimatedContent delay={130}>{presentacion ? paragraphs.map((text, index) => <p key={index} className={index === 0 ? "home-about-lead" : undefined}>{text}</p>) : <><p className="home-about-lead">Raíz Quilpué es una corporación cultural e histórica.</p><p>Somos un espacio para encontrarnos con las historias, saberes, lugares, personas y expresiones que forman parte de nuestra identidad local, conectando el patrimonio con la comunidad y el territorio.</p><p>Dedicada a investigar, rescatar, difundir y construir participativamente la memoria histórica y cultural de Quilpué.</p></>}</AnimatedContent>
           <Link href="/quienes-somos" className="home-text-link">Conocer más<ArrowUpRight size={18} aria-hidden="true" /></Link>
         </div>
       </section>

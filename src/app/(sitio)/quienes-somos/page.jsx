@@ -1,8 +1,14 @@
 import Image from "next/image";
+import { PAGINA_QUIENES_SOMOS } from "@/lib/paginas/estructura.mjs";
+import { initials, splitParagraphs } from "@/lib/paginas/text.mjs";
+import { getPaginaPublica } from "@/services/paginas.service";
+
+export const dynamic = "force-dynamic";
+
 import AnimatedContent from "@/components/motion/AnimatedContent";
 import { BookOpen, Handshake, MapPinned, Users } from "lucide-react";
 
-const content = {
+const fallbackContent = {
   // CAMBIAR TEXTO AQUÍ
   eyebrow: "Raíz Quilpué",
   // CAMBIAR TEXTO AQUÍ
@@ -129,7 +135,42 @@ const images = {
     "/images/quienes-somos/Foto Fundadores.png",
 };
 
-export default function QuienesSomosPage() {
+function Portrait({ src, alt, ...props }) {
+  if (src) return <Image src={src} alt={alt} {...props} />;
+  return <div role="img" aria-label={alt} className={props.className + " flex items-center justify-center bg-[#ffdf90]"} style={props.style}>{initials(alt)}</div>;
+}
+
+export default async function QuienesSomosPage() {
+  let page = null;
+  try { page = await getPaginaPublica(PAGINA_QUIENES_SOMOS); }
+  catch { console.error("[QuienesSomosPage] No se pudo leer el contenido editable."); }
+  const sections = page?.secciones;
+  const mission = sections?.presentacion_mision?.campos;
+  const values = sections?.valores;
+  const directory = sections?.directorio;
+  const closing = sections?.cierre?.campos;
+  const people = directory?.integrantes?.map((person) => ({
+    name: person.nombre, role: person.cargo, image: person.imagen?.url,
+    description: person.descripcion, id: person.id,
+  }));
+  const content = {
+    ...fallbackContent,
+    eyebrow: mission?.texto_superior ?? fallbackContent.eyebrow,
+    title: mission?.titulo_pagina ?? fallbackContent.title,
+    missionTitle: mission?.titulo_mision ?? fallbackContent.missionTitle,
+    missionParagraphs: mission ? splitParagraphs(mission.parrafos_mision) : fallbackContent.missionParagraphs,
+    valuesTitle: values?.campos?.titulo_seccion ?? fallbackContent.valuesTitle,
+    values: values ? values.valores.map((value, index) => ({
+      ...fallbackContent.values[index % fallbackContent.values.length],
+      title: value.titulo, word: value.texto_superior, description: value.descripcion, id: value.id,
+    })) : fallbackContent.values,
+    directoryTitle: directory?.campos?.titulo_seccion ?? fallbackContent.directoryTitle,
+    director: people ? people[0] : fallbackContent.director,
+    board: people ? people.slice(1) : fallbackContent.board,
+    quoteEyebrow: closing?.titulo_cierre ?? fallbackContent.quoteEyebrow,
+    quote: closing?.contenido_cierre ?? fallbackContent.quote,
+  };
+
   return (
     <main className="bg-[#e7dcd2] text-[#946541]">
       <AnimatedContent as="section" className="bg-[#bb9c82]/25 px-6 pt-16 pb-14 sm:pt-20 sm:pb-16">
@@ -154,7 +195,7 @@ export default function QuienesSomosPage() {
               {content.missionTitle}
             </h2>
             {content.missionParagraphs.map((paragraph) => (
-              <p key={paragraph} className="mb-4 text-base leading-relaxed text-[#946541]">
+              <p key={paragraph} className="mb-4 text-base leading-relaxed whitespace-pre-line text-[#946541]">
                 {paragraph}
               </p>
             ))}
@@ -194,7 +235,7 @@ export default function QuienesSomosPage() {
               </h2>
             </div>
             <p className="hidden font-mono text-[10px] tracking-[0.28em] text-[#946541] uppercase md:block">
-              01 — 04
+              01 — {String(content.values.length).padStart(2, "0")}
             </p>
           </div>
 
@@ -205,7 +246,7 @@ export default function QuienesSomosPage() {
 
               return (
                 <li
-                  key={value.title}
+                  key={value.id ?? value.title}
                   className={`relative overflow-hidden p-5 sm:p-6 ${value.span}`}
                   style={{ background: value.background, color: value.ink }}
                 >
@@ -249,9 +290,9 @@ export default function QuienesSomosPage() {
           {content.directoryTitle}
         </h2>
 
-        <article className="mb-8 flex flex-col gap-8 bg-[#bb9c82]/25 p-6 sm:p-8 md:flex-row">
+        {content.director ? <article className="mb-8 flex flex-col gap-8 bg-[#bb9c82]/25 p-6 sm:p-8 md:flex-row">
           <div className="shrink-0">
-            <Image
+            <Portrait
               src={content.director.image}
               alt={content.director.name}
               width={600}
@@ -272,16 +313,16 @@ export default function QuienesSomosPage() {
               {content.director.description}
             </p>
           </div>
-        </article>
+        </article> : null}
 
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
           {content.board.map((person) => (
             <article
-              key={person.name}
+              key={person.id ?? person.name}
               className="bg-[#e7dcd2] p-6 text-center"
               style={{ border: "1px solid var(--border)" }}
             >
-              <Image
+              <Portrait
                 src={person.image}
                 alt={person.name}
                 width={400}
@@ -295,7 +336,7 @@ export default function QuienesSomosPage() {
               </h3>
               <p className="mt-1 font-mono text-[10px] tracking-wide text-[#946541]">
                 {person.role}
-              </p>
+              </p>{person.description ? <p className="mt-3 text-xs leading-relaxed whitespace-pre-line">{person.description}</p> : null}
             </article>
           ))}
         </div>
@@ -338,7 +379,7 @@ export default function QuienesSomosPage() {
 
               <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {content.founders.map((person) => (
-                  <li key={person.name}>
+                  <li key={person.id ?? person.name}>
                     <p className="font-serif text-lg leading-snug italic">
                       {person.name}
                     </p>

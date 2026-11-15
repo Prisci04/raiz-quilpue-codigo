@@ -7,6 +7,7 @@ import {
   Settings,
   ShoppingBag,
   MessageCircle,
+  PanelsTopLeft,
 } from "lucide-react";
 
 export const ADMIN_NAV = [
@@ -20,6 +21,7 @@ export const ADMIN_NAV = [
       { href: "/admin/contenidos", label: "Contenidos", icon: FileText },
       { href: "/admin/actividades", label: "Actividades", icon: CalendarDays },
       { href: "/admin/museo", label: "Museo Digital", icon: Landmark },
+      { href: "/admin/paginas", label: "Páginas", icon: PanelsTopLeft },
       { href: "/admin/ia", label: "Administrar IA", icon: MessageCircle },
       { href: "/admin/market", label: "Market", icon: ShoppingBag },
     ],
