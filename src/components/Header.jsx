@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import "./header-rev1.css";
 
 const navItems = [
   { href: "/", label: "Inicio" },
@@ -32,7 +33,13 @@ export default function Header() {
 
   return (
     <header
-      className="fixed top-0 right-0 left-0 z-50"
+      className={`fixed top-0 right-0 left-0 z-50 ${pathname === "/" ? "rev1-header" : ""}`}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && menuOpen) {
+          setMenuOpen(false);
+          event.currentTarget.querySelector('[aria-controls="menu-movil"]')?.focus();
+        }
+      }}
       style={{
         background: "rgba(231, 220, 210, 0.96)",
         backdropFilter: "blur(8px)",

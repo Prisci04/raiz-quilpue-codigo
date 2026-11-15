@@ -28,7 +28,7 @@ test("Home REV1: real public layout, data/empty states, search, carousel, footer
     `);
     const css = await require("postcss")([require("@tailwindcss/postcss")({ base: root })])
       .process(await readFile(join(root, "src/app/globals.css"), "utf8"), { from: join(root, "src/app/globals.css") });
-    const styles = css.css + (await Promise.all(["src/components/home/home-rev1.css", "src/components/footer/footer.css", "src/components/ai/assistant.css"].map((path) => readFile(join(root, path), "utf8")))).join("\n")
+    const styles = css.css + (await Promise.all(["src/components/header-rev1.css", "src/components/home/home-rev1.css", "src/components/footer/footer.css", "src/components/ai/assistant.css"].map((path) => readFile(join(root, path), "utf8")))).join("\n")
       + '@font-face{font-family:Raiz;src:url(/raiz.otf)}:root{--font-raiz-local:Raiz;--font-poppins:Arial}body{margin:0}';
     server = createServer(async (req, res) => {
       const path = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
