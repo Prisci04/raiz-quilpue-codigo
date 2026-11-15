@@ -14,7 +14,7 @@ test("HU22 REV1 Footer prerenders official identity, real routes/contact and acc
   const html = renderToStaticMarkup(React.createElement(Footer));
   for (const text of ["Raíz Quilpué", "Cultura", "Memoria", "Territorio", "raizquilpue@gmail.com", "+56 9 3940 5350", "Volver arriba"]) assert.ok(html.includes(text));
   for (const route of ["/", "/quienes-somos", "/contenido", "/actividades", "/museo", "/asistente"]) assert.ok(html.includes('href="' + route + '"'));
-  assert.match(html, /LogoRaizQuilpue\.png/); assert.match(html, /https:\/\/www.instagram.com\/raizquilpue\//);
+  assert.match(html, /raiz-quilpue-isotipo\.png/); assert.match(html, /https:\/\/www.instagram.com\/raizquilpue\//);
   assert.match(html, /href="tel:\+56939405350"/); assert.match(html, /aria-label="Explorar Raíz Quilpué"/);
   assert.doesNotMatch(html, /href="#"|WebGL|canvas/);
 });

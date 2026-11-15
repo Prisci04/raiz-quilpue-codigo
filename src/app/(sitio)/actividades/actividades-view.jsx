@@ -1,4 +1,5 @@
 "use client";
+import "@/components/public-rev1.css";
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
@@ -59,7 +60,7 @@ export default function ActividadesView({ activities = [], error = "", initialVi
   }
 
   return (
-    <main className="bg-[#e7dcd2] text-[#946541]">
+    <main className="rev1-public rev1-activities bg-[#e7dcd2] text-[#946541]">
       <AnimatedContent as="section" className="bg-[#bb9c82]/25">
         <div className="mx-auto max-w-[1200px] px-4 pt-8 pb-5 sm:px-8 sm:pt-16 sm:pb-8 lg:flex lg:items-end lg:justify-between lg:gap-12">
           <div className="max-w-2xl">

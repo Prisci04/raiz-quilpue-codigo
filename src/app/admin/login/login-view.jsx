@@ -1,5 +1,6 @@
 "use client";
 
+import "./login-rev1.css";
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -63,7 +64,8 @@ export default function LoginView() {
   }
 
   return (
-    <main className="grid min-h-full bg-[#efe6d8] text-[#704a31] lg:grid-cols-2">
+    <main className="rev1-login grid min-h-full bg-[#efe6d8] text-[#704a31] lg:grid-cols-2">
+      <Link href="/" className="login-brand" aria-label="Raíz Quilpué: volver al Inicio"><Image src="/images/logo/raiz-quilpue-isotipo.png" alt="" width={2280} height={2304} priority /><span>Raíz Quilpué</span></Link>
       <section className="relative hidden min-h-screen overflow-hidden text-[#f6efe6] lg:flex">
         <Image
           src="/images/contenido/archivo-historico.jpg"

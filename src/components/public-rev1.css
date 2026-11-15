@@ -1,0 +1,128 @@
+/* Shared public surfaces; never applied to Admin or map internals. */
+.rev1-public { background: #fffdf9; color: #594334; }
+.rev1-public :is(h1,h2,h3) { color: #30241d; letter-spacing: -.035em; text-wrap: balance; }
+.rev1-public h1 { font-family: var(--font-raiz-local), Georgia, serif; font-weight: 400; }
+.rev1-public p { overflow-wrap: anywhere; }
+.rev1-public :is(a,button,input,select,textarea):focus-visible { outline: 3px solid #8d4d32; outline-offset: 4px; }
+.rev1-public input:focus-visible { outline-offset: 1px; }
+.rev1-public label:focus-within { border-color: #8d4d32; }
+.rev1-public > section:first-child { background: radial-gradient(ellipse at 0 0,#dfb47e30,transparent 70%),#f2e9dc; border-bottom: 1px solid #dfcdb7; }
+.rev1-public > section:first-child h1 { font-size: clamp(2.7rem,5.4vw,5rem); line-height: 1.08; }
+.rev1-public > section:first-child p { max-width: 65ch; }
+.rev1-public :is(button,select,input,textarea) { border-radius: 7px; }
+.rev1-public button { transition: background 180ms ease, box-shadow 180ms ease; }
+.rev1-public button[aria-pressed="true"] { background: #493225; color: #fff9ed; }
+.rev1-public .sticky { background: #fffdf9f5; border-color: #dfcdb7; }
+.rev1-public .interactive-card { overflow: hidden; border-radius: 10px 10px 24px 10px; background: #fffdf9; box-shadow: 0 5px 24px #30241d0b; border: 1px solid #e8dccd; }
+.rev1-public .interactive-card:hover { box-shadow: 0 12px 32px #30241d18; }
+.rev1-activities .interactive-card > div:first-child { height: 240px; }
+.rev1-activities .interactive-card > div:last-child { padding: 24px; }
+.rev1-activities #actividades-list { scroll-margin-top: 80px; }
+.rev1-activities #actividades-list > div.border { background: #f4ede2; border: 0; border-radius: 12px; }
+.rev1-contents > div:last-child { padding-block: 48px 64px; }
+.rev1-contents article { border-radius: 10px; overflow: hidden; }
+.rev1-contents article h3 { font-size: clamp(1.25rem,2vw,1.65rem); }
+.rev1-about > section:first-child { text-align: left; }
+.rev1-about > section:first-child > div { text-align: left; }
+.rev1-about > section:first-child .h-px { margin-left: 0; background: #a76540; }
+.rev1-about > section:nth-child(2) { padding-block: 64px; }
+.rev1-about > section:nth-child(2) img { border-radius: 80px 12px 12px 12px; box-shadow: 0 12px 32px #30241d12; }
+.rev1-about > section:nth-child(3) { background: #f1e7d9; }
+.rev1-about > section:nth-child(3) li { border-radius: 8px; }
+.rev1-about > section:nth-child(4) > article { background: #f2e9dc; border-radius: 12px 12px 40px 12px; }
+.rev1-about > section:nth-child(4) > div:last-child > article { background: transparent; border: 0 !important; border-top: 1px solid #d6c1a8 !important; padding-top: 28px; }
+.rev1-about > section:nth-child(5) { background: #30241d; }
+.rev1-about > section:nth-child(5) h2 { color: #fff9ed; }
+.rev1-about > section:last-child { background: #f2e9dc; }
+.rev1-about blockquote { color: #493225; font-family: var(--font-raiz-local),Georgia,serif; }
+.rev1-detail > article { max-width: 1060px; padding-top: 32px; }
+.rev1-detail > article > a:first-child { border: 0; background: transparent; padding-left: 0; text-decoration: underline; text-underline-offset: 5px; }
+.rev1-detail > article > div.relative { height: clamp(260px,42vw,530px); border-radius: 12px 12px 40px 12px; }
+.rev1-detail h1 { font-size: clamp(2.2rem,4.4vw,4rem); max-width: 22ch; }
+.rev1-story-detail > article > div:last-child { max-width: 760px; margin-inline: auto; }
+.rev1-detail form { background: #f2e9dc; padding: 28px; border-radius: 12px; }
+.rev1-detail form input { background: #fffdf9; }
+.rev1-museum > section:first-child { background: #30241d; color: #fff9ed; min-height: 560px; }
+.rev1-museum > section:first-child h1 { color: #fff9ed; }
+.rev1-museum > section:first-child > div.absolute.inset-0 { background: linear-gradient(90deg,#241b15f5,#30241dcc 45%,#30241d44); }
+.rev1-museum > section:first-child em { color: #e3bd8d; font-family: var(--font-raiz-local),Georgia,serif; font-style: normal; }
+.rev1-museum > section:first-child a { border-radius: 5px 5px 16px 5px; }
+.rev1-museum > section:first-child a:first-child { background: #e3bd8d; color: #30241d; }
+.rev1-museum section[id] { scroll-margin-top: 84px; }
+@media(max-width:700px) {
+  .rev1-public > section:first-child h1 { font-size: 2.8rem; }
+  .rev1-public > section:first-child > div { padding-top: 40px; padding-bottom: 32px; }
+  .rev1-about > section:nth-child(2) { padding-block: 40px; }
+  .rev1-activities .interactive-card > div:first-child { height: 220px; }
+  .rev1-detail > article { padding-inline: 20px; }
+  .rev1-detail form { padding: 20px; }
+  .rev1-museum > section:first-child { min-height: 580px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .rev1-public button,.rev1-public .interactive-card,.rev1-public .interactive-card img { transition: none; }
+}
+
+.rev1-activities > section:first-child p:not(.uppercase),
+.rev1-contents > section:first-child p,
+.rev1-about > section:nth-child(2) p { color: #594334; }
+.rev1-museum section:not(:first-child) > div.grid > button { border-radius: 10px; overflow: hidden; box-shadow: 0 6px 24px #30241d0b; }
+.rev1-museum [role="dialog"] { border-radius: 14px; background: #fffdf9; }
+
+/* Distinct compositions, shared warm materials. */
+.rev1-contents [aria-label="Filtrar contenidos"] { gap: 8px; padding-block: 6px; }
+.rev1-contents [aria-label="Filtrar contenidos"] button {
+  border: 1px solid transparent; border-radius: 24px; padding: 10px 17px;
+  background: #f3eadd; color: #624835; text-transform: none; font-size: 13px;
+}
+.rev1-contents [aria-label="Filtrar contenidos"] button:hover { background: #e8d7bf; }
+.rev1-contents [aria-label="Filtrar contenidos"] button[aria-pressed="true"] { background: #493225; color: #fff9ed; box-shadow: 0 3px 10px #30241d20; }
+.rev1-contents .museum-card { background: #fffdf9; border: 1px solid #e3d5c3; border-radius: 12px; box-shadow: 0 5px 20px #30241d08; }
+.rev1-contents .museum-card:hover { border-color: #b98a60; box-shadow: 0 10px 26px #30241d12; }
+.rev1-contents .museum-card h3 { font-family: inherit; font-weight: 600; font-size: 21px; line-height: 1.35; color: #30241d; }
+.rev1-contents .museum-card p { color: #66503e; }
+.rev1-contents .museum-card > div:last-child { padding: 24px; }
+.rev1-contents .museum-card button { text-transform: none; font-size: 13px; color: #803f26; border-bottom: 1px solid #c5a480; border-radius: 0; }
+.rev1-activities [aria-label="Vista de actividades"] { padding: 5px; border-radius: 12px; background: #f1e6d7; gap: 4px; }
+.rev1-activities [aria-label="Vista de actividades"] button { border: 0; border-radius: 8px; text-transform: none; font-size: 13px; padding-inline: 18px; }
+.rev1-activities [aria-label="Vista de actividades"] button:not([aria-pressed="true"]):hover { background: #e5d3bb; color: #493225; }
+.rev1-activities .interactive-card { border-radius: 10px 10px 26px 10px; }
+.rev1-activities .interactive-card h2 { font-family: inherit; font-size: 22px; font-weight: 600; line-height: 1.3; }
+.rev1-activities .interactive-card > div:last-child { padding: 24px; }
+.rev1-activities .interactive-card > div:last-child > span:last-child { margin-top: 20px; border-radius: 5px 5px 14px 5px; }
+.rev1-museum .museum-collection-card { box-shadow: none; border: 1px solid #e2d3bf; background: #faf5ee; }
+.rev1-museum .museum-collection-card > div:first-child { height: 190px; }
+.rev1-museum .museum-collection-card h3 { font-family: inherit; font-size: 21px; font-weight: 600; }
+.rev1-museum .museum-collection-card > div:last-child { padding: 22px 24px; }
+.rev1-museum .museum-collection-card:hover { border-color: #ae7d53; box-shadow: 0 8px 22px #30241d10; }
+.rev1-museum #coleccion { background: #30241d; }
+.rev1-museum #collection-heading { color: #fff9ed; }
+.rev1-museum #collection-heading em { color: #dfb47e; }
+.rev1-museum #coleccion [aria-pressed] { border-radius: 24px; min-height: 44px; font-family: inherit; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.rev1-museum #coleccion [aria-pressed="true"] { background: #e3bd8d; color: #30241d; border-color: #e3bd8d; }
+.rev1-museum .museum-record-grid { gap: 28px; }
+.rev1-museum .museum-record-card { background: #f5eddf; border: 0; border-radius: 10px 10px 20px 10px; overflow: hidden; color: #493225; box-shadow: 0 7px 24px #120d0925; }
+.rev1-museum .museum-record-card > div:first-child { height: 260px; background: #493a2e; }
+.rev1-museum .museum-record-card img { object-fit: contain; padding: 14px; }
+.rev1-museum .museum-record-card > div:last-child { padding: 24px; }
+.rev1-museum .museum-record-card > div:last-child > div:first-child { color: #79583c; font-size: 10px; line-height: 1.8; padding-bottom: 12px; border-bottom: 1px solid #d8c5ac; }
+.rev1-museum .museum-record-card h3 { color: #30241d; font-size: 24px; line-height: 1.3; margin-top: 14px; }
+.rev1-museum .museum-record-card p { color: #65503e; font-size: 13px; }
+.rev1-museum .museum-record-card > div:last-child > span { display: flex; justify-content: space-between; color: #803f26; padding-top: 16px; border-top: 1px solid #d8c5ac; }
+.rev1-museum .museum-record-card:hover { box-shadow: 0 12px 34px #120d0945; }
+.museum-contribution-help { display: inline-block; vertical-align: middle; margin: 16px 0 0 14px; max-width: 460px; }
+.museum-contribution-help summary { display: flex; align-items: center; gap: 9px; min-height: 44px; cursor: pointer; list-style: none; font-size: 13px; }
+.museum-contribution-help summary::-webkit-details-marker { display: none; }
+.museum-contribution-help summary > span:first-child { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid currentColor; border-radius: 50%; font-weight: 600; }
+.museum-contribution-help summary:focus-visible { outline: 3px solid #b78a5b; outline-offset: 4px; border-radius: 5px; }
+.museum-contribution-help[open] { display: block; margin-left: 0; }
+.museum-contribution-help > p { background: #fff9ed; color: #493225; padding: 18px 20px; border-left: 3px solid #b78a5b; font-size: 14px; line-height: 1.8; border-radius: 0 8px 8px 0; }
+@media(max-width:700px) {
+  .rev1-museum .museum-record-card > div:first-child { height: 240px; }
+  .rev1-museum .museum-record-card > div:last-child { padding: 22px; }
+  .rev1-contents .museum-card > div:last-child { padding: 20px; }
+  .museum-contribution-help { margin-left: 0; margin-right: 14px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .rev1-museum .museum-record-card,.rev1-museum .museum-record-card img,
+  .rev1-contents .museum-card,.rev1-contents .museum-card img { animation: none; transition: none; transform: none; }
+}

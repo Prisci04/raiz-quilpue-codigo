@@ -60,6 +60,8 @@ test("Home REV1: real public layout, data/empty states, search, carousel, footer
       await evaluate("document.fonts.ready");
       await evaluate("document.querySelector('[aria-label=\"Pausar imágenes\"]').click()");
       await capture("hero", width);
+      assert.equal(await evaluate(`(()=>{const w=document.querySelector('.ai-widget-toggle').getBoundingClientRect();return [...document.querySelectorAll('.home-slide-buttons button')].every(e=>{const r=e.getBoundingClientRect();return r.right<=w.left||r.left>=w.right||r.bottom<=w.top||r.top>=w.bottom})})()`), true, "Widget must not cover carousel controls");
+
       for (const [name, selector] of [["comunidad", ".home-about"], ["museo", ".home-museum"], ["historias", ".home-journal"], ["actividades", ".home-activities"]]) {
         await evaluate(`document.querySelector(${JSON.stringify(selector)}).scrollIntoView({block:'center'})`);
         await capture(name, width);

@@ -24,8 +24,7 @@ export default function Footer() {
       <div className="rev1-footer-heading">
         <AnimatedContent className="rev1-footer-identity" distance={18} duration={500}>
           <Link href="/" className="rev1-footer-brand" aria-label="Raíz Quilpué, inicio">
-            <span className="rev1-footer-logo"><Image src="/images/logo/LogoRaizQuilpue.png" alt="Logo de Raíz Quilpué" width={60} height={60} /></span>
-            <span>Raíz Quilpué</span>
+            <span className="rev1-footer-mark"><Image src="/images/logo/raiz-quilpue-isotipo.png" alt="Raíz Quilpué" width={2280} height={2304} sizes="(max-width: 639px) 112px, 136px" /></span>
           </Link>
           <p className="rev1-footer-territory">Cultura <span>·</span> Memoria <span>·</span> Territorio</p>
         </AnimatedContent>

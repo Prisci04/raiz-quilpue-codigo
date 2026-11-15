@@ -1,3 +1,6 @@
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { hu22Modules } from "./helpers/hu22-modules.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createServer } from "node:http";
@@ -18,13 +21,19 @@ test("visual browser: public/admin pages at 1440/1024/390, keyboard, motion pref
   const temporary = await mkdtemp(join(tmpdir(), "rq-visual-browser-"));
   let server, browser;
   try {
+    const hooks = await hu22Modules({ "next/image": "import React from 'react';export default function Image({fill,priority,unoptimized,sizes,...props}){return React.createElement('img',props)}", "@/services/paginas.service": "export async function getPaginaPublica(){return null}" });
+    let aboutMarkup;
+    try { aboutMarkup = renderToStaticMarkup(await (await import("../src/app/(sitio)/quienes-somos/page.jsx")).default()); }
+    finally { hooks.deregister(); }
     await bundleFixture(root, temporary, `
       import React from "react";import {createRoot} from "react-dom/client";
       import Home from "@/app/(sitio)/home-view";
+      import ActivityDetail from "@/app/(sitio)/actividades/[id]/actividad-view";
+      import StoryDetail from "@/app/(sitio)/contenido/[id]/contenido-nota-view";
       import Activities from "@/app/(sitio)/actividades/actividades-view";
       import Contents from "@/app/(sitio)/contenido/contenido-view";
       import Museum from "@/app/(sitio)/museo/museo-view";
-      import About from "@/app/(sitio)/quienes-somos/page";
+      const aboutMarkup=${JSON.stringify(aboutMarkup)};function About(){return <div dangerouslySetInnerHTML={{__html:aboutMarkup}}/>;}
       import Header from "@/components/Header";import Footer from "@/components/Footer";
       import Shell from "@/components/admin/AdminShell";
       import Dashboard from "@/app/admin/(panel)/dashboard-view";
@@ -37,7 +46,7 @@ test("visual browser: public/admin pages at 1440/1024/390, keyboard, motion pref
       const content={id:1,title:"Historias de nuestro territorio",titulo:"Historias de nuestro territorio",description:"Memorias y relatos de Quilpué.",tipo:"noticia",estado:"publicada",date:"2026-06-17",image:"/images/inicio/imageninicio.jpg"};
       const activities=[activity,{...activity,id:2,titulo:"Recorrido patrimonial"}];
       const contents=[content,{...content,id:2,tipo:"patrimonio"}];
-      const views={home:<Home contents={contents} activities={activities}/>,activities:<Activities activities={activities}/>,calendar:<Activities activities={activities} initialView="calendario"/>,contents:<Contents items={contents}/>,museum:<Museum/>,about:<About/>,login:<Login/>,dashboard:<Dashboard dateLabel="8 de noviembre de 2026" publishedContents={2} totalContents={2} publishedActivities={2} totalEnrollments={0} publishedMuseumPieces={0}/>,"admin-activities":<AdminActivities activities={activities}/>,"admin-contents":<AdminContents contenidos={contents}/>,"admin-museum":<AdminMuseum/>};
+      const views={"activity-detail":<ActivityDetail activity={activity}/>,"story-detail":<StoryDetail contenido={content}/>,home:<Home contents={contents} activities={activities}/>,activities:<Activities activities={activities}/>,calendar:<Activities activities={activities} initialView="calendario"/>,contents:<Contents items={contents}/>,museum:<Museum items={[{...content,tipo:"Fotograf\u00edas"},{...content,id:2,title:"Un recuerdo del barrio",tipo:"Documentos"}]}/>,about:<About/>,login:<Login/>,dashboard:<Dashboard dateLabel="8 de noviembre de 2026" publishedContents={2} totalContents={2} publishedActivities={2} totalEnrollments={0} publishedMuseumPieces={0}/>,"admin-activities":<AdminActivities activities={activities}/>,"admin-contents":<AdminContents contenidos={contents}/>,"admin-museum":<AdminMuseum/>};
       const root=createRoot(document.getElementById("app"));let revision=0;
       window.qaRender=(name)=>{window.qaPath=name==='home'?'/':'/'+name;root.render(<React.Fragment key={++revision}>{name==='motion'?<><div style={{height:1800}}/><AnimatedContent className="motion-probe"><button>Foco accesible</button></AnimatedContent><div style={{height:1000}}/></>:['dashboard','admin-activities','admin-contents','admin-museum'].includes(name)?<Shell displayName="Gestión local" email="qa@example.test" isAdministrador>{views[name]}</Shell>:name==='login'?views[name]:<div className="flex min-h-full flex-col pt-16"><Header/>{views[name]}<Footer/></div>}</React.Fragment>)};
       window.qaRender('home');window.qaReady=true;
@@ -46,6 +55,8 @@ test("visual browser: public/admin pages at 1440/1024/390, keyboard, motion pref
       .process(await readFile(join(root, "src/app/globals.css"), "utf8"), { from: join(root, "src/app/globals.css") });
     const styles = css.css + await readFile(join(root, "src/components/admin/admin-ui.css"), "utf8")
       + await readFile(join(root, "src/components/header-rev1.css"), "utf8")
+      + await readFile(join(root, "src/components/public-rev1.css"), "utf8")
+      + await readFile(join(root, "src/app/admin/login/login-rev1.css"), "utf8")
       + await readFile(join(root, "src/components/home/home-rev1.css"), "utf8")
       + await readFile(join(root, "src/components/footer/footer.css"), "utf8")
       + '@font-face{font-family:Raiz;src:url(/raiz.otf)}:root{--font-raiz-local:Raiz;--font-poppins:Arial}body{margin:0}';
@@ -70,7 +81,7 @@ test("visual browser: public/admin pages at 1440/1024/390, keyboard, motion pref
     browser = qa.browser;
     const { send, evaluate, waitFor } = qa;
     await waitFor("window.qaReady && document.querySelector('h1')");
-    const views = ["home", "activities", "calendar", "contents", "museum", "about", "login", "dashboard", "admin-activities", "admin-contents", "admin-museum"];
+    const views = ["activity-detail", "story-detail", "home", "activities", "calendar", "contents", "museum", "about", "login", "dashboard", "admin-activities", "admin-contents", "admin-museum"];
     for (const width of [1440, 1024, 390]) {
       await send("Emulation.setDeviceMetricsOverride", { width, height: 1000, deviceScaleFactor: 1, mobile: width === 390 });
       for (const name of views) {
@@ -85,6 +96,19 @@ test("visual browser: public/admin pages at 1440/1024/390, keyboard, motion pref
         }
         const capture = await send("Page.captureScreenshot", { format: "png" });
         await writeFile(join(tmpdir(), `rq-visual-${name}-${width}.png`), Buffer.from(capture.data, "base64"));
+        if (name === "museum") {
+          await evaluate("document.querySelector('#coleccion').scrollIntoView({block:'start'})");
+          await pause(500);
+          assert.equal(await evaluate("document.documentElement.scrollWidth<=innerWidth"), true);
+          await writeFile(join(tmpdir(), `rq-visual-museum-archive-${width}.png`), Buffer.from((await send("Page.captureScreenshot", {format:"png"})).data,"base64"));
+          await evaluate("document.querySelector('.museum-contribution-help summary').focus()");
+          assert.equal(await evaluate("document.activeElement.matches('.museum-contribution-help summary')"), true);
+          await evaluate("document.activeElement.click()");
+          await waitFor("document.querySelector('.museum-contribution-help').open");
+          await evaluate("window.scrollTo(0,0)");
+        }
+        if (name === "login") assert.equal(await evaluate("document.querySelector('.login-brand').getAttribute('href')"), "/");
+        if (name !== "login" && !["dashboard","admin-activities","admin-contents","admin-museum"].includes(name)) assert.equal(await evaluate("Boolean(document.querySelector('header.rev1-header'))"), true);
         if (name === "home") {
           await send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", windowsVirtualKeyCode: 9 });
           await send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", windowsVirtualKeyCode: 9 });
@@ -120,7 +144,7 @@ test("visual browser: public/admin pages at 1440/1024/390, keyboard, motion pref
     await evaluate("document.querySelector('.interactive-card').dispatchEvent(new MouseEvent('mouseover',{bubbles:true}))");
     assert.equal(await evaluate("getComputedStyle(document.querySelector('.interactive-card')).transform"), "none");
     assert.deepEqual(qa.errors, []); assert.deepEqual(qa.external, []);
-    console.log("Browser reviewed: 11 views × 3 widths; screenshots: " + join(tmpdir(), "rq-visual-*.png"));
+    console.log("Browser reviewed: 13 views × 3 widths; screenshots: " + join(tmpdir(), "rq-visual-*.png"));
   } finally {
     browser?.kill();
     if (server) { server.closeAllConnections(); await new Promise((done) => server.close(done)); }

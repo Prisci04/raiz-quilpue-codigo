@@ -33,7 +33,7 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 right-0 left-0 z-50 ${pathname === "/" ? "rev1-header" : ""}`}
+      className="fixed top-0 right-0 left-0 z-50 rev1-header"
       onKeyDown={(event) => {
         if (event.key === "Escape" && menuOpen) {
           setMenuOpen(false);
@@ -57,10 +57,10 @@ export default function Header() {
             >
               {/* CAMBIAR IMAGEN AQUÍ: sube el logo oficial con este nombre. */}
               <Image
-                src="/images/logo/LogoRaizQuilpue.png"
+                src="/images/logo/raiz-quilpue-isotipo.png"
                 alt="Logo de Raíz Quilpué"
-                width={32}
-                height={32}
+                width={2280}
+                height={2304}
                 className="h-auto w-8 object-contain"
               />
             </div>

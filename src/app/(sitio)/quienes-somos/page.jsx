@@ -1,3 +1,4 @@
+import "@/components/public-rev1.css";
 import Image from "next/image";
 import { PAGINA_QUIENES_SOMOS } from "@/lib/paginas/estructura.mjs";
 import { initials, splitParagraphs } from "@/lib/paginas/text.mjs";
@@ -172,7 +173,7 @@ export default async function QuienesSomosPage() {
   };
 
   return (
-    <main className="bg-[#e7dcd2] text-[#946541]">
+    <main className="rev1-public rev1-about bg-[#e7dcd2] text-[#946541]">
       <AnimatedContent as="section" className="bg-[#bb9c82]/25 px-6 pt-16 pb-14 sm:pt-20 sm:pb-16">
         <div className="mx-auto max-w-7xl text-center">
           <div className="mb-4 text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">

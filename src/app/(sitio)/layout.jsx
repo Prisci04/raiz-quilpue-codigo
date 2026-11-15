@@ -6,7 +6,7 @@ import "@/components/ai/assistant.css";
 
 export default function SitioLayout({ children }) {
   return (
-    <AssistantProvider><div className="flex min-h-full flex-col bg-[#e7dcd2] pt-16 text-[#946541]">
+    <AssistantProvider><div className="flex min-h-full flex-col bg-[#fffdf9] pt-16 text-[#946541]">
       <Header />
       {children}
       <Footer />

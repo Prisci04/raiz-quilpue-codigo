@@ -1,4 +1,5 @@
 "use client";
+import "@/components/public-rev1.css";
 
 import Image from "next/image";
 import AnimatedContent from "@/components/motion/AnimatedContent";
@@ -225,7 +226,7 @@ export default function MuseoView({ items = [], categorias = [], error = "" }) {
   }, [showContribution]);
 
   return (
-    <main className="bg-[#e7dcd2] text-[#946541]">
+    <main className="rev1-public rev1-museum bg-[#e7dcd2] text-[#946541]">
       <section className="relative isolate flex min-h-[620px] items-center overflow-hidden bg-[#704a31] text-[#e7dcd2] sm:min-h-[680px]">
         <div className="absolute inset-y-0 right-0 -z-10 w-full sm:left-[38%] sm:w-auto">
           <Image
@@ -272,6 +273,7 @@ export default function MuseoView({ items = [], categorias = [], error = "" }) {
               >
                 Quiero dar mi aporte
               </button>
+              <ContributionHelp />
             </div>
           </div>
         </div>
@@ -302,7 +304,7 @@ export default function MuseoView({ items = [], categorias = [], error = "" }) {
                 setActiveTipo(collection.id);
                 document.getElementById("coleccion")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
               }}
-              className="interactive-card group overflow-hidden rounded-xl border border-[#bb9c82]/60 bg-[#f8f3ed] text-left shadow-sm hover:border-[#db700f]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#db700f]"
+              className="museum-collection-card interactive-card group overflow-hidden rounded-xl border border-[#bb9c82]/60 bg-[#f8f3ed] text-left shadow-sm hover:border-[#db700f]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#db700f]"
             >
               <div className="relative h-52 overflow-hidden bg-[#bb9c82]/30">
                 <Image
@@ -421,14 +423,14 @@ export default function MuseoView({ items = [], categorias = [], error = "" }) {
               {error}
             </p>
           ) : visibleItems.length ? (
-            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="museum-record-grid mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {visibleItems.map((item, index) => (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => openItem(item)}
                   aria-label={`Abrir ficha de ${item.title}`}
-                  className="group animate-fade-up border border-[#e7dcd2]/20 bg-[#e7dcd2]/5 text-left transition-colors hover:border-[#e48d40]/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e48d40]"
+                  className="museum-record-card group animate-fade-up border border-[#e7dcd2]/20 bg-[#e7dcd2]/5 text-left transition-colors hover:border-[#e48d40]/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e48d40]"
                   style={{ animationDelay: `${index * 0.06}s` }}
                 >
                   <div className="relative h-56 overflow-hidden bg-[#bb9c82]/30">
@@ -508,6 +510,7 @@ export default function MuseoView({ items = [], categorias = [], error = "" }) {
               Quiero dar mi aporte
               <ArrowRight size={15} aria-hidden="true" />
             </button>
+            <ContributionHelp />
           </div>
         </div>
       </section>
@@ -649,4 +652,12 @@ export default function MuseoView({ items = [], categorias = [], error = "" }) {
       ) : null}
     </main>
   );
+}
+
+
+function ContributionHelp() {
+  return <details className="museum-contribution-help">
+    <summary aria-label="Ayuda: cómo compartir un aporte"><span aria-hidden="true">?</span><span>¿Cómo funciona?</span></summary>
+    <p>Puedes compartir una foto, un documento o un recuerdo de Quilpué. Completa el formulario, agrega tu material y envíalo. El equipo lo revisará y, si corresponde, podrá aparecer en el museo. No se publica al momento de enviarlo.</p>
+  </details>;
 }
