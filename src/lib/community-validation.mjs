@@ -9,6 +9,7 @@ import {
   NOMBRE_ESTADO_PUBLICADA,
   NOMBRE_PARTICIPACION_INSCRIPCION,
 } from "./catalogos.mjs";
+import { parseActividadUbicacion } from "./actividad-ubicacion.mjs";
 import { parseOwnedAporteImageUrl, parseOwnedPortadaUrl } from "./media/policy.mjs";
 
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
@@ -165,6 +166,8 @@ export function parseActividadInput(input, catalogos = {}) {
       return fail("Indica los cupos máximos cuando la actividad requiere inscripción.");
     }
   }
+  const ubicacion = parseActividadUbicacion(input);
+  if (!ubicacion.ok) return ubicacion;
 
   return {
     ok: true,
@@ -187,6 +190,7 @@ export function parseActividadInput(input, catalogos = {}) {
       cupos_espera: cuposEspera ?? 0,
       id_costo: costo.value,
       valor_monto: costoItem && costo.value === costoItem.id ? valorMonto : null,
+      ...ubicacion.value,
       informacion_adicional: informacion.value,
       imagen_url: imagenUrl,
       id_estado: estado.value,

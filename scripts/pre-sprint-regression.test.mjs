@@ -101,6 +101,7 @@ const hooks = registerHooks({
     return next(name, context.parentURL?.startsWith("regression-mock:") ? { ...context, parentURL: import.meta.url } : context);
   },
   load(url, context, next) {
+    if (url.endsWith(".css")) return { format: "module", source: "export {};", shortCircuit: true };
     if (url.startsWith("regression-mock:")) return { format: "module", source: mocks[url.slice(16)], shortCircuit: true };
     if (url.startsWith("file:") && url.endsWith(".jsx")) return {
       format: "module", shortCircuit: true,

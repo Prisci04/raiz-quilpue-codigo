@@ -1,3 +1,5 @@
+import OpenStreetMapMap from "@/components/maps/OpenStreetMapMap";
+import { actividadTieneUbicacionFisica, buildActividadMapsLinks, puedeMostrarMapa } from "@/lib/actividad-ubicacion.mjs";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -79,14 +81,14 @@ function cuposLabel(activity) {
 
 function Dato({ icon: Icon, label, value }) {
   return (
-    <article className="rounded-xl border border-[#efe6dc] bg-white px-3 py-2.5">
+    <article className="min-w-0 rounded-xl border border-[#efe6dc] bg-white px-3 py-2.5">
       <div className="flex items-center gap-2.5">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#f8ebe6] text-[#c45c38]">
           <Icon size={15} aria-hidden="true" />
         </span>
         <div className="min-w-0">
           <p className="text-[11px] leading-4 text-[#8a7968]">{label}</p>
-          <p className="text-sm leading-5 font-medium text-[#2c1810]">{value}</p>
+          <p className="text-sm leading-5 font-medium wrap-anywhere text-[#2c1810]">{value}</p>
         </div>
       </div>
     </article>
@@ -97,6 +99,8 @@ export default function ActividadDetallePanel({ activity }) {
   const fecha = dateLabel(activity.fecha);
   const horario = horarioLabel(activity.hora_inicio, activity.hora_fin);
   const lugar = labelLugarActividad(activity);
+  const physical = actividadTieneUbicacionFisica(activity);
+  const links = buildActividadMapsLinks(activity);
 
   return (
     <section className="admin-page">
@@ -186,6 +190,8 @@ export default function ActividadDetallePanel({ activity }) {
         <Dato icon={CalendarDays} label="Fecha" value={fecha} />
         <Dato icon={Clock3} label="Hora" value={horario} />
         <Dato icon={MapPin} label="Lugar" value={lugar} />
+        {physical && activity.direccion ? <Dato icon={MapPin} label="Dirección" value={activity.direccion} /> : null}
+        <Dato icon={MapPin} label="Ubicación" value={!physical ? "Sin uso en modalidad virtual" : puedeMostrarMapa(activity) ? "Coordenadas guardadas" : "Sin coordenadas"} />
         <Dato icon={Users} label="Público" value={labelPublicoObjetivo(activity.publico_objetivo)} />
         <Dato icon={Wallet} label="Valor" value={labelCosto(activity.costo, activity.valor_monto)} />
         <Dato icon={Ticket} label="Cupos" value={cuposLabel(activity)} />
@@ -196,6 +202,16 @@ export default function ActividadDetallePanel({ activity }) {
           value={labelParticipacion(activity.tipo_participacion, { corta: true })}
         />
       </div>
+
+      {physical ? <div className="admin-card mt-5 space-y-3 p-4">
+        <h2 className="font-serif text-lg font-medium text-[#2c1810]">Ubicación del evento</h2>
+        {puedeMostrarMapa(activity) ? <OpenStreetMapMap latitud={activity.latitud} longitud={activity.longitud} /> : null}
+        <div className="flex flex-wrap gap-4 text-sm text-[#704a31]">
+          {links.directions ? <a href={links.directions} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">Cómo llegar</a> : null}
+          {links.map ? <a href={links.map} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center underline">Abrir en Google Maps</a> : null}
+        </div>
+        {links.map ? <p className="text-xs leading-relaxed text-[#7c5c47]">Cómo llegar abre las indicaciones de ruta; Abrir en Google Maps muestra el punto. Se abren en otra pestaña.</p> : null}
+      </div> : null}
 
       {activity.informacion_adicional ? (
         <div className="mt-6 rounded-2xl border border-[#efe6dc] bg-white p-5 sm:p-6">

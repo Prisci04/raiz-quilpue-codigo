@@ -1,4 +1,5 @@
 import Image from "next/image";
+import AnimatedContent from "@/components/motion/AnimatedContent";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Landmark, Library, Newspaper } from "lucide-react";
 
@@ -62,72 +63,23 @@ export default function AccessSection({ contents = [], activities = [] }) {
     actividades: activities.length,
   };
 
-  return (
-    <section aria-labelledby="accesos-heading" className="mx-auto max-w-7xl scroll-mt-24 px-6 py-16">
-      <div className="mb-10 max-w-2xl">
-        <div className="section-label mb-2">Accesos principales</div>
-        <h2 id="accesos-heading" className="font-serif text-3xl font-semibold text-[#704a31] md:text-4xl">
-          Explora Raíz Quilpué
-        </h2>
-        <p className="mt-3 text-sm leading-relaxed text-[#946541] md:text-base">
-          Cuatro espacios para conocer el patrimonio, descubrir historias, participar en actividades y recorrer el museo digital de Quilpué. 
-        </p>
+  const museum = accessItems[3];
+  return <section className="home-discover" aria-labelledby="accesos-heading">
+    <div className="home-container">
+      <AnimatedContent className="home-section-heading"><div><p className="home-eyebrow">02 / Accesos principales</p><h2 id="accesos-heading">Explora Raíz Quilpué<span aria-hidden="true">.</span></h2></div><p>Cuatro espacios para conocer el patrimonio, descubrir historias, participar en actividades y recorrer el museo digital de Quilpué.</p></AnimatedContent>
+      <ul className="home-pathways">{accessItems.slice(0, 3).map((item, index) => {
+        const countLabel = formatCount(counts[item.countKey], item.countSingular, item.countPlural);
+        const Icon = item.icon;
+        return <AnimatedContent as="li" key={item.href} delay={index * 80} distance={18}><Link href={item.href} className="home-pathway interactive-card">
+          <div className="home-pathway-image"><Image src={item.image} alt={item.imageAlt} fill sizes="(max-width: 700px) 100vw, 33vw" className="home-image" /><span aria-hidden="true">0{index + 1}</span></div>
+          <div className="home-pathway-title"><h3><Icon size={19} strokeWidth={1.5} aria-hidden="true" />{item.title}</h3>{countLabel ? <span>{countLabel}</span> : null}</div>
+          <p>{item.description}</p><span className="home-pathway-cta">{item.cta}<ArrowRight size={18} aria-hidden="true" /></span>
+        </Link></AnimatedContent>;
+      })}</ul>
+      <div className="home-museum" aria-labelledby="home-museum-heading">
+        <AnimatedContent className="home-museum-photo" distance={20} duration={520}><Image src={museum.image} alt={museum.imageAlt} fill sizes="(max-width: 700px) 100vw, 55vw" className="home-image" /><span>Patrimonio · Quilpué</span></AnimatedContent>
+        <div className="home-museum-copy"><AnimatedContent><p className="home-eyebrow">Museo Digital</p><h3 id="home-museum-heading">Un museo para <em>nuestras memorias.</em></h3></AnimatedContent><AnimatedContent delay={100}><p>{museum.description}</p></AnimatedContent><Link href={museum.href} className="home-button home-button-light">{museum.cta}<ArrowRight size={18} aria-hidden="true" /></Link><p className="home-museum-foot">Conservar. Compartir. Descubrir.</p></div>
       </div>
-
-      <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {accessItems.map((item) => {
-          const countLabel = formatCount(counts[item.countKey], item.countSingular, item.countPlural);
-          const Icon = item.icon;
-
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className="group flex h-full flex-col overflow-hidden border border-[#bb9c82] bg-[#e7dcd2] text-[#946541] shadow-[0_10px_24px_rgba(112,74,49,0.08)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-[#946541] hover:shadow-[0_18px_36px_rgba(112,74,49,0.16)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#704a31]"
-              >
-                <div className="relative h-44 overflow-hidden bg-[#bb9c82]/30">
-                  <Image
-                    src={item.image}
-                    alt={item.imageAlt}
-                    fill
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    className="object-cover transition-transform duration-700 motion-safe:group-hover:scale-105"
-                  />
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background:
-                        "linear-gradient(to top, rgba(112,74,49,0.55) 0%, rgba(112,74,49,0.08) 55%, transparent 100%)",
-                    }}
-                  />
-                  <span className="absolute top-3 left-3 flex h-9 w-9 items-center justify-center bg-[#e7dcd2] text-[#704a31] shadow-[0_4px_12px_rgba(112,74,49,0.18)]">
-                    <Icon size={20} strokeWidth={1.7} aria-hidden="true" />
-                  </span>
-                </div>
-
-                <div className="flex flex-1 flex-col px-5 pt-5 pb-5">
-                  {countLabel ? (
-                    <p className="mb-2 font-mono text-[10px] tracking-[0.16em] text-[#db700f] uppercase">
-                      {countLabel}
-                    </p>
-                  ) : null}
-                  <h3 className="font-serif text-xl font-semibold text-[#704a31]">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-[#946541]">{item.description}</p>
-                  <span className="mt-auto inline-flex items-center gap-2 pt-5 font-mono text-[11px] font-semibold tracking-[0.16em] text-[#db700f] uppercase transition-colors group-hover:text-[#704a31]">
-                    {item.cta}
-                    <ArrowRight
-                      size={14}
-                      strokeWidth={1.8}
-                      aria-hidden="true"
-                      className="transition-transform duration-300 group-hover:translate-x-1"
-                    />
-                  </span>
-                </div>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
+    </div>
+  </section>;
 }

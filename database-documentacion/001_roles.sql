@@ -5,7 +5,7 @@ CREATE TABLE public.roles (
 );
 
 /*CONTRAINTS*/
-ALTER TABLE public.roles 
+ALTER TABLE public.roles
 add constraint roles_nombre_check
 CHECK (
   BTRIM(nombre_rol) <> ''
@@ -40,6 +40,6 @@ VALUES('Administrador','Acceso completo al portal administrativo.'),
       ('Editor','Usuario encargado de gestionar contenidos y actividades.');
 
 /*SELECTS*/
-SELECT * 
-FROM public.roles 
+SELECT *
+FROM public.roles
 ORDER BY id_rol;

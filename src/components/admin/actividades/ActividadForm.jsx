@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImageIcon } from "lucide-react";
 import AdminNotice from "@/components/admin/contenidos/AdminNotice";
+import ActividadUbicacionField from "@/components/admin/actividades/ActividadUbicacionField";
 import ContenidoEditor from "@/components/admin/contenidos/ContenidoEditor";
 import { esCostoPagada, todayISO } from "@/lib/actividades";
 import {
@@ -37,6 +38,11 @@ const EMPTY = {
   id_publico: "",
   id_modalidad: "",
   id_tipo_participacion: "",
+  lugar: "",
+  direccion: "",
+  google_place_id: null,
+  latitud: null,
+  longitud: null,
   cupos: "",
   cupos_espera: "",
   id_costo: "",
@@ -88,6 +94,13 @@ function formFromActivity(activity) {
     id_publico: activity.id_publico ?? "",
     id_modalidad: activity.id_modalidad ?? "",
     id_tipo_participacion: activity.id_tipo_participacion ?? "",
+    lugar: activity.lugar ?? "",
+    direccion: Object.hasOwn(activity, "direccion_evento")
+      ? activity.direccion_evento ?? ""
+      : activity.direccion ?? "",
+    google_place_id: activity.google_place_id ?? null,
+    latitud: activity.latitud ?? null,
+    longitud: activity.longitud ?? null,
     cupos: activity.cupos ?? "",
     cupos_espera: activity.cupos_espera ?? "",
     id_costo: activity.id_costo ?? "",
@@ -117,6 +130,10 @@ function activityPayload(form, idEstado) {
     informacion_adicional: form.informacion_adicional,
     imagen_url: form.imagen_url || null,
     id_estado: idEstado,
+    direccion: form.direccion || null,
+    google_place_id: form.google_place_id,
+    latitud: form.latitud,
+    longitud: form.longitud,
   };
 }
 
@@ -499,6 +516,9 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
               ) : null}
             </div>
           </div>
+
+          <ActividadUbicacionField value={{ ...form, modalidad: catalogNombre(catalogos?.modalidad ?? [], form.id_modalidad) }} catalogLugar disabled={busy}
+            onChange={(patch) => setForm((current) => ({ ...current, ...patch }))} />
 
           <div className="admin-card p-4 sm:p-6">
             <span className="text-[13px] font-medium text-[#2c1810]">Imagen de la actividad</span>

@@ -1,6 +1,8 @@
 import "server-only";
 
 import { parseOwnedAporteImageUrl, parseOwnedPortadaUrl } from "@/lib/media/policy.mjs";
+import { actividadUbicacionColumns, readActividadUbicacion, writeActividadUbicacion } from "@/services/actividad-ubicacion.service";
+import { CAMPOS_UBICACION } from "@/lib/actividad-ubicacion.mjs";
 import { logInternalError } from "@/lib/http";
 import { deleteImage } from "@/services/storage.service";
 import { mapAporteMuseo, mapAporteMuseoPublico } from "@/lib/museo";
@@ -121,14 +123,11 @@ export async function listActividadesAdmin() {
 
 export async function getActividadAdmin(id) {
   const data = assertQuery(
-    await admin()
-      .from("actividades")
-      .select(ACTIVIDAD_COLUMNS)
-      .eq("id_actividad", id)
-      .maybeSingle(),
+    await readActividadUbicacion((fields) => admin().from("actividades")
+      .select(ACTIVIDAD_COLUMNS + actividadUbicacionColumns(fields))
+      .eq("id_actividad", id).maybeSingle()),
     "Failed to get actividad",
   );
-
   return mapActividadVista(data);
 }
 
@@ -183,37 +182,27 @@ export async function saveActividadAdmin(id, input, usuarioId) {
     resolved.id_lugar = await resolveLugarForActividad(input.lugar);
   }
 
-  if (id) {
-    const current = await getActividadAdmin(id);
-    if (!current) return null;
+  const current = id ? await getActividadAdmin(id) : null;
+  if (id && !current) return null;
 
-    const data = assertQuery(
-      await admin()
-        .from("actividades")
-        .update(actividadWritePayload(resolved, { usuarioId, isCreate: false }))
-        .eq("id_actividad", id)
-        .select(ACTIVIDAD_COLUMNS)
-        .maybeSingle(),
-      "Failed to save actividad",
-    );
-
-    if (!data) return null;
-
-    if (input.imagen_url !== undefined && current.imagen_url !== input.imagen_url) {
-      await deleteOwnedPortada(current.imagen_url);
-    }
-
-    return mapActividadVista(data);
+  const payload = actividadWritePayload(resolved, { usuarioId, isCreate: !id });
+  for (const field of CAMPOS_UBICACION) {
+    if (Object.hasOwn(input, field)) payload[field] = input[field];
   }
 
-  const data = assertQuery(
-    await admin()
-      .from("actividades")
-      .insert(actividadWritePayload(resolved, { usuarioId, isCreate: true }))
-      .select(ACTIVIDAD_COLUMNS)
-      .single(),
-    "Failed to save actividad",
-  );
+  const result = await writeActividadUbicacion((fields, value) => {
+    const query = admin().from("actividades");
+    const mutation = id ? query.update(value).eq("id_actividad", id) : query.insert(value);
+    const selected = mutation.select(ACTIVIDAD_COLUMNS + actividadUbicacionColumns(fields));
+    return id ? selected.maybeSingle() : selected.single();
+  }, payload);
+
+  const data = assertQuery(result, "Failed to save actividad");
+  if (!data) return null;
+
+  if (current && input.imagen_url !== undefined && current.imagen_url !== input.imagen_url) {
+    await deleteOwnedPortada(current.imagen_url);
+  }
 
   return mapActividadVista(data);
 }
@@ -221,20 +210,13 @@ export async function saveActividadAdmin(id, input, usuarioId) {
 export async function saveActividadEstadoAdmin(id, idEstado) {
   const current = await getActividadAdmin(id);
   if (!current) return null;
-
   const data = assertQuery(
-    await admin()
-      .from("actividades")
-      .update({
-        id_estado: idEstado,
-        fec_actualizacion: new Date().toISOString(),
-      })
+    await readActividadUbicacion((fields) => admin().from("actividades")
+      .update({ id_estado: idEstado, fec_actualizacion: new Date().toISOString() })
       .eq("id_actividad", id)
-      .select(ACTIVIDAD_COLUMNS)
-      .maybeSingle(),
+      .select(ACTIVIDAD_COLUMNS + actividadUbicacionColumns(fields)).maybeSingle()),
     "Failed to save actividad estado",
   );
-
   return mapActividadVista(data);
 }
 

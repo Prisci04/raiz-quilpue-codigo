@@ -48,13 +48,13 @@ function cuposText(activity) {
   return `${activity.cupos} ${activity.cupos === 1 ? "cupo" : "cupos"}`;
 }
 
-export default function ActivityCard({ activity }) {
+export default function ActivityCard({ activity, headingAs: Heading = "h2" }) {
   const modalidad = activity.modalidad ? labelModalidad(activity.modalidad) : null;
 
   return (
     <Link
       href={`/actividades/${activity.id}`}
-      className="flex h-full flex-col bg-[#f4ece4] text-[#5c331c]"
+      className="interactive-card group flex h-full flex-col bg-[#f4ece4] text-[#5c331c]"
     >
       <div className="relative h-40 w-full overflow-hidden bg-[#bb9c82]/40 sm:h-44">
         {activity.imagen_url ? (
@@ -63,7 +63,7 @@ export default function ActivityCard({ activity }) {
             alt=""
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover"
+            className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-[1.025]"
           />
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center font-mono text-[10px] tracking-wide text-[#946541] uppercase">
@@ -82,9 +82,9 @@ export default function ActivityCard({ activity }) {
       </div>
 
       <div className="flex flex-1 flex-col px-4 pt-3 pb-4">
-        <h2 className="font-serif text-[1.2rem] leading-snug font-medium text-[#5c331c] sm:text-[1.35rem]">
+        <Heading className="font-serif text-[1.2rem] leading-snug font-medium text-[#5c331c] sm:text-[1.35rem]">
           {activity.titulo}
-        </h2>
+        </Heading>
 
         <ul className="mt-3 space-y-1.5 text-[13px] text-[#5c4638]">
           <li className="flex items-start gap-2">

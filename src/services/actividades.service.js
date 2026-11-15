@@ -1,5 +1,6 @@
 import { compareActividades, mapActividadVista } from "@/lib/actividades";
 import { NOMBRE_ESTADO_PUBLICADA, NOMBRE_INSCRIPCION_CANCELADA } from "@/lib/catalogos.mjs";
+import { actividadUbicacionColumns, readActividadUbicacion } from "@/services/actividad-ubicacion.service";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -107,9 +108,9 @@ export async function getActividades({ page, limit, orderBy = "fecha" }) {
 }
 
 export async function getActividadById(id) {
-  const { data, error } = await publicadasQuery(ACTIVIDAD_DETALLE_COLUMNS)
-    .eq("id_actividad", id)
-    .maybeSingle();
+  const { data, error } = await readActividadUbicacion((withLocation) =>
+    publicadasQuery(ACTIVIDAD_DETALLE_COLUMNS + actividadUbicacionColumns(withLocation))
+      .eq("id_actividad", id).maybeSingle());
 
   if (error) {
     throw new Error("Failed to get actividad");

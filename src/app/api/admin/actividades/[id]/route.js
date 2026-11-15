@@ -2,6 +2,7 @@ import { jsonError, jsonSuccess, parsePositiveInteger } from "@/lib/http";
 import { runAdminCommunity, readJsonBody } from "@/lib/admin-community-http";
 import { parseActividadEstado, parseActividadInput } from "@/lib/community-validation.mjs";
 import { parseOwnedPortadaUrl } from "@/lib/media/policy.mjs";
+import { coordinatePatch } from "@/lib/actividad-ubicacion.mjs";
 import {
   deleteActividadAdmin,
   getActividadAdmin,
@@ -34,6 +35,7 @@ export async function PATCH(request, { params }) {
     if (!parsed.ok) return jsonError(400, "VALIDATION", "El identificador no es válido.");
 
     const body = await readJsonBody(request);
+    if (!body || !Object.keys(body).length) return jsonError(400, "VALIDATION", "La solicitud no es válida.");
     const catalogos = await listCatalogosParaActividad();
     const soloEstado =
       Boolean(body) &&
@@ -52,11 +54,10 @@ export async function PATCH(request, { params }) {
     const current = await getActividadAdmin(parsed.value);
     if (!current) return jsonError(404, "NOT_FOUND", "Actividad no encontrada.");
 
-    const sameImage = body.imagen_url === current.imagen_url;
-    const input = parseActividadInput(
-      sameImage ? { ...body, imagen_url: null } : body,
-      catalogos,
-    );
+    // The joined place address is for display, not an implicit event override.
+    const merged = { ...current, direccion: current.direccion_evento, ...coordinatePatch(body) };
+    const sameImage = merged.imagen_url === current.imagen_url;
+    const input = parseActividadInput(sameImage ? { ...merged, imagen_url: null } : merged, catalogos);
     if (!input.ok) return jsonError(400, "VALIDATION", input.message);
     if (sameImage) {
       input.value.imagen_url = current.imagen_url;

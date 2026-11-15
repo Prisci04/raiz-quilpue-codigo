@@ -25,6 +25,8 @@ export default function AdminSidebar({ open, onClose, isAdministrador }) {
       release();
       release = () => {};
       const sidebar = ref.current;
+      // A queued breakpoint event may arrive between unmount and effect cleanup.
+      if (!sidebar) return;
       sidebar.inert = !desktop.matches && !open;
       if (desktop.matches || !open) return;
       const opener = document.activeElement;

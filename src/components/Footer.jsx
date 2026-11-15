@@ -1,136 +1,53 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Mail } from "lucide-react";
+import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
+import AnimatedContent from "@/components/motion/AnimatedContent";
+import BackToTop from "./footer/BackToTop";
+import "./footer/footer.css";
 
-const footerLinks = [
-	{ label: "Inicio", href: "/" },
-	{ label: "Quiénes somos", href: "/quienes-somos" },
-	{ label: "Contenidos", href: "/contenido" },
-	{ label: "Actividades", href: "/actividades" },
-	{ label: "Museo Digital", href: "/museo" },
+const links = [
+  { label: "Inicio", href: "/" },
+  { label: "Quiénes somos", href: "/quienes-somos" },
+  { label: "Contenidos", href: "/contenido" },
+  { label: "Actividades", href: "/actividades" },
+  { label: "Museo Digital", href: "/museo" },
+  { label: "Raíz Quilpué IA", href: "/asistente" },
 ];
-
-function InstagramIcon({ className }) {
-	return (
-		<svg
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			strokeWidth="1.8"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-			aria-hidden="true"
-			className={className}
-		>
-			<rect x="3" y="3" width="18" height="18" rx="5" />
-			<circle cx="12" cy="12" r="4" />
-			<circle cx="17.4" cy="6.6" r="1.05" fill="currentColor" stroke="none" />
-		</svg>
-	);
+const email = "https://mail.google.com/mail/?view=cm&fs=1&to=raizquilpue%40gmail.com";
+function Instagram() {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.4" cy="6.6" r="1.05" fill="currentColor" stroke="none" /></svg>;
 }
 
-const iconClassName = "size-[1em] shrink-0";
-const gmailComposeUrl =
-	"https://mail.google.com/mail/?view=cm&fs=1&to=raizquilpue%40gmail.com";
-
-const socialLinks = [
-	{ label: "Correo", href: gmailComposeUrl, icon: Mail, external: true },
-	{
-		label: "Instagram",
-		href: "https://www.instagram.com/raizquilpue/",
-		icon: InstagramIcon,
-		external: true,
-	},
-];
-
 export default function Footer() {
-	return (
-		<footer className="site-footer">
-			<div className="mx-auto max-w-7xl px-6 py-16">
-				<div className="grid grid-cols-1 gap-10 md:grid-cols-4">
-					<div className="md:col-span-2">
-						<div className="mb-5 flex items-center gap-3">
-							<div className="flex h-9 w-9 items-center justify-center rounded-[2px] bg-[#ffdf90]">
-								{/* CAMBIAR IMAGEN AQUÍ: usa el mismo logo oficial del Header. */}
-								<Image
-									src="/images/logo/LogoRaizQuilpue.png"
-									alt="Logo de Raíz Quilpué"
-									width={36}
-									height={36}
-									className="h-auto w-9 object-contain"
-								/>
-							</div>
-							<div>
-								<div className="font-serif text-lg font-bold text-[#e7dcd2]">
-									Raíz Quilpué
-								</div>
-								<div className="font-mono text-[9px] tracking-[0.18em] text-[#ffdf90] uppercase">
-									¿Quienes somos?
-								</div>
-							</div>
-						</div>
-						<p className="max-w-[320px] text-sm leading-relaxed text-[#e7dcd2]/60">
-							Rescatando la memoria, fortaleciendo la identidad y construyendo comunidad desde Quilpué.
-						</p>
-						<div className="mt-6 flex flex-wrap gap-3">
-							{socialLinks.map((social) => {
-								const Icon = social.icon;
-
-								return (
-									<a
-										key={social.label}
-										href={social.href}
-										target={social.external ? "_blank" : undefined}
-										rel={social.external ? "noreferrer" : undefined}
-										className="inline-flex min-h-11 items-center gap-1.5 border border-[#e7dcd2]/20 px-3 py-2 font-mono text-[10px] tracking-wide text-[#e7dcd2]/50 uppercase transition-colors hover:border-[#ffdf90] hover:text-[#ffdf90] sm:min-h-0 sm:py-1.5 sm:text-[11px]"
-									>
-										<Icon className={iconClassName} strokeWidth={1.8} aria-hidden="true" />
-										{social.label}
-									</a>
-								);
-							})}
-						</div>
-					</div>
-
-					<div>
-						<h4 className="mb-4 font-mono text-xs tracking-[0.15em] text-[#ffdf90] uppercase">
-							Portal
-						</h4>
-						<ul className="space-y-2">
-							{footerLinks.map((item) => (
-								<li key={item.label}>
-									<Link
-										href={item.href}
-										className="text-sm text-[#e7dcd2]/55 transition-colors hover:text-[#e7dcd2]"
-									>
-										{item.label}
-									</Link>
-								</li>
-							))}
-						</ul>
-					</div>
-
-					<div>
-						<h4 className="mb-4 font-mono text-xs tracking-[0.15em] text-[#ffdf90] uppercase">
-							Contacto
-						</h4>
-						<ul className="space-y-2 text-sm text-[#e7dcd2]/55">
-							<li>Quilpué, Región de Valparaíso, Chile</li>
-							<li className="pt-2"><a href={gmailComposeUrl} target="_blank" rel="noreferrer">raizquilpue@gmail.com</a></li>
-							<li>+56 9 3940 5350</li>
-						</ul>
-					</div>
-				</div>
-
-				<div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-[#e7dcd2]/10 pt-6 md:flex-row">
-					<p className="font-mono text-[10px] tracking-wide text-[#e7dcd2]/35">
-						© 2026 Raíz Quilpué — Todos los derechos reservados.
-					</p>
-					<p className="font-mono text-[10px] tracking-wide text-[#e7dcd2]/35">
-						PATRIMONIO · CULTURA · COMUNIDAD
-					</p>
-				</div>
-			</div>
-		</footer>
-	);
+  return <footer className="site-footer rev1-footer" aria-label="Raíz Quilpué: enlaces y contacto">
+    <div className="rev1-footer-inner">
+      <div className="rev1-footer-heading">
+        <AnimatedContent className="rev1-footer-identity" distance={18} duration={500}>
+          <Link href="/" className="rev1-footer-brand" aria-label="Raíz Quilpué, inicio">
+            <span className="rev1-footer-logo"><Image src="/images/logo/LogoRaizQuilpue.png" alt="Logo de Raíz Quilpué" width={60} height={60} /></span>
+            <span>Raíz Quilpué</span>
+          </Link>
+          <p className="rev1-footer-territory">Cultura <span>·</span> Memoria <span>·</span> Territorio</p>
+        </AnimatedContent>
+        <AnimatedContent className="rev1-footer-story" delay={100} distance={18}>
+          <p>Rescatando la memoria,<br /><em>construyendo comunidad.</em></p>
+          <span>Fortaleciendo la identidad desde Quilpué.</span>
+          <Link href="/quienes-somos">Conoce nuestra historia<ArrowUpRight size={17} aria-hidden="true" /></Link>
+        </AnimatedContent>
+      </div>
+      <div className="rev1-footer-content">
+        <AnimatedContent as="nav" className="rev1-footer-nav" aria-label="Explorar Raíz Quilpué" delay={80}>
+          <h2>Un territorio por descubrir</h2>
+          <ul>{links.map((item, index) => <li key={item.href}><Link href={item.href}><span className="rev1-footer-index" aria-hidden="true">0{index + 1}</span>{item.label}<ArrowUpRight size={16} aria-hidden="true" /></Link></li>)}</ul>
+        </AnimatedContent>
+        <AnimatedContent as="section" className="rev1-footer-contact" aria-labelledby="rev1-footer-contact-title" delay={160}>
+          <div className="rev1-footer-contact-top"><h2 id="rev1-footer-contact-title">Sigamos en contacto</h2><span aria-hidden="true">↗</span></div>
+          <a href={email} target="_blank" rel="noreferrer" className="rev1-footer-email"><Mail size={18} aria-hidden="true" />raizquilpue@gmail.com</a>
+          <div className="rev1-footer-contact-details"><a href="tel:+56939405350"><Phone size={16} aria-hidden="true" />+56 9 3940 5350</a><p><MapPin size={16} aria-hidden="true" />Quilpué, Región de Valparaíso, Chile</p></div>
+          <a className="rev1-footer-social" href="https://www.instagram.com/raizquilpue/" target="_blank" rel="noreferrer"><Instagram size={18} aria-hidden="true" />Encuéntranos en Instagram<ArrowUpRight size={16} aria-hidden="true" /></a>
+        </AnimatedContent>
+      </div>
+      <div className="rev1-footer-bottom"><p>© 2026 Raíz Quilpué · Todos los derechos reservados.</p><BackToTop /></div>
+    </div>
+  </footer>;
 }
