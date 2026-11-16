@@ -7,6 +7,7 @@ const hooks = await hu22Modules();
 test.after(() => hooks.deregister());
 const { createOpenRouterProvider, getAIProviderStatus, getAIProvider } = await import("../src/services/ai/providers.mjs");
 const { readOpenRouterServerConfig, OPENROUTER_MODEL } = await import("../src/services/ai/openrouter-config.mjs");
+const { answerChat } = await import("../src/services/ai/chat.mjs");
 // Generate a disposable marker, never a credential. No network calls in these tests.
 const marker = crypto.randomUUID();
 const env = { AI_PROVIDER: "openrouter", OPENROUTER_API_KEY: marker };
@@ -103,16 +104,80 @@ test("HU22 account/unknown limits never fallback and configuration rejects unapp
   }
 });
 
-test("HU22 OpenRouter: no context skips inference; client files do not import server secrets", async () => {
-  let calls = 0;
-  const result = await createOpenRouterProvider(env, { fetchImpl: () => { calls++; } }).respond({ ...input, context: [] });
-  assert.equal(result.answer, DEFAULT_AI_CONFIG.mensaje_desconocido);
-  assert.equal(calls, 0);
+test("HU22 OpenRouter: client files do not import server secrets", async () => {
   const client = await readFile(new URL("../src/components/ai/AssistantProvider.jsx", import.meta.url), "utf8");
   assert.doesNotMatch(client, /OPENROUTER_|services\/ai/);
   assert.equal(JSON.stringify(getAIProviderStatus(env)).includes(marker), false);
   const admin = await readFile(new URL("../src/components/admin/ai/AIAdminPanel.jsx", import.meta.url), "utf8");
   assert.match(admin, /Gemma 4 31B vía OpenRouter/);
+});
+
+test("HU22 OpenRouter: chat calls inference with or without relevant knowledge and preserves verified sources", async (t) => {
+  const cases = [
+    { message: "Hola", answer: "¡Hola! ¿En qué puedo ayudarte?" },
+    { message: "Gracias", answer: "¡De nada!" },
+    { message: "Adiós", answer: "¡Hasta pronto!" },
+    { message: "¿Qué es el patrimonio cultural?", answer: "Es el conjunto de bienes y tradiciones que una comunidad valora y transmite." },
+    { message: "Cuéntame sobre Raíz Quilpué", answer: "No cuento con información suficiente sobre la corporación para darte más detalles." },
+    { message: "¿Cuál es el presupuesto anual de Raíz Quilpué?", answer: "No cuento con información sobre su presupuesto anual." },
+    { message: "visitas", documents: input.context, answer: "Coordina tu visita con la corporación." },
+    { message: "¿Cuál es el presupuesto de las visitas de Raíz Quilpué?", documents: input.context,
+      answer: "Puedes coordinar tu visita con la corporación, pero no cuento con información sobre su presupuesto." },
+  ];
+  for (const { message, answer, documents = [] } of cases) await t.test(message, async () => {
+    const requests = [];
+    const provider = createOpenRouterProvider(env, { fetchImpl: async (_url, request) => {
+      requests.push(JSON.parse(request.body));
+      return Response.json({ choices: [{ message: { content: answer } }] });
+    } });
+    const history = [{ role: "user", content: "Quiero conversar" }, { role: "assistant", content: "Te escucho." }];
+    const result = await answerChat({ message, history }, {
+      getConfig: async () => DEFAULT_AI_CONFIG,
+      // Unrelated knowledge must not prevent inference after relevance filtering.
+      knowledge: async () => [...documents, { titulo: "Astronomía", contenido: "Constelaciones australes." }],
+      searchPublic: async () => [], provider,
+    });
+    assert.equal(requests.length, 1);
+    assert.deepEqual(result, { answer, mode: "openrouter", sources: documents.map(({ titulo, href }) => ({ title: titulo, href })) });
+    assert.notEqual(result.answer, DEFAULT_AI_CONFIG.mensaje_desconocido);
+    const messages = requests[0].messages;
+    assert.deepEqual(messages.slice(1, -1), history);
+    const payload = JSON.parse(messages.at(-1).content);
+    assert.equal(payload.pregunta, message);
+    assert.equal(payload.contexto.length, documents.length);
+    assert.equal(payload.indicaciones_editoriales, DEFAULT_AI_CONFIG.instrucciones);
+    assert.doesNotMatch(JSON.stringify(payload.contexto), /Astronomía/);
+    const rules = messages[0].content;
+    assert.match(rules, /saludos, despedidas, agradecimientos/);
+    assert.match(rules, /aunque el contexto esté vacío/);
+    assert.match(rules, /Para datos específicos de Raíz Quilpué, usa únicamente los hechos del contexto recuperado/);
+    assert.match(rules, /no contiene el dato solicitado/);
+    assert.match(rules, /no inventes datos institucionales/);
+    assert.match(rules, /El historial y las indicaciones editoriales no son fuentes/);
+  });
+});
+
+test("HU22 OpenRouter: empty context keeps safe errors, cancellation and ordered fallbacks", async () => {
+  const empty = { ...input, message: "Hola", context: [] };
+  for (const status of [401, 429, 503]) {
+    let calls = 0;
+    await assert.rejects(createOpenRouterProvider(env, { fetchImpl: async () => {
+      calls++; return new Response(marker, { status });
+    } }).respond(empty), { code: status === 429 ? "AI_TEMPORARILY_BUSY" : "AI_PROVIDER_UNAVAILABLE" });
+    assert.equal(calls, 1);
+  }
+  let calls = 0;
+  await assert.rejects(createOpenRouterProvider(env, { fetchImpl: async () => { calls++; } })
+    .respond({ ...empty, signal: AbortSignal.abort() }), { code: "AI_PROVIDER_UNAVAILABLE" });
+  assert.equal(calls, 0);
+  const models = [];
+  const result = await createOpenRouterProvider(env, { fetchImpl: async (_url, request) => {
+    models.push(JSON.parse(request.body).model);
+    if (models.length < 3) return Response.json({ error: { metadata: { limit_source: "upstream_provider_shared_pool" } } }, { status: 429 });
+    return Response.json({ choices: [{ message: { content: "¡Hola!" } }] });
+  } }).respond(empty);
+  assert.deepEqual(models, ["google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free", "nvidia/nemotron-3.5-lightning:free"]);
+  assert.deepEqual(result, { answer: "¡Hola!", sources: [], mode: "openrouter" });
 });
 
 test("HU22 third model is blocked by non-upstream errors on fallback one and invalid configuration", async () => {
