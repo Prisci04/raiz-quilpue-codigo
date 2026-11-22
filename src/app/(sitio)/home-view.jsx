@@ -90,7 +90,7 @@ export default function HomeView({ page = null, contents = [], activities = [] }
 
   return (
     <main className="rev1-home">
-      <section className="home-hero" aria-labelledby="home-hero-title">
+      <section className="home-hero home-hero-immersive" aria-labelledby="home-hero-title">
         <div className="home-hero-inner">
           <div className="home-hero-copy">
             <AnimatedContent className="home-eyebrow" distance={18}><Leaf size={16} aria-hidden="true" /> {portada?.campos?.texto_superior ?? "Cultura · Memoria · Territorio"}</AnimatedContent>
@@ -113,7 +113,7 @@ export default function HomeView({ page = null, contents = [], activities = [] }
           <AnimatedContent className="home-hero-gallery" delay={100} distance={18} duration={600}>
             <div className="home-hero-photo">
               {heroSlides.map((item, index) => <div key={item.id || item.image} className="home-slide" aria-hidden={activeSlide !== index} style={{ opacity: activeSlide === index ? 1 : 0 }}>
-                <Image src={item.image} alt={item.caption} fill priority={index === 0} sizes="(max-width: 700px) 100vw, 55vw" className="home-slide-image" unoptimized />
+                <Image src={item.image} alt={item.caption} fill priority={index === 0} sizes="100vw" className="home-slide-image" unoptimized />
               </div>)}
               <div className="home-photo-shade" aria-hidden="true" />
               <span className="home-photo-label"><MapPin size={14} aria-hidden="true" /> Quilpué, Chile</span>

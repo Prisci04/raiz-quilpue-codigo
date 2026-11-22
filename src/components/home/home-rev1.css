@@ -236,3 +236,39 @@
   .rev1-home *, .rev1-home *::before, .rev1-home *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   .rev1-home .home-pause { display: none; }
 }
+
+/* Approved REV1: immersive, administrable photographic cover. */
+.home-hero-immersive { min-height: min(850px,calc(100svh - 64px)); padding: 64px 48px 0; background: #30241d; color: #fff9ed; isolation: isolate; }
+.home-hero-immersive .home-hero-inner { display: block; min-height: 620px; padding-bottom: 100px; }
+.home-hero-immersive .home-hero-copy { position: relative; z-index: 2; max-width: 670px; pointer-events: auto; }
+.home-hero-immersive .home-hero-copy h1 { font-size: clamp(44px,5.4vw,78px); max-width: 650px; text-shadow: 0 2px 24px #0004; }
+.home-hero-immersive .home-hero-copy h1 em { color: #e9c397; }
+.home-hero-immersive .home-hero-copy h1 > span { color: inherit; }
+.home-hero-immersive .home-eyebrow,.home-hero-immersive .home-hero-description,.home-hero-immersive .home-search-area > p { color: #f2e3cd; }
+.home-hero-immersive .home-hero-gallery { position: absolute; inset: 0; z-index: -1; transform: none !important; opacity: 1 !important; pointer-events: none; }
+.home-hero-immersive .home-hero-photo { height: 100%; max-height: none; min-height: 0; border-radius: 0; }
+.home-hero-immersive .home-slide-image { object-position: center; }
+.home-hero-immersive .home-slide { transition: opacity 700ms ease; }
+.home-hero-immersive .home-photo-shade { background: linear-gradient(90deg,#201710eb 0%,#201710bd 35%,#20171030 85%),linear-gradient(0deg,#201710d9,transparent 45%); }
+.home-hero-immersive .home-photo-caption { left: auto; max-width: 320px; bottom: 95px; text-align: right; }
+.home-hero-immersive .home-gallery-controls { position: absolute; bottom: 36px; right: 300px; color: #fff9ed; pointer-events: auto; }
+.home-hero-immersive .home-slide-number small { color: #e5c9a7; }
+.home-hero-immersive .home-slide-buttons button[aria-pressed=true] > span { background: #fff9ed; }
+.home-hero-immersive .home-slide-buttons button:hover { background: #fff2; }
+.home-hero-immersive .home-hero-foot { position: relative; z-index: 2; margin-top: -64px; width: fit-content; margin-left: 0; }
+.home-hero-immersive .home-hero-foot a { color: #f2e3cd; }
+.home-hero-immersive .home-hero-foot > span { display: none; }
+.home-hero-immersive .home-button-dark { background: #e3bd8d; color: #30241d; }
+.home-hero-immersive .home-text-link { color: #fff9ed; }
+.home-hero-immersive .home-search { color: #30241d; }
+@media(max-width:700px) {
+ .home-hero-immersive { padding: 44px 24px 0; min-height: 800px; }
+ .home-hero-immersive .home-hero-inner { min-height: 730px; padding-bottom: 180px; }
+ .home-hero-immersive .home-hero-copy h1 { font-size: 44px; }
+ .home-hero-immersive .home-photo-shade { background: linear-gradient(90deg,#201710d9,#20171070),linear-gradient(0deg,#201710ed,transparent 65%); }
+ .home-hero-immersive .home-photo-caption { right: 24px; bottom: 100px; font-size: 12px; }
+ .home-hero-immersive .home-photo-label { top: auto; bottom: 180px; right: 24px; }
+ .home-hero-immersive .home-gallery-controls { bottom: 20px; right: auto; left: 24px; width: 250px; }
+ .home-hero-immersive .home-hero-foot { margin-top: -80px; max-width: 140px; }
+}
+@media(prefers-reduced-motion:reduce) { .home-hero-immersive .home-slide { transition: none; } }

@@ -1,4 +1,5 @@
 "use client";
+import "@/components/public-rev1.css";
 
 import { useState } from "react";
 import ActividadFicha from "@/components/actividades/ActividadFicha";
@@ -78,7 +79,7 @@ export default function ActividadView({ activity }) {
   }
 
   return (
-    <main className="bg-[#e7dcd2] text-[#704a31]">
+    <main className="rev1-public rev1-detail rev1-activity-detail bg-[#e7dcd2] text-[#704a31]">
       <ActividadFicha
         activity={activity}
         backHref="/actividades"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createLugar, getUbicaciones } from "@/lib/api/ubicaciones";
+import { getUbicaciones } from "@/lib/api/ubicaciones";
 
 const inputClass =
   "mt-1.5 w-full rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] px-3 py-2.5 text-sm text-[#2c1810] outline-none focus:border-[#c4a484]";
@@ -15,36 +15,40 @@ function Field({ label, children, className = "" }) {
   );
 }
 
+function mapsEmbedSrc(query) {
+  return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&hl=es&z=16&output=embed`;
+}
+
 export default function LugarFields({ value, onChange, disabled }) {
   const [regiones, setRegiones] = useState([]);
   const [comunas, setComunas] = useState([]);
-  const [lugares, setLugares] = useState([]);
-  const [mode, setMode] = useState("existente");
-  const [nuevo, setNuevo] = useState({ nombre_lugar: "", direccion: "" });
+  const [defaults, setDefaults] = useState({ id_region: "", id_comuna: "" });
   const [error, setError] = useState("");
-  const [creating, setCreating] = useState(false);
-  const idRegion = value.id_region ?? "";
-  const idComuna = value.id_comuna ?? "";
+  const [mapQuery, setMapQuery] = useState("");
+
+  const resolvedRegion = value.id_region || defaults.id_region || "";
+  const defaultComuna =
+    Number(defaults.id_region) === Number(resolvedRegion) ? defaults.id_comuna : "";
+  const resolvedComuna = value.id_comuna || defaultComuna || "";
+  const direccion = value.lugar_direccion ?? "";
+
+  const regionNombre = regiones.find((item) => Number(item.id) === Number(resolvedRegion))?.nombre;
+  const comunaNombre = comunas.find((item) => Number(item.id) === Number(resolvedComuna))?.nombre;
 
   useEffect(() => {
     let active = true;
 
     getUbicaciones({
-      idRegion: idRegion || undefined,
-      idComuna: idComuna || undefined,
+      idRegion: value.id_region || undefined,
     })
       .then((data) => {
         if (!active) return;
         setRegiones(data.regiones ?? []);
         setComunas(data.comunas ?? []);
-        setLugares(data.lugares ?? []);
-        if (!idRegion && data.id_region) {
-          onChange({
-            id_region: data.id_region,
-            id_comuna: data.id_comuna ?? "",
-            id_lugar: "",
-          });
-        }
+        setDefaults({
+          id_region: data.id_region ?? "",
+          id_comuna: data.id_comuna ?? "",
+        });
       })
       .catch((loadError) => {
         if (active) setError(loadError.message);
@@ -53,47 +57,24 @@ export default function LugarFields({ value, onChange, disabled }) {
     return () => {
       active = false;
     };
-  }, [idRegion, idComuna, onChange]);
+  }, [value.id_region]);
 
-  function handleRegion(nextRegion) {
-    onChange({ id_region: nextRegion, id_comuna: "", id_lugar: "" });
-  }
+  useEffect(() => {
+    const trimmed = direccion.trim();
+    const query = trimmed
+      ? [trimmed, comunaNombre, regionNombre, "Chile"].filter(Boolean).join(", ")
+      : "";
+    const handle = setTimeout(() => setMapQuery(query), query ? 400 : 0);
+    return () => clearTimeout(handle);
+  }, [direccion, comunaNombre, regionNombre]);
 
-  function handleComuna(nextComuna) {
-    onChange({ id_region: idRegion, id_comuna: nextComuna, id_lugar: "" });
-  }
-
-  async function handleCreate(event) {
-    event.preventDefault();
-    if (!idComuna || !nuevo.nombre_lugar.trim() || !nuevo.direccion.trim()) {
-      setError("Indica nombre, dirección y comuna para crear el lugar.");
-      return;
-    }
-
-    setCreating(true);
-    setError("");
-
-    try {
-      const created = await createLugar({
-        nombre_lugar: nuevo.nombre_lugar,
-        direccion: nuevo.direccion,
-        id_comuna: Number(idComuna),
-      });
-      setLugares((current) => [...current, created]);
-      setMode("existente");
-      onChange({
-        id_region: Number(idRegion),
-        id_comuna: Number(idComuna),
-        id_lugar: created.id,
-        nombre_lugar: created.nombre,
-        latitud: created.latitud,
-        longitud: created.longitud,
-      });
-    } catch (createError) {
-      setError(createError.message);
-    } finally {
-      setCreating(false);
-    }
+  function emit(patch) {
+    onChange({
+      id_region: resolvedRegion,
+      id_comuna: resolvedComuna,
+      lugar_direccion: direccion,
+      ...patch,
+    });
   }
 
   return (
@@ -102,8 +83,14 @@ export default function LugarFields({ value, onChange, disabled }) {
         <select
           required
           disabled={disabled}
-          value={idRegion}
-          onChange={(event) => handleRegion(event.target.value)}
+          value={resolvedRegion}
+          onChange={(event) =>
+            onChange({
+              id_region: event.target.value,
+              id_comuna: "",
+              lugar_direccion: direccion,
+            })
+          }
           className={inputClass}
         >
           <option value="">Seleccionar región</option>
@@ -118,8 +105,8 @@ export default function LugarFields({ value, onChange, disabled }) {
         <select
           required
           disabled={disabled}
-          value={idComuna}
-          onChange={(event) => handleComuna(event.target.value)}
+          value={resolvedComuna}
+          onChange={(event) => emit({ id_comuna: event.target.value })}
           className={inputClass}
         >
           <option value="">Seleccionar comuna</option>
@@ -130,71 +117,32 @@ export default function LugarFields({ value, onChange, disabled }) {
           ))}
         </select>
       </Field>
-      <Field label="Lugar *" className="lg:col-span-2">
-        <select
-          required={mode === "existente"}
+      <Field label="Dirección *" className="lg:col-span-2">
+        <input
+          required
+          maxLength={250}
           disabled={disabled}
-          value={mode === "existente" ? (value.id_lugar ?? "") : "nuevo"}
-          onChange={(event) => {
-            if (event.target.value === "nuevo") {
-              setMode("nuevo");
-              onChange({ id_region: idRegion, id_comuna: idComuna, id_lugar: "" });
-              return;
-            }
-            setMode("existente");
-            const selected = lugares.find((lugar) => Number(lugar.id) === Number(event.target.value));
-            onChange({
-              id_region: idRegion,
-              id_comuna: idComuna,
-              id_lugar: Number(event.target.value),
-              nombre_lugar: selected?.nombre,
-              latitud: selected?.latitud,
-              longitud: selected?.longitud,
-            });
-          }}
+          value={direccion}
+          placeholder="Ej. Av. Diego Portales 1234"
+          onChange={(event) => emit({ lugar_direccion: event.target.value })}
           className={inputClass}
-        >
-          <option value="">Seleccionar lugar</option>
-          {lugares.map((lugar) => (
-            <option key={lugar.id} value={lugar.id}>
-              {lugar.nombre}
-            </option>
-          ))}
-          <option value="nuevo">Crear un lugar nuevo</option>
-        </select>
+        />
       </Field>
-      {mode === "nuevo" ? (
-        <div className="grid gap-3 lg:col-span-2">
-          <Field label="Nombre del nuevo lugar *">
-            <input
-              value={nuevo.nombre_lugar}
-              disabled={disabled || creating}
-              onChange={(event) =>
-                setNuevo((current) => ({ ...current, nombre_lugar: event.target.value }))
-              }
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Dirección *">
-            <input
-              value={nuevo.direccion}
-              disabled={disabled || creating}
-              onChange={(event) =>
-                setNuevo((current) => ({ ...current, direccion: event.target.value }))
-              }
-              className={inputClass}
-            />
-          </Field>
-          <button
-            type="button"
-            disabled={disabled || creating}
-            onClick={handleCreate}
-            className="min-h-10 w-fit rounded-sm border border-[#e6ddd4] bg-white px-4 text-sm font-medium text-[#2c1810] disabled:opacity-50"
-          >
-            {creating ? "Creando lugar…" : "Guardar lugar"}
-          </button>
-        </div>
-      ) : null}
+      <div className="overflow-hidden rounded-sm border border-[#e6ddd4] bg-[#fbfaf8] lg:col-span-2">
+        {mapQuery ? (
+          <iframe
+            title="Mapa de la dirección"
+            src={mapsEmbedSrc(mapQuery)}
+            className="h-64 w-full border-0"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        ) : (
+          <p className="px-4 py-16 text-center text-sm text-[#8d7b6d]">
+            Escribe la dirección para verla en el mapa.
+          </p>
+        )}
+      </div>
       {error ? <p className="text-sm text-[#8d3b28] lg:col-span-2">{error}</p> : null}
     </div>
   );

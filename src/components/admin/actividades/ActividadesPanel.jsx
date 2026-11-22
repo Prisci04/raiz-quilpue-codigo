@@ -13,6 +13,7 @@ import {
   esEstadoBorrador,
   esEstadoPublicada,
   esEstadoVisibleEnPortal,
+  labelLugarActividad,
   labelModalidad,
   mostrarComoFinalizada,
 } from "@/lib/actividades";
@@ -66,7 +67,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
 
   const visible = useMemo(() => activities.filter((activity) => {
     const term = query.trim().toLocaleLowerCase("es-CL");
-    const matchesQuery = !term || `${activity.titulo} ${activity.descripcion} ${activity.lugar ?? ""}`.toLocaleLowerCase("es-CL").includes(term);
+    const matchesQuery = !term || `${activity.titulo} ${activity.descripcion} ${labelLugarActividad(activity, "")}`.toLocaleLowerCase("es-CL").includes(term);
     return matchesQuery && matchesFilter(activity, filter);
   }), [activities, filter, query]);
 
@@ -174,7 +175,7 @@ export default function ActividadesPanel({ activities = [], error = "", notice =
                     </td>
                     <td className="px-3 py-4 text-[#5c4d42]">
                       {dateLabel(activity.fecha)}
-                      <p className="mt-1 text-xs text-[#8d7b6d]">{activity.lugar || "Lugar pendiente"}</p>
+                      <p className="mt-1 text-xs text-[#8d7b6d]">{labelLugarActividad(activity)}</p>
                     </td>
                     <td className="px-3 py-4 text-[#5c4d42]">
                       {labelModalidad(activity.modalidad)}

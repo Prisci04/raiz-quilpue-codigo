@@ -1,4 +1,4 @@
-/* Home pilot only: preserve the shared header's 64px layout contract. */
+/* Public shared header: preserve the shared header's 64px layout contract. */
 .rev1-header {
   background: rgba(255, 253, 249, .97) !important;
   border-bottom: 1px solid #dfcdb7 !important;
@@ -59,3 +59,5 @@
 @media (prefers-reduced-motion: reduce) {
   .rev1-header *, .rev1-header *::after { animation: none !important; transition: none !important; }
 }
+
+.rev1-header .group img { width: 42px; height: auto; max-height: 44px; object-fit: contain; }

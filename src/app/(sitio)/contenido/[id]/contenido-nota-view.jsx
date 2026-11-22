@@ -1,3 +1,4 @@
+import "@/components/public-rev1.css";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -26,7 +27,7 @@ export default function ContenidoNotaView({ contenido }) {
   const summary = contenido.summary?.trim() ?? "";
 
   return (
-    <main className="bg-[#e7dcd2] pb-16 text-[#704a31]">
+    <main className="rev1-public rev1-detail rev1-story-detail bg-[#e7dcd2] pb-16 text-[#704a31]">
       <article className="mx-auto max-w-3xl px-6 pt-8 sm:pt-10">
         <Link
           href="/contenido"

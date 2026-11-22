@@ -1,4 +1,5 @@
 "use client";
+import "@/components/public-rev1.css";
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
@@ -7,6 +8,7 @@ import ActividadesCalendar from "@/components/actividades/ActividadesCalendar";
 import ViewTabs from "@/components/actividades/ViewTabs";
 import Pagination from "@/components/Pagination";
 import AnimatedContent from "@/components/motion/AnimatedContent";
+import { labelLugarActividad } from "@/lib/actividades";
 
 const PAGE_SIZE = 12;
 
@@ -20,7 +22,7 @@ export default function ActividadesView({ activities = [], error = "", initialVi
     if (!normalizedQuery) return activities;
 
     return activities.filter((activity) => {
-      const text = `${activity.titulo} ${activity.lugar ?? ""} ${activity.descripcion}`.toLowerCase();
+      const text = `${activity.titulo} ${labelLugarActividad(activity, "")} ${activity.descripcion}`.toLowerCase();
       return text.includes(normalizedQuery);
     });
   }, [activities, normalizedQuery]);
@@ -58,7 +60,7 @@ export default function ActividadesView({ activities = [], error = "", initialVi
   }
 
   return (
-    <main className="bg-[#e7dcd2] text-[#946541]">
+    <main className="rev1-public rev1-activities bg-[#e7dcd2] text-[#946541]">
       <AnimatedContent as="section" className="bg-[#bb9c82]/25">
         <div className="mx-auto max-w-[1200px] px-4 pt-8 pb-5 sm:px-8 sm:pt-16 sm:pb-8 lg:flex lg:items-end lg:justify-between lg:gap-12">
           <div className="max-w-2xl">

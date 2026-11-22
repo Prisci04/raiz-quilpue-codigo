@@ -20,10 +20,10 @@ import {
 } from "@/lib/catalogos.mjs";
 import { getCatalogos } from "@/lib/api/catalogos";
 import { deleteActividad, getActividadAdmin, saveActividad } from "@/lib/api/community";
+import { getUbicaciones } from "@/lib/api/ubicaciones";
 import { discardUploadedPortada, uploadPortada } from "@/lib/api/media";
 import EstimacionInscripcionesCard from "@/components/admin/actividades/EstimacionInscripcionesCard";
 import LugarFields from "@/components/admin/actividades/LugarFields";
-import { coordenadasValidas } from "@/lib/actividad-ubicacion.mjs";
 
 const EMPTY_DOC = { type: "doc", content: [{ type: "paragraph" }] };
 const PORTADA_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
@@ -35,7 +35,7 @@ const EMPTY = {
   fecha: "",
   hora_inicio: "",
   hora_fin: "",
-  id_lugar: "",
+  lugar_direccion: "",
   id_comuna: "",
   id_region: "",
   id_publico: "",
@@ -91,7 +91,7 @@ function formFromActivity(activity) {
     fecha: activity.fecha ?? "",
     hora_inicio: clock(activity.hora_inicio),
     hora_fin: clock(activity.hora_fin),
-    id_lugar: activity.id_lugar ?? "",
+    lugar_direccion: activity.lugar_direccion ?? "",
     id_comuna: activity.id_comuna ?? "",
     id_region: activity.id_region ?? "",
     id_publico: activity.id_publico ?? "",
@@ -121,7 +121,8 @@ function activityPayload(form, idEstado) {
     fecha: form.fecha,
     hora_inicio: form.hora_inicio,
     hora_fin: form.hora_fin,
-    id_lugar: form.id_lugar,
+    lugar_direccion: form.lugar_direccion,
+    id_comuna: form.id_comuna,
     id_publico: form.id_publico,
     id_modalidad: form.id_modalidad,
     id_tipo_participacion: form.id_tipo_participacion || null,
@@ -186,6 +187,17 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
         if (active) setError(loadErrorCaught.message);
       });
 
+    getUbicaciones()
+      .then((data) => {
+        if (!active) return;
+        setForm((current) => ({
+          ...current,
+          id_region: current.id_region || data.id_region || "",
+          id_comuna: current.id_comuna || data.id_comuna || "",
+        }));
+      })
+      .catch(() => {});
+
     return () => {
       active = false;
     };
@@ -227,14 +239,12 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
   }
 
   const handleLugarChange = useCallback((next) => {
-    setForm((current) => {
-      const changed = String(current.id_lugar) !== String(next.id_lugar);
-      const point = coordenadasValidas(next.latitud, next.longitud) ? { latitud: next.latitud, longitud: next.longitud } : { latitud: null, longitud: null };
-      return {
-        ...current, id_lugar: next.id_lugar, id_comuna: next.id_comuna, id_region: next.id_region,
-        ...(changed ? { lugar: next.nombre_lugar ?? "", ...point } : {}),
-      };
-    });
+    setForm((current) => ({
+      ...current,
+      lugar_direccion: next.lugar_direccion,
+      id_comuna: next.id_comuna,
+      id_region: next.id_region,
+    }));
   }, []);
 
   function choosePortada(event) {
@@ -259,7 +269,8 @@ export default function ActividadForm({ activityId = null, initialActivity = nul
 
   function validateLocal() {
     if (!form.fecha) return "La fecha es obligatoria.";
-    if (!form.id_lugar) return "Indica el lugar de la actividad.";
+    if (!String(form.lugar_direccion ?? "").trim()) return "Indica la dirección de la actividad.";
+    if (!form.id_comuna) return "Indica la comuna de la actividad.";
     if (!form.id_publico) return "Indica el público de la actividad.";
     if (!form.id_modalidad) return "Indica la modalidad de la actividad.";
     if (form.hora_inicio && form.hora_fin && form.hora_fin <= form.hora_inicio) {

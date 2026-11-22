@@ -124,6 +124,85 @@ export async function getLugarById(id) {
   return mapLugar(data);
 }
 
+function exactIlike(value) {
+  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+export async function resolveLugarForActividad(lugar) {
+  const direccion = typeof lugar?.direccion === "string" ? lugar.direccion.trim() : "";
+  const idComuna = Number(lugar?.id_comuna);
+
+  if (!direccion || !Number.isInteger(idComuna) || idComuna < 1) {
+    const failure = new Error("Missing lugar for actividad");
+    failure.code = "LUGAR_REQUIRED";
+    throw failure;
+  }
+
+  const client = getSupabaseAdminClient();
+  const placeId = typeof lugar.google_place_id === "string" ? lugar.google_place_id.trim() : "";
+
+  if (placeId) {
+    const { data, error } = await client
+      .from("lugar")
+      .select(LUGAR_LIST_COLUMNS)
+      .eq("google_place_id", placeId)
+      .maybeSingle();
+
+    if (error) {
+      throw queryFailed("Failed to resolve lugar", error);
+    }
+
+    if (data) {
+      return mapLugar(data).id;
+    }
+  }
+
+  const { data, error } = await client
+    .from("lugar")
+    .select(LUGAR_LIST_COLUMNS)
+    .eq("id_comuna", idComuna)
+    .ilike("direccion", exactIlike(direccion))
+    .limit(1);
+
+  if (error) {
+    throw queryFailed("Failed to resolve lugar", error);
+  }
+
+  if (data?.[0]) {
+    return mapLugar(data[0]).id;
+  }
+
+  try {
+    const created = await createLugar({
+      nombre_lugar: (lugar.nombre_lugar || direccion).slice(0, 150),
+      direccion,
+      id_comuna: idComuna,
+      google_place_id: placeId || null,
+      latitud: lugar.latitud ?? null,
+      longitud: lugar.longitud ?? null,
+    });
+    return created.id;
+  } catch (createError) {
+    if (createError.code === "LUGAR_TAKEN" && placeId) {
+      const { data: existing, error: existingError } = await client
+        .from("lugar")
+        .select(LUGAR_LIST_COLUMNS)
+        .eq("google_place_id", placeId)
+        .maybeSingle();
+
+      if (existingError) {
+        throw queryFailed("Failed to resolve lugar", existingError);
+      }
+
+      if (existing) {
+        return mapLugar(existing).id;
+      }
+    }
+
+    throw createError;
+  }
+}
+
 export async function createLugar(input) {
   const { data, error } = await getSupabaseAdminClient()
     .from("lugar")

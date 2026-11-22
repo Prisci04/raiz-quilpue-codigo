@@ -27,6 +27,7 @@ import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { finalizarActividadesVencidas } from "@/services/actividades-finalizacion.service";
 import { listCatalogo } from "@/services/catalogos.service";
+import { resolveLugarForActividad } from "@/services/lugares.service";
 import { deleteOwnedPortada } from "@/services/storage.service";
 
 const ACTIVIDAD_COLUMNS = `
@@ -185,23 +186,33 @@ function actividadWritePayload(input, { usuarioId, isCreate }) {
 }
 
 export async function saveActividadAdmin(id, input, usuarioId) {
+  const resolved = { ...input };
+  if (input.lugar) {
+    resolved.id_lugar = await resolveLugarForActividad(input.lugar);
+  }
+
   const current = id ? await getActividadAdmin(id) : null;
   if (id && !current) return null;
-  const payload = actividadWritePayload(input, { usuarioId, isCreate: !id });
+
+  const payload = actividadWritePayload(resolved, { usuarioId, isCreate: !id });
   for (const field of CAMPOS_UBICACION) {
     if (Object.hasOwn(input, field)) payload[field] = input[field];
   }
+
   const result = await writeActividadUbicacion((fields, value) => {
     const query = admin().from("actividades");
     const mutation = id ? query.update(value).eq("id_actividad", id) : query.insert(value);
     const selected = mutation.select(ACTIVIDAD_COLUMNS + actividadUbicacionColumns(fields));
     return id ? selected.maybeSingle() : selected.single();
   }, payload);
+
   const data = assertQuery(result, "Failed to save actividad");
   if (!data) return null;
+
   if (current && input.imagen_url !== undefined && current.imagen_url !== input.imagen_url) {
     await deleteOwnedPortada(current.imagen_url);
   }
+
   return mapActividadVista(data);
 }
 

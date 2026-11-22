@@ -71,3 +71,16 @@
 @media (prefers-reduced-motion: reduce) {
   .rev1-footer *, .rev1-footer *::before, .rev1-footer *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+
+/* Official isotipo, fully contained and unaltered on a warm circular surface. */
+.rev1-footer-identity { display: flex; flex-direction: column; align-items: center; }
+.rev1-footer .rev1-footer-mark { display: grid; place-items: center; width: 168px; height: 168px; border-radius: 50%; border: 1px solid #c9994b77; background: #392a20; box-shadow: inset 0 0 0 7px #dfb47e05,0 8px 24px #120d0920; }
+.rev1-footer-mark img { display: block; width: 136px; height: auto; object-fit: contain; }
+.rev1-footer .rev1-footer-territory { margin-left: 0; justify-content: center; }
+@media(max-width:639px) {
+ .rev1-footer .rev1-footer-mark { width: 140px; height: 140px; }
+ .rev1-footer-mark img { width: 112px; }
+ /* Keep the Instagram touch target outside the floating assistant's right rail. */
+ .rev1-footer-social { margin-right: 76px; flex-wrap: wrap; }
+}

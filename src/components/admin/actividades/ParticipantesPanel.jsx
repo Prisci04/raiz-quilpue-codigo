@@ -27,6 +27,7 @@ import AdminNotice from "@/components/admin/contenidos/AdminNotice";
 import {
   cuposDisponibles,
   esEstadoPublicada,
+  labelLugarActividad,
   labelParticipacion,
   listaEsperaDisponibles,
   mostrarComoFinalizada,
@@ -445,7 +446,7 @@ export default function ParticipantesPanel({
             </span>
             <span className="inline-flex items-center gap-1.5">
               <MapPin size={15} strokeWidth={1.8} aria-hidden="true" />
-              {activity.lugar || "Lugar pendiente"}
+              {labelLugarActividad(activity)}
             </span>
           </p>
         </div>

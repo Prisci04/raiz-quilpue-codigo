@@ -1,4 +1,5 @@
 "use client";
+import "@/components/public-rev1.css";
 
 import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
@@ -70,7 +71,7 @@ export default function ContenidoView({
       : "No hay contenidos en esta categoría.";
 
   return (
-    <main className="bg-[#e7dcd2] text-[#946541]">
+    <main className="rev1-public rev1-contents bg-[#e7dcd2] text-[#946541]">
       <AnimatedContent as="section" className="bg-[#bb9c82]/25 px-6 pt-16 pb-12 sm:pt-20">
         <div className="mx-auto max-w-7xl">
           <div className="mb-4 text-[11px] font-semibold tracking-[0.22em] text-[#db700f] uppercase">Patrimonio · Noticias · Historias · Cultura · Comunidad</div>
