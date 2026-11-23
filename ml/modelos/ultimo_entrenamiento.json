@@ -1,5 +1,5 @@
 {
-  "huella": "c2babab483c7cf8a872101f1bd605546ae17fd63dfb4c6e1cf4076e08938a163",
+  "huella": "a629198c9f08647c10afc84d3cdc86f2ddbf2b6770fd87fc3cd07fa35c0578dd",
   "n_filas": 3,
   "esquema": "7vars-cupos_max-cat-tiempo",
   "predictoras": [
@@ -14,10 +14,11 @@
   "y_min": 15,
   "y_max": 20,
   "y_media": 18.333333333333332,
+  "fecha_actualizacion": "2026-11-22T23:59:42.552481+00:00",
   "metricas_ilustrativas": true,
   "metricas": {
-    "mae": 10.272783314672042,
-    "rmse": 10.272783314672042,
+    "mae": 2.9896250031894276,
+    "rmse": 2.9896250031894276,
     "mae_base": 2.5,
     "r2": null,
     "ilustrativas": true

@@ -95,12 +95,11 @@ En `.env.local` del proyecto Next.js:
 
     ML_INFERENCE_URL=http://127.0.0.1:8000
     ML_INFERENCE_SECRET=un-secreto-largo
-    CRON_SECRET=un-secreto-cron
 
-Cron de respaldo (diario): `GET/POST /api/cron/ml-actualizar`
-con `Authorization: Bearer <CRON_SECRET>`. En Vercel, `vercel.json`
-programa `0 9 * * *` (UTC). El `.joblib` debe vivir en el host Python
-(no en Vercel); Next solo llama a `ML_INFERENCE_URL`.
+El modelo se actualiza desde Estadísticas (botón) o al finalizar
+actividades (en segundo plano, solo si cambió el histórico).
+El `.joblib` vive en el host Python (no en Vercel); Next solo llama
+a `ML_INFERENCE_URL`.
 
 ## 6. Metodología
 

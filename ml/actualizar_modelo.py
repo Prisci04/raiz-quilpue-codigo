@@ -107,7 +107,6 @@ def actualizar_modelo(*, forzar=False, motivo="manual"):
             resultado = entrenar(
                 df=df,
                 mostrar_grafico=False,
-                omitir_si_igual=False,
             )
         except Exception as exc:
             # No se sobrescribe el .joblib: entrenar solo guarda al final con éxito.
