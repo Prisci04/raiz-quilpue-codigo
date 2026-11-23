@@ -430,10 +430,10 @@ export default function MuseoView({ items = [], categorias = [], error = "" }) {
                   type="button"
                   onClick={() => openItem(item)}
                   aria-label={`Abrir ficha de ${item.title}`}
-                  className="museum-record-card group animate-fade-up border border-[#e7dcd2]/20 bg-[#e7dcd2]/5 text-left transition-colors hover:border-[#e48d40]/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e48d40]"
+                  className="museum-record-card group animate-fade-up border-0 bg-[#f5eddf] text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e48d40]"
                   style={{ animationDelay: `${index * 0.06}s` }}
                 >
-                  <div className="relative h-56 overflow-hidden bg-[#bb9c82]/30">
+                  <div className="relative h-56 overflow-hidden border-0 bg-[#493a2e]">
                     {item.image ? (
                       <Image
                         src={item.image}

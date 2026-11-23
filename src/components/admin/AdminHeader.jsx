@@ -220,6 +220,7 @@ export default function AdminHeader({
                 <Link
                   href="/admin/perfil"
                   className="flex min-h-10 items-center gap-2.5 rounded-sm px-2.5 text-[13px] text-[#2c1810] hover:bg-[#f6f1eb]"
+                  style={{ fontSize: "13px", lineHeight: "20px" }}
                   onClick={() => setProfileOpen(false)}
                 >
                   <UserRound size={15} strokeWidth={1.8} aria-hidden="true" />
@@ -228,6 +229,7 @@ export default function AdminHeader({
                 <Link
                   href="/"
                   className="flex min-h-10 items-center gap-2.5 rounded-sm px-2.5 text-[13px] text-[#2c1810] hover:bg-[#f6f1eb]"
+                  style={{ fontSize: "13px", lineHeight: "20px" }}
                   onClick={() => setProfileOpen(false)}
                 >
                   <SquareArrowOutUpRight size={15} strokeWidth={1.8} aria-hidden="true" />
@@ -236,6 +238,7 @@ export default function AdminHeader({
                 <button
                   type="button"
                   className="flex min-h-10 w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-[13px] text-[#8d3b28] hover:bg-[#f6e4dc] disabled:opacity-60"
+                  style={{ fontSize: "13px", lineHeight: "20px" }}
                   disabled={loggingOut}
                   onClick={handleLogout}
                 >

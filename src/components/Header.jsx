@@ -58,7 +58,7 @@ export default function Header() {
               {/* CAMBIAR IMAGEN AQUÍ: sube el logo oficial con este nombre. */}
               <Image
                 src="/images/logo/raiz-quilpue-isotipo.png"
-                alt="Logo de Raíz Quilpué"
+                alt="Logo de Corporación Raíz Quilpué"
                 width={2280}
                 height={2304}
                 className="h-auto w-8 object-contain"
@@ -66,16 +66,16 @@ export default function Header() {
             </div>
             <div className="leading-tight">
               <div
-                className="font-serif text-base font-bold"
-                style={{ color: "var(--primary)", letterSpacing: "0.01em" }}
+                className="font-serif font-bold"
+                style={{ color: "var(--primary)", letterSpacing: "0.01em", fontSize: "17px", lineHeight: "1" }}
               >
-                Raíz
+                Corporación
               </div>
               <div
                 className="font-mono text-[9px] tracking-[0.18em] uppercase"
                 style={{ color: "var(--active-indicator)", marginTop: "-3px" }}
               >
-                Quilpué
+                Raíz Quilpué
               </div>
             </div>
           </Link>

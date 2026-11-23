@@ -1,11 +1,9 @@
 import {
-  BarChart3,
   CalendarDays,
   FileText,
   Landmark,
   LayoutDashboard,
   Settings,
-  ShoppingBag,
   MessageCircle,
   PanelsTopLeft,
 } from "lucide-react";
@@ -23,21 +21,21 @@ export const ADMIN_NAV = [
       { href: "/admin/museo", label: "Museo Digital", icon: Landmark },
       { href: "/admin/paginas", label: "Páginas", icon: PanelsTopLeft },
       { href: "/admin/ia", label: "Administrar IA", icon: MessageCircle },
-      { href: "/admin/market", label: "Market", icon: ShoppingBag },
+      // { href: "/admin/market", label: "Market", icon: ShoppingBag },
     ],
   },
   {
-    label: "Sistema",
+    label: "Configuración",
     items: [
-      {
-        href: "/admin/estadisticas",
-        label: "Estadísticas",
-        icon: BarChart3,
-        adminOnly: true,
-      },
+      // {
+      //   href: "/admin/estadisticas",
+      //   label: "Estadísticas",
+      //   icon: BarChart3,
+      //   adminOnly: true,
+      // },
       {
         href: "/admin/configuracion",
-        label: "Configuración",
+        label: "Usuarios",
         icon: Settings,
         adminOnly: true,
       },

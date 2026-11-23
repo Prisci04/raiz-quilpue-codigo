@@ -170,10 +170,9 @@ export default function ActividadDetallePanel({ activity }) {
           <div className="mt-5 flex flex-wrap gap-2 lg:mt-auto lg:pt-5">
             <Link
               href={`/admin/actividades/${activity.id}/participantes`}
-              className="inline-flex min-h-11 items-center gap-2 rounded-sm bg-[#1e4536] px-4 text-sm font-medium text-white hover:bg-[#16352a]"
+              className="inline-flex min-h-11 items-center rounded-sm bg-[#1e4536] px-4 text-sm font-medium whitespace-nowrap text-white hover:bg-[#16352a]"
             >
-              <Users size={16} strokeWidth={1.8} aria-hidden="true" />
-              Ver participantes
+              Participantes
             </Link>
             <Link
               href={`/admin/actividades/${activity.id}/editar`}

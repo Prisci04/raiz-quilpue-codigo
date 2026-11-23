@@ -460,7 +460,7 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
           </p>
         ) : (
           <>
-            <ul className="mt-3 space-y-3 md:hidden">
+            <ul className="mt-3 space-y-3 lg:hidden">
               {pageItems.map((contenido) => (
                 <li key={contenido.id} className="border-b border-[#e8dfd4] py-3">
                   <Link
@@ -496,8 +496,8 @@ export default function ContenidosPanel({ contenidos, error, notice = "" }) {
               ))}
             </ul>
 
-            <div tabIndex={0} role="region" aria-label="Listado de contenidos" className="admin-table-scroll mt-2 hidden overflow-x-auto md:block">
-              <table className="admin-table w-full min-w-[720px] text-left text-sm">
+            <div tabIndex={0} role="region" aria-label="Listado de contenidos" className="admin-table-scroll mt-2 hidden lg:block">
+              <table className="admin-table w-full table-fixed text-left text-sm">
                 <thead>
                   <tr className="border-b border-[#e6dcd0] text-[13px] text-[#8a7968]">
                     <th className="min-w-72 px-2 py-3 font-medium">Título</th>
