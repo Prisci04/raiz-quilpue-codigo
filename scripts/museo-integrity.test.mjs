@@ -17,7 +17,8 @@ const state = globalThis.__museoTest = {};
 function aporteRow(overrides = {}) {
   return {
     id_aporte: 1,
-    nombre_aportante: "Ana Pérez",
+    nombre_aportante: "Ana",
+    apellido_aportante: "Pérez",
     correo_aportante: "ana@correo.cl",
     titulo: "Foto de la plaza",
     descripcion: "Una foto antigua",

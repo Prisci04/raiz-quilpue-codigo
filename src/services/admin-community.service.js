@@ -76,6 +76,7 @@ const ACTIVIDAD_LIST_COLUMNS = ACTIVIDAD_COLUMNS;
 const APORTE_BASE_COLUMNS = `
   id_aporte,
   nombre_aportante,
+  apellido_aportante,
   correo_aportante,
   titulo,
   descripcion,
@@ -461,6 +462,8 @@ async function idEstadoRevision(nombre) {
 }
 
 async function cleanupAporteImage(url) {
+  if (!url) return;
+
   const ownedAporte = parseOwnedAporteImageUrl(url);
   if (ownedAporte) {
     try {
@@ -563,6 +566,7 @@ export async function savePiezaMuseoAdmin(id, input, usuario) {
         id_estado_revision: aprobadoId,
         id_usuario_revisor: usuario?.id ?? null,
         nombre_aportante: input.nombre_aportante,
+        apellido_aportante: input.apellido_aportante,
         correo_aportante: input.correo_aportante,
         fec_revision: new Date().toISOString(),
       })
@@ -631,6 +635,28 @@ export async function countAportesMuseoAdmin() {
 
   if (!Number.isInteger(count)) {
     throw new Error("Supabase did not return an exact museo aportes count.");
+  }
+
+  return count;
+}
+
+export async function countAportesPendientesMuseoAdmin() {
+  const pendienteId = await idEstadoRevision(NOMBRE_REVISION_PENDIENTE);
+  if (!pendienteId) return 0;
+
+  const { count, error } = await admin()
+    .from("museo_aportes")
+    .select("id_aporte", { count: "exact", head: true })
+    .eq("id_estado_revision", pendienteId);
+
+  if (error) {
+    throw new Error(`Failed to count museo aportes pendientes: ${error.message}`);
+  }
+
+  if (!Number.isInteger(count)) {
+    throw new Error(
+      "Supabase did not return an exact museo aportes pendientes count.",
+    );
   }
 
   return count;

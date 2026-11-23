@@ -2,6 +2,7 @@ import { requireGestorContenidoPage } from "@/lib/auth/page-guard";
 import MuseoPanel from "@/components/admin/museo/MuseoPanel";
 import {
   countAportesMuseoAdmin,
+  countAportesPendientesMuseoAdmin,
   listPiezasMuseoAdmin,
 } from "@/services/admin-community.service";
 
@@ -14,6 +15,7 @@ export default async function AdminMuseoPage({ searchParams }) {
   const query = await searchParams;
   let pieces = [];
   let contributionCount = null;
+  let pendingContributionCount = 0;
   let error = "";
 
   try {
@@ -41,6 +43,15 @@ export default async function AdminMuseoPage({ searchParams }) {
       : "No se pudo cargar la cantidad de aportes recibidos.";
   }
 
+  try {
+    pendingContributionCount = await countAportesPendientesMuseoAdmin();
+  } catch (errorCaught) {
+    console.error(
+      "[AdminMuseoPage] Error al contar aportes pendientes:",
+      errorCaught,
+    );
+  }
+
   const notice =
     query.creado === "1"
       ? "Pieza creada correctamente."
@@ -54,6 +65,7 @@ export default async function AdminMuseoPage({ searchParams }) {
     <MuseoPanel
       pieces={pieces}
       contributionCount={contributionCount}
+      pendingContributionCount={pendingContributionCount}
       error={error}
       notice={notice}
     />

@@ -65,9 +65,10 @@ export function mapAporteMuseo(row) {
     categoria: categoria?.nombre_categoria ?? row.categoria ?? "",
     fecha_aproximada: row.fecha_aproximada ?? "",
     lugar: row.lugar_referencia ?? row.lugar ?? "",
-    imagen_url: row.imagen_url ?? null,
+    imagen_url: row.imagen_url ? String(row.imagen_url) : null,
     estado_revision: estado?.nombre_estado_revision ?? row.estado_revision ?? "",
     nombre: row.nombre_aportante ?? row.nombre ?? "",
+    apellido: row.apellido_aportante ?? row.apellido ?? null,
     correo: row.correo_aportante ?? row.correo ?? "",
     fecha_creacion: row.fec_creacion ?? row.fecha_creacion ?? null,
     fec_revision: row.fec_revision ?? null,
@@ -93,9 +94,11 @@ export function mapAporteMuseoPublico(row) {
 }
 
 export function aportanteDesdeUsuario(user) {
-  const nombre = [user?.nombre, user?.apellido].filter(Boolean).join(" ").trim();
+  const nombre = String(user?.nombre ?? "").trim() || "Raíz";
+  const apellido = String(user?.apellido ?? "").trim() || "Quilpué";
   return {
-    nombre_aportante: nombre || "Raíz Quilpué",
+    nombre_aportante: nombre,
+    apellido_aportante: apellido,
     correo_aportante: String(user?.email ?? "").trim().toLowerCase(),
   };
 }

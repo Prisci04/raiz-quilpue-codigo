@@ -101,6 +101,110 @@
   to { opacity: 1; }
 }
 
+@keyframes admin-pending-core {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(0.92);
+    filter: brightness(1.08);
+  }
+}
+
+@keyframes admin-pending-halo {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(2.15);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.15);
+    opacity: 0;
+  }
+}
+
+@keyframes admin-pending-trail {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.35);
+  }
+}
+
+.admin-pending-dot {
+  position: absolute;
+  top: -0.28rem;
+  right: -0.28rem;
+  z-index: 2;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 9999px;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      #ff8a80 0%,
+      #e53935 42%,
+      #b71c1c 100%
+    );
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.95),
+    0 1px 3px rgba(183, 28, 28, 0.35),
+    0 0 10px rgba(229, 57, 53, 0.45);
+}
+
+.admin-pending-dot::before,
+.admin-pending-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Estela / aura suave */
+.admin-pending-dot::before {
+  inset: -0.2rem;
+  background: radial-gradient(
+    circle,
+    rgba(229, 57, 53, 0.45) 0%,
+    rgba(229, 57, 53, 0.18) 45%,
+    rgba(229, 57, 53, 0) 72%
+  );
+  z-index: -1;
+}
+
+/* Anillo que se expande (estela animada) */
+.admin-pending-dot::after {
+  inset: -0.05rem;
+  border: 1.5px solid rgba(229, 57, 53, 0.55);
+  background: transparent;
+  box-shadow: 0 0 8px rgba(229, 57, 53, 0.25);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .admin-pending-dot {
+    animation: admin-pending-core 2.8s ease-in-out infinite;
+  }
+
+  .admin-pending-dot::before {
+    animation: admin-pending-trail 2.8s ease-in-out infinite;
+  }
+
+  .admin-pending-dot::after {
+    animation: admin-pending-halo 2.8s ease-out infinite;
+  }
+}
+
 .admin-shell .admin-form :is(input:not([type="file"]):not([type="checkbox"]), select, textarea) {
   min-width: 0;
   min-height: 2.75rem;

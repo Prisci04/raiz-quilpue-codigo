@@ -18,64 +18,64 @@ export async function POST(request) {
   try {
     const formData = await request.formData();
     const file = formData.get("archivo");
+    const hasFile = file instanceof File && file.size > 0;
 
-    if (!(file instanceof File) || file.size === 0) {
-      return noStore(
-        jsonError(400, "VALIDATION", "Debes seleccionar una imagen."),
-      );
-    }
+    let publicUrl = null;
 
-    if (file.size > MAX_FILE_SIZE) {
-      return noStore(
-        jsonError(
-          400,
-          "FILE_TOO_LARGE",
-          "La imagen no puede superar los 5 MB.",
-        ),
-      );
-    }
+    if (hasFile) {
+      if (file.size > MAX_FILE_SIZE) {
+        return noStore(
+          jsonError(
+            400,
+            "FILE_TOO_LARGE",
+            "La imagen no puede superar los 5 MB.",
+          ),
+        );
+      }
 
-    if (!ALLOWED_TYPES.has(file.type)) {
-      return noStore(
-        jsonError(
-          400,
-          "INVALID_FILE_TYPE",
-          "Solo se permiten imágenes JPG, PNG, WEBP o AVIF.",
-        ),
-      );
-    }
+      if (!ALLOWED_TYPES.has(file.type)) {
+        return noStore(
+          jsonError(
+            400,
+            "INVALID_FILE_TYPE",
+            "Solo se permiten imágenes JPG, PNG, WEBP o AVIF.",
+          ),
+        );
+      }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const inspected = inspectImageFile({
-      bytes: buffer,
-      type: file.type,
-      name: file.name,
-      size: file.size,
-    });
-    if (!inspected.ok) {
-      return noStore(jsonError(inspected.status, inspected.code, inspected.message));
-    }
-
-    const supabase = getSupabaseAdminClient();
-    const fileId = crypto.randomUUID();
-    const candidatePath = `museo/aportes/${fileId}.${inspected.extension}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from(BUCKET)
-      .upload(candidatePath, buffer, {
-        contentType: inspected.mime,
-        upsert: false,
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const inspected = inspectImageFile({
+        bytes: buffer,
+        type: file.type,
+        name: file.name,
+        size: file.size,
       });
+      if (!inspected.ok) {
+        return noStore(jsonError(inspected.status, inspected.code, inspected.message));
+      }
 
-    if (uploadError) {
-      throw new Error(`No fue posible subir el archivo: ${uploadError.message}`);
+      const supabase = getSupabaseAdminClient();
+      const fileId = crypto.randomUUID();
+      const candidatePath = `museo/aportes/${fileId}.${inspected.extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(candidatePath, buffer, {
+          contentType: inspected.mime,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(`No fue posible subir el archivo: ${uploadError.message}`);
+      }
+
+      uploadedPath = candidatePath;
+
+      const {
+        data: { publicUrl: uploadedUrl },
+      } = supabase.storage.from(BUCKET).getPublicUrl(uploadedPath);
+      publicUrl = uploadedUrl;
     }
-
-    uploadedPath = candidatePath;
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from(BUCKET).getPublicUrl(uploadedPath);
 
     const catalogos = {
       categoria_museo: await listCatalogo("categoria_museo"),
@@ -83,6 +83,7 @@ export async function POST(request) {
     const parsed = parseAporteMuseoInput(
       {
         nombre: formData.get("nombre"),
+        apellido: formData.get("apellido"),
         correo: formData.get("correo"),
         id_categoria_museo: formData.get("id_categoria_museo"),
         titulo: formData.get("titulo"),

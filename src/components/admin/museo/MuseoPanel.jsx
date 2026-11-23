@@ -48,6 +48,7 @@ function revisionLabel(estado) {
 export default function MuseoPanel({
   pieces = [],
   contributionCount: initialContributionCount = null,
+  pendingContributionCount: initialPendingCount = 0,
   error = "",
   notice = "",
 }) {
@@ -59,6 +60,9 @@ export default function MuseoPanel({
   const [contributions, setContributions] = useState([]);
   const [contributionsLoaded, setContributionsLoaded] = useState(false);
   const [loadingContributions, setLoadingContributions] = useState(false);
+  const [pendingCount, setPendingCount] = useState(
+    Number.isFinite(initialPendingCount) ? initialPendingCount : 0,
+  );
 
   const [actionError, setActionError] = useState("");
   const [noticeText, setNoticeText] = useState(notice);
@@ -81,12 +85,18 @@ export default function MuseoPanel({
       const aportes = await getAportesMuseo();
       setContributions(aportes);
       setContributionsLoaded(true);
+      setPendingCount(
+        aportes.filter((item) => esRevisionPendiente(item.estado_revision))
+          .length,
+      );
     } catch (loadError) {
       setActionError(loadError.message);
     } finally {
       setLoadingContributions(false);
     }
   }
+
+  const hayAportesPendientes = pendingCount > 0;
 
   const visiblePieces = useMemo(() => {
     return pieces.filter((piece) => {
@@ -107,7 +117,7 @@ export default function MuseoPanel({
 
       return (
         !term ||
-        `${entry.titulo} ${entry.nombre} ${entry.correo} ${entry.categoria}`
+        `${entry.titulo} ${entry.nombre} ${entry.apellido ?? ""} ${entry.correo} ${entry.categoria}`
           .toLocaleLowerCase("es-CL")
           .includes(term)
       );
@@ -128,6 +138,7 @@ export default function MuseoPanel({
       setContributions((current) =>
         current.map((item) => (item.id === entry.id ? { ...item, ...aporte } : item)),
       );
+      setPendingCount((current) => Math.max(0, current - 1));
 
       setNoticeText("El aporte fue aceptado y ya forma parte de la colección pública.");
       router.refresh();
@@ -158,6 +169,7 @@ export default function MuseoPanel({
             : item,
         ),
       );
+      setPendingCount((current) => Math.max(0, current - 1));
 
       setNoticeText("El aporte fue rechazado correctamente.");
     } catch (rejectError) {
@@ -183,9 +195,15 @@ export default function MuseoPanel({
       } else {
         await deleteAporteMuseo(deleteTarget.entry.id);
 
+        const eraPendiente = esRevisionPendiente(
+          deleteTarget.entry.estado_revision,
+        );
         setContributions((current) =>
           current.filter((item) => item.id !== deleteTarget.entry.id),
         );
+        if (eraPendiente) {
+          setPendingCount((current) => Math.max(0, current - 1));
+        }
         router.refresh();
       }
 
@@ -283,12 +301,20 @@ export default function MuseoPanel({
           type="button"
           onClick={openContributions}
           aria-pressed={tab === "aportes"}
-          className={`flex items-center gap-2.5 rounded-xl border bg-white px-3 py-2.5 text-left ${
+          className={`relative overflow-visible flex items-center gap-2.5 rounded-xl border bg-white px-3 py-2.5 text-left ${
             tab === "aportes"
               ? "border-[#1e4536]"
               : "border-[#efe6dc]"
           }`}
         >
+          {hayAportesPendientes ? (
+            <>
+              <span className="admin-pending-dot" aria-hidden="true" />
+              <span className="sr-only">
+                Hay aportes pendientes de revisión
+              </span>
+            </>
+          ) : null}
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#fde8e2] text-[#a5452d]">
             <MessageSquareText size={15} />
           </span>
@@ -327,13 +353,20 @@ export default function MuseoPanel({
               type="button"
               onClick={openContributions}
               aria-pressed={tab === "aportes"}
-              className={`min-h-11 rounded-sm px-4 text-[13px] ${
+              className={`relative overflow-visible min-h-11 rounded-sm px-4 pr-5 text-[13px] ${
                 tab === "aportes"
                   ? "bg-[#1e4536] text-white"
                   : "border border-[#eadfd4]"
               }`}
             >
               Aportes de la comunidad
+              {hayAportesPendientes ? (
+                <span
+                  className="admin-pending-dot"
+                  title="Hay aportes pendientes"
+                  aria-label="Hay aportes pendientes de revisión"
+                />
+              ) : null}
             </button>
           </div>
 
@@ -502,7 +535,7 @@ export default function MuseoPanel({
                     </h2>
 
                     <p className="mt-1 text-sm text-[#7c6a5c]">
-                      {entry.nombre} ·{" "}
+                      {[entry.nombre, entry.apellido].filter(Boolean).join(" ")} ·{" "}
                       <a
                         href={`mailto:${entry.correo}`}
                         className="underline"

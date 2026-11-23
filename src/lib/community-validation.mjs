@@ -301,6 +301,11 @@ export function parseAporteMuseoInput(input, catalogos = {}) {
   const nombre = text(input.nombre ?? input.nombre_aportante, 160, { required: true });
   if (!nombre) return fail("El nombre es obligatorio.");
 
+  const apellido = text(input.apellido ?? input.apellido_aportante, 160, {
+    required: true,
+  });
+  if (!apellido) return fail("El apellido es obligatorio.");
+
   const correo = text(input.correo ?? input.correo_aportante, 254, { required: true });
   if (!correo || !EMAIL_PATTERN.test(correo.toLowerCase())) {
     return fail("Usa un correo con @ y un dominio como .cl o .com.");
@@ -319,16 +324,21 @@ export function parseAporteMuseoInput(input, catalogos = {}) {
   );
   if (!categoria.ok) return categoria;
 
-  const imagenRaw = input.imagen_url === null || input.imagen_url === undefined ? "" : input.imagen_url;
-  const imagenUrl = typeof imagenRaw === "string" ? text(imagenRaw, 2000) : null;
-  if (!imagenUrl || !parseOwnedAporteImageUrl(imagenUrl)) {
-    return fail("Debes adjuntar una imagen válida.");
+  const imagenRaw =
+    input.imagen_url === null || input.imagen_url === undefined
+      ? ""
+      : input.imagen_url;
+  const imagenUrl =
+    typeof imagenRaw === "string" ? text(imagenRaw, 2000) : null;
+  if (imagenUrl && !parseOwnedAporteImageUrl(imagenUrl)) {
+    return fail("La imagen adjunta no es válida.");
   }
 
   return {
     ok: true,
     value: {
       nombre_aportante: nombre,
+      apellido_aportante: apellido,
       correo_aportante: correo.toLowerCase(),
       titulo,
       descripcion,

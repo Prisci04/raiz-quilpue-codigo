@@ -45,9 +45,10 @@ test("exige imagen propia y rechaza Unsplash, /images/ o una URL ajena", () => {
   assert.equal(parsePiezaMuseoInput({ ...base, id_categoria_museo: 99 }, catalogos).ok, false);
 });
 
-test("valida categoría, título, correo e imagen del aporte comunitario", () => {
+test("valida categoría, título, correo, apellido e imagen opcional del aporte", () => {
   const ok = parseAporteMuseoInput({
-    nombre: "Ana Pérez",
+    nombre: "Ana",
+    apellido: "Pérez",
     correo: "Ana.Perez@correo.cl",
     id_categoria_museo: 1,
     titulo: "Foto de la plaza",
@@ -56,12 +57,39 @@ test("valida categoría, título, correo e imagen del aporte comunitario", () =>
   }, catalogos);
   assert.equal(ok.ok, true);
   assert.equal(ok.value.correo_aportante, "ana.perez@correo.cl");
-  assert.equal(ok.value.nombre_aportante, "Ana Pérez");
+  assert.equal(ok.value.nombre_aportante, "Ana");
+  assert.equal(ok.value.apellido_aportante, "Pérez");
   assert.equal(ok.value.id_categoria_museo, 1);
+
+  const sinImagen = parseAporteMuseoInput({
+    nombre: "Ana",
+    apellido: "Pérez",
+    correo: "ana@correo.cl",
+    id_categoria_museo: 1,
+    titulo: "Relato sin foto",
+    descripcion: "Solo texto",
+    imagen_url: null,
+  }, catalogos);
+  assert.equal(sinImagen.ok, true);
+  assert.equal(sinImagen.value.imagen_url, null);
+
+  // Aportes nuevos: apellido obligatorio (los antiguos en BD pueden ser NULL).
+  assert.equal(
+    parseAporteMuseoInput({
+      nombre: "Ana",
+      correo: "ana@correo.cl",
+      id_categoria_museo: 1,
+      titulo: "Foto",
+      descripcion: "Desc",
+      imagen_url: aporteUrl,
+    }, catalogos).ok,
+    false,
+  );
 
   assert.equal(
     parseAporteMuseoInput({
       nombre: "Ana",
+      apellido: "Pérez",
       correo: "sin-dominio",
       id_categoria_museo: 1,
       titulo: "Foto",
@@ -73,6 +101,7 @@ test("valida categoría, título, correo e imagen del aporte comunitario", () =>
   assert.equal(
     parseAporteMuseoInput({
       nombre: "Ana",
+      apellido: "Pérez",
       correo: "ana@correo.cl",
       id_categoria_museo: 1,
       titulo: "Foto",
